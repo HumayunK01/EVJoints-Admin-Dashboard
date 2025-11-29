@@ -1,0 +1,42 @@
+[
+    {
+        "name": "Google",
+        "visitors": 3456,
+        "revenues": 4220,
+        "sales": 3456,
+        "conversion": 2.59,
+        "logoName": "google"
+    },
+    {
+        "name": "X.com",
+        "visitors": 3456,
+        "revenues": 4220,
+        "sales": 3456,
+        "conversion": 2.59,
+        "logoName": "x"
+    },
+    {
+        "name": "Github",
+        "visitors": 3456,
+        "revenues": 4220,
+        "sales": 3456,
+        "conversion": 2.59,
+        "logoName": "github"
+    },
+    {
+        "name": "Vimeo",
+        "visitors": 3456,
+        "revenues": 4220,
+        "sales": 3456,
+        "conversion": 2.59,
+        "logoName": "vimeo"
+    },
+    {
+        "name": "Facebook",
+        "visitors": 3456,
+        "revenues": 4220,
+        "sales": 3456,
+        "conversion": 2.59,
+        "logoName": "facebook"
+    }
+]
