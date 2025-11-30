@@ -4,16 +4,16 @@ import Image from "next/image";
 
 export function UserInfo() {
   const USER = {
-    name: "Admin",
+    name: "Saqlain",
     email: "admin@evjoints.com",
-    img: "https://imgs.search.brave.com/0UbG4XOGV__MhzDnZciqioKm2tdIWnX_87z5lLLqMxU/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9jZG4w/Lmljb25maW5kZXIu/Y29tL2RhdGEvaWNv/bnMvc2V0LXVpLWFw/cC1hbmRyb2lkLzMy/LzgtNTEyLnBuZw",
+    img: "/images/profile.jpg",
   };
 
   return (
     <div className="flex items-center gap-3">
       <Image
         src={USER.img}
-        className="size-12"
+        className="size-12 rounded-full object-cover"
         alt={`Avatar of ${USER.name}`}
         role="presentation"
         width={200}
