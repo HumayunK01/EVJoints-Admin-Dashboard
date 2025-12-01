@@ -34,6 +34,8 @@ export function CustomersTable() {
     const [sortOption, setSortOption] = useState("Newest First");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
+    const [filterSubscription, setFilterSubscription] = useState("");
+    const [filterVehicleType, setFilterVehicleType] = useState("");
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -62,9 +64,16 @@ export function CustomersTable() {
                 (!startDate || new Date(customer.customerRegDate) >= new Date(startDate)) &&
                 (!endDate || new Date(customer.customerRegDate) <= new Date(endDate));
 
-            return matchesSearch && matchesDate;
+            const matchesSubscription = !filterSubscription || customer.subscription === filterSubscription;
+            const matchesVehicleType = !filterVehicleType || customer.vehicleType === filterVehicleType;
+
+            return matchesSearch && matchesDate && matchesSubscription && matchesVehicleType;
         });
-    }, [searchTerm, startDate, endDate]);
+    }, [searchTerm, startDate, endDate, filterSubscription, filterVehicleType]);
+
+    // Extract unique options for filters
+    const subscriptionOptions = useMemo(() => Array.from(new Set(customersData.map(c => c.subscription))), []);
+    const vehicleTypeOptions = useMemo(() => Array.from(new Set(customersData.map(c => c.vehicleType))), []);
 
     const sortedData = useMemo(() => {
         return [...filteredData].sort((a, b) => {
@@ -240,22 +249,60 @@ export function CustomersTable() {
 
             {
                 isFilterOpen && mounted && createPortal(
-                    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                        <div className="mx-4 w-auto rounded-lg bg-white p-0 shadow-lg dark:bg-gray-dark">
-
-                            <div className="flex flex-col gap-4">
-                                <DateRangeFilter
-                                    startDate={startDate}
-                                    endDate={endDate}
-                                    onApply={(start, end) => {
-                                        setStartDate(start);
-                                        setEndDate(end);
-                                        setIsFilterOpen(false);
-                                    }}
-                                    onCancel={() => setIsFilterOpen(false)}
-                                />
+                    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+                        <DateRangeFilter
+                            startDate={startDate}
+                            endDate={endDate}
+                            onApply={(start, end) => {
+                                setStartDate(start);
+                                setEndDate(end);
+                                setIsFilterOpen(false);
+                            }}
+                            onCancel={() => setIsFilterOpen(false)}
+                            onClear={() => {
+                                setStartDate("");
+                                setEndDate("");
+                                setFilterSubscription("");
+                                setFilterVehicleType("");
+                            }}
+                        >
+                            <div className="flex gap-4 md:flex-row">
+                                <div className="w-1/2 md:w-1/2">
+                                    <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+                                        Subscription Type
+                                    </label>
+                                    <select
+                                        value={filterSubscription}
+                                        onChange={(e) => setFilterSubscription(e.target.value)}
+                                        className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white dark:focus:border-primary"
+                                    >
+                                        <option value="">All</option>
+                                        {subscriptionOptions.map((option) => (
+                                            <option key={option} value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="w-1/2 md:w-1/2">
+                                    <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+                                        Vehicle Type
+                                    </label>
+                                    <select
+                                        value={filterVehicleType}
+                                        onChange={(e) => setFilterVehicleType(e.target.value)}
+                                        className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white dark:focus:border-primary"
+                                    >
+                                        <option value="">All</option>
+                                        {vehicleTypeOptions.map((option) => (
+                                            <option key={option} value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
-                        </div>
+                        </DateRangeFilter>
                     </div>,
                     document.body
                 )
@@ -318,10 +365,10 @@ export function CustomersTable() {
                             Trip
                         </TableHead>
                         <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Subscription
+                            Check In
                         </TableHead>
                         <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Check In
+                            Subscription
                         </TableHead>
                         <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Device Model
@@ -332,106 +379,133 @@ export function CustomersTable() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {currentData.map((customer, key) => (
-                        <TableRow
-                            key={key}
-                            className="border-t border-stroke dark:border-dark-3"
-                        >
-                            {showCheckboxes && (
-                                <TableCell className="px-4 py-4 pl-6 dark:border-dark-3 xl:pl-7.5">
-                                    <input
-                                        type="checkbox"
-                                        className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
-                                        checked={selectedRows.has(customer.email)}
-                                        onChange={() => toggleRow(customer.email)}
-                                    />
+                    {currentData.length > 0 ? (
+                        currentData.map((customer, key) => (
+                            <TableRow
+                                key={key}
+                                className="border-t border-stroke dark:border-dark-3"
+                            >
+                                {showCheckboxes && (
+                                    <TableCell className="px-4 py-4 pl-6 dark:border-dark-3 xl:pl-7.5">
+                                        <input
+                                            type="checkbox"
+                                            className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
+                                            checked={selectedRows.has(customer.email)}
+                                            onChange={() => toggleRow(customer.email)}
+                                        />
+                                    </TableCell>
+                                )}
+                                <TableCell className={`px-4 py-4 dark:border-dark-3 ${!showCheckboxes ? "pl-6 xl:pl-7.5" : ""}`}>
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.firstName}
+                                    </p>
                                 </TableCell>
-                            )}
-                            <TableCell className={`px-4 py-4 dark:border-dark-3 ${!showCheckboxes ? "pl-6 xl:pl-7.5" : ""}`}>
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.firstName}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.lastName}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.email}</p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.phone}</p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {new Date(customer.vehicleRegDate).toLocaleDateString('en-GB')}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {new Date(customer.customerRegDate).toLocaleDateString('en-GB')}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.vehicleType}
-                                </p>
-                            </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.lastName}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.email}</p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.phone}</p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {new Date(customer.vehicleRegDate).toLocaleDateString('en-GB')}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {new Date(customer.customerRegDate).toLocaleDateString('en-GB')}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.vehicleType}
+                                    </p>
+                                </TableCell>
 
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.manufacturer}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.vehicleModel}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.vehicleVariant}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.deviceBrand}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.version}</p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.navigation}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.trip}</p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.subscription}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.checkIn}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.deviceModel}
-                                </p>
-                            </TableCell>
-                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                    {customer.devicePlatform}
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.manufacturer}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.vehicleModel}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.vehicleVariant}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.deviceBrand}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.version}</p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <span
+                                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.navigation === "Yes"
+                                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                            }`}
+                                    >
+                                        {customer.navigation}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <span
+                                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.trip === "Yes"
+                                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                            }`}
+                                    >
+                                        {customer.trip}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <span
+                                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.checkIn === "Yes"
+                                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                            }`}
+                                    >
+                                        {customer.checkIn}
+                                    </span>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.subscription}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.deviceModel}
+                                    </p>
+                                </TableCell>
+                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                        {customer.devicePlatform}
+                                    </p>
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    ) : (
+                        <TableRow>
+                            <TableCell colSpan={20} className="h-24 text-center">
+                                <p className="text-sm text-dark dark:text-white">
+                                    No customers found.
                                 </p>
                             </TableCell>
                         </TableRow>
-                    ))}
+                    )}
                 </TableBody>
             </Table>
 

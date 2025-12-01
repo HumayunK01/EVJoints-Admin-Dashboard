@@ -4,30 +4,30 @@ import React, { useEffect, useRef, useState } from "react";
 import flatpickr from "flatpickr";
 import { Instance } from "flatpickr/dist/types/instance";
 
+
 interface DateRangeFilterProps {
     startDate: string;
     endDate: string;
     onApply: (start: string, end: string) => void;
     onCancel: () => void;
+    onClear?: () => void;
+    children?: React.ReactNode;
 }
 
 const PRESETS = [
     { label: "Today", getValue: () => [new Date(), new Date()] },
     { label: "Yesterday", getValue: () => { const d = new Date(); d.setDate(d.getDate() - 1); return [d, d]; } },
-    { label: "This week (Sun - Today)", getValue: () => { const end = new Date(); const start = new Date(); start.setDate(start.getDate() - start.getDay()); return [start, end]; } },
     { label: "Last 7 days", getValue: () => { const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 6); return [start, end]; } },
-    { label: "Last week (Sun - Sat)", getValue: () => { const end = new Date(); end.setDate(end.getDate() - end.getDay() - 1); const start = new Date(end); start.setDate(start.getDate() - 6); return [start, end]; } },
     { label: "Last 28 days", getValue: () => { const end = new Date(); const start = new Date(); start.setDate(start.getDate() - 27); return [start, end]; } },
 ];
 
-export function DateRangeFilter({ startDate, endDate, onApply, onCancel }: DateRangeFilterProps) {
+export function DateRangeFilter({ startDate, endDate, onApply, onCancel, onClear, children }: DateRangeFilterProps) {
     const calendarRef = useRef<HTMLDivElement>(null);
     const fpInstance = useRef<Instance | null>(null);
     const [selectedRange, setSelectedRange] = useState<[Date, Date] | null>(
         startDate && endDate ? [new Date(startDate), new Date(endDate)] : null
     );
     const [activePreset, setActivePreset] = useState<string | null>(null);
-    const [isCompareEnabled, setIsCompareEnabled] = useState(false);
 
     useEffect(() => {
         if (calendarRef.current && !fpInstance.current) {
@@ -56,6 +56,17 @@ export function DateRangeFilter({ startDate, endDate, onApply, onCancel }: DateR
             fpInstance.current.setDate(selectedRange, false);
         }
     }, [selectedRange]);
+
+    // Update local state when props change (e.g. when cleared externally)
+    useEffect(() => {
+        if (!startDate && !endDate) {
+            setSelectedRange(null);
+            setActivePreset(null);
+            if (fpInstance.current) {
+                fpInstance.current.clear();
+            }
+        }
+    }, [startDate, endDate]);
 
     const handlePresetClick = (preset: typeof PRESETS[0]) => {
         const range = preset.getValue() as [Date, Date];
@@ -100,23 +111,12 @@ export function DateRangeFilter({ startDate, endDate, onApply, onCancel }: DateR
                         </li>
                     ))}
                 </ul>
-                <div className="mt-4 flex items-center justify-between px-3">
-                    <span className="text-sm text-dark dark:text-white">Compare</span>
-                    <button
-                        onClick={() => setIsCompareEnabled(!isCompareEnabled)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isCompareEnabled ? "bg-primary" : "bg-gray-300 dark:bg-gray-600"
-                            }`}
-                    >
-                        <span
-                            className={`${isCompareEnabled ? "translate-x-6" : "translate-x-1"
-                                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
-                        />
-                    </button>
-                </div>
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 p-4">
+            <div className="flex flex-1 flex-col p-4">
+                {children && <div className="mb-4">{children}</div>}
+
                 <div className="mb-4 flex items-center gap-2">
                     <div className="flex-1">
                         <label className="mb-1 block text-xs text-gray-500">Start date</label>
@@ -135,19 +135,29 @@ export function DateRangeFilter({ startDate, endDate, onApply, onCancel }: DateR
 
                 <div ref={calendarRef} className="mb-4 flex justify-center [&_.flatpickr-calendar]:!shadow-none [&_.flatpickr-calendar]:!w-full"></div>
 
-                <div className="flex justify-end gap-2 border-t border-stroke pt-4 dark:border-dark-3">
-                    <button
-                        onClick={onCancel}
-                        className="rounded px-4 py-2 text-sm font-medium text-dark hover:text-primary dark:text-white"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleApply}
-                        className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-90"
-                    >
-                        Apply
-                    </button>
+                <div className="mt-auto flex justify-between border-t border-stroke pt-4 dark:border-dark-3">
+                    {onClear && (
+                        <button
+                            onClick={onClear}
+                            className="rounded px-4 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                            Clear Filter
+                        </button>
+                    )}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={onCancel}
+                            className="rounded px-4 py-2 text-sm font-medium text-dark hover:text-primary dark:text-white"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleApply}
+                            className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-90"
+                        >
+                            Apply
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
