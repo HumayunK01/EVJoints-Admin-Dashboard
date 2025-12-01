@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown";
 
 import customersData from "@/data/customers.json";
+import { DateRangeFilter } from "./DateRangeFilter";
 
 export function CustomersTable() {
     const [currentPage, setCurrentPage] = useState(1);
@@ -36,18 +37,26 @@ export function CustomersTable() {
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
+    const showCheckboxes = searchTerm.length > 0 || startDate.length > 0 || endDate.length > 0;
+
+    useEffect(() => {
+        if (!showCheckboxes) {
+            setSelectedRows(new Set());
+        }
+    }, [showCheckboxes]);
+
     const filteredData = useMemo(() => {
         return customersData.filter((customer) => {
-            const matchesSearch =
-                customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                customer.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                customer.email.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesSearch = Object.values(customer).some((value) =>
+                String(value).toLowerCase().includes(searchTerm.toLowerCase())
+            );
 
             const matchesDate =
                 (!startDate || new Date(customer.customerRegDate) >= new Date(startDate)) &&
@@ -98,37 +107,58 @@ export function CustomersTable() {
         setCurrentPage(1);
     };
 
-    const handleDownload = (format: "csv" | "excel" | "pdf") => {
-        if (format === "csv" || format === "excel") {
-            const headers = Object.keys(customersData[0]).join(",");
-            const csvContent = [
-                headers,
-                ...sortedData.map((row) => Object.values(row).join(",")),
-            ].join("\n");
-
-            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", `customers_list.${format === "excel" ? "xls" : "csv"}`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+    const toggleRow = (email: string) => {
+        const newSelected = new Set(selectedRows);
+        if (newSelected.has(email)) {
+            newSelected.delete(email);
         } else {
-            alert("PDF download is not implemented yet.");
+            newSelected.add(email);
         }
+        setSelectedRows(newSelected);
+    };
+
+    const toggleAll = () => {
+        if (selectedRows.size === currentData.length) {
+            setSelectedRows(new Set());
+        } else {
+            setSelectedRows(new Set(currentData.map((c) => c.email)));
+        }
+    };
+
+    const handleDownload = (format: "csv" | "excel") => {
+        const headers = Object.keys(customersData[0]).join(",");
+
+        // Determine which data to download: selected rows or all filtered data
+        const dataToDownload = selectedRows.size > 0
+            ? sortedData.filter(row => selectedRows.has(row.email))
+            : sortedData;
+
+        const csvContent = [
+            headers,
+            ...dataToDownload.map((row) => Object.values(row).join(",")),
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `customers_list${selectedRows.size > 0 ? '_selected' : ''}.${format === "excel" ? "xls" : "csv"}`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
         setIsDownloadOpen(false);
     };
 
     return (
         <div className="max-w-full rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
-            <div className="flex flex-col gap-4 px-4 py-6 md:flex-row md:items-center md:justify-between md:px-6 xl:px-7.5">
-                <h4 className="text-xl font-bold text-dark dark:text-white">
+            <div className="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6 xl:px-7.5">
+                <h4 className="text-lg font-bold text-dark dark:text-white">
                     Customers List
                 </h4>
 
-                <div className="flex flex-wrap items-center gap-2">
-                    <div className="relative">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
+                    <div className="relative w-full sm:w-auto">
                         <button className="absolute left-4 top-1/2 -translate-y-1/2 text-dark dark:text-white">
                             <SearchIcon className="h-4 w-4" />
                         </button>
@@ -137,189 +167,166 @@ export function CustomersTable() {
                             placeholder="Search..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full rounded-lg border border-stroke bg-transparent py-2.5 pl-10 pr-4 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white dark:focus:border-primary sm:w-[260px]"
+                            className="w-full rounded-lg border border-stroke bg-transparent py-2 pl-10 pr-4 text-sm text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white dark:focus:border-primary sm:w-[260px]"
                         />
                     </div>
 
-                    <button
-                        onClick={() => setIsFilterOpen(true)}
-                        className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2.5 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
-                    >
-                        <FilterIcon className="h-4 w-4" />
-                        Filters
-                    </button>
+                    <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+                        <button
+                            onClick={() => setIsFilterOpen(true)}
+                            className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
+                        >
+                            <FilterIcon className="h-4 w-4" />
+                            Filters
+                        </button>
 
-                    <Dropdown isOpen={isSortOpen} setIsOpen={setIsSortOpen}>
-                        <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2.5 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
-                            <SortIcon className="h-4 w-4" />
-                            Sort
-                            <ChevronDownIcon className="h-4 w-4" />
-                        </DropdownTrigger>
-                        <DropdownContent className="w-48 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
-                            {[
-                                "Ascending (Low High)",
-                                "Descending (High Low)",
-                                "A - Z",
-                                "Z - A",
-                                "Newest First",
-                                "Oldest First",
-                            ].map((option) => (
+                        <Dropdown isOpen={isSortOpen} setIsOpen={setIsSortOpen}>
+                            <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
+                                <SortIcon className="h-4 w-4" />
+                                Sort
+                                <ChevronDownIcon className="h-4 w-4" />
+                            </DropdownTrigger>
+                            <DropdownContent className="w-48 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
+                                {[
+                                    "Ascending (Low High)",
+                                    "Descending (High Low)",
+                                    "A - Z",
+                                    "Z - A",
+                                    "Newest First",
+                                    "Oldest First",
+                                ].map((option) => (
+                                    <button
+                                        key={option}
+                                        onClick={() => {
+                                            setSortOption(option);
+                                            setIsSortOpen(false);
+                                        }}
+                                        className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 ${sortOption === option
+                                            ? "bg-gray-2 dark:bg-dark-2"
+                                            : ""
+                                            }`}
+                                    >
+                                        {option}
+                                    </button>
+                                ))}
+                            </DropdownContent>
+                        </Dropdown>
+
+                        <Dropdown isOpen={isDownloadOpen} setIsOpen={setIsDownloadOpen}>
+                            <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
+                                <DownloadIcon className="h-4 w-4" />
+                                Download
+                                <ChevronDownIcon className="h-4 w-4" />
+                            </DropdownTrigger>
+                            <DropdownContent className="w-40 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
                                 <button
-                                    key={option}
-                                    onClick={() => {
-                                        setSortOption(option);
-                                        setIsSortOpen(false);
-                                    }}
-                                    className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 ${sortOption === option
-                                        ? "bg-gray-2 dark:bg-dark-2"
-                                        : ""
-                                        }`}
+                                    onClick={() => handleDownload("csv")}
+                                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2"
                                 >
-                                    {option}
+                                    CSV
                                 </button>
-                            ))}
-                        </DropdownContent>
-                    </Dropdown>
+                                <button
+                                    onClick={() => handleDownload("excel")}
+                                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2"
+                                >
+                                    Excel
+                                </button>
 
-                    <Dropdown isOpen={isDownloadOpen} setIsOpen={setIsDownloadOpen}>
-                        <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2.5 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
-                            <DownloadIcon className="h-4 w-4" />
-                            Download
-                            <ChevronDownIcon className="h-4 w-4" />
-                        </DropdownTrigger>
-                        <DropdownContent className="w-40 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
-                            <button
-                                onClick={() => handleDownload("csv")}
-                                className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2"
-                            >
-                                CSV
-                            </button>
-                            <button
-                                onClick={() => handleDownload("excel")}
-                                className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2"
-                            >
-                                Excel
-                            </button>
-                            <button
-                                onClick={() => handleDownload("pdf")}
-                                className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2"
-                            >
-                                PDF
-                            </button>
-                        </DropdownContent>
-                    </Dropdown>
+                            </DropdownContent>
+                        </Dropdown>
+                    </div>
                 </div>
             </div>
 
-            {isFilterOpen && mounted && createPortal(
-                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-gray-dark">
-                        <div className="mb-4 flex items-center justify-between">
-                            <h5 className="text-lg font-bold text-dark dark:text-white">
-                                Filter Customers
-                            </h5>
-                            <button
-                                onClick={() => setIsFilterOpen(false)}
-                                className="text-dark hover:text-primary dark:text-white"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="flex flex-col gap-4">
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Registration Date From
-                                </label>
-                                <input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white dark:focus:border-primary"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Registration Date To
-                                </label>
-                                <input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white dark:focus:border-primary"
-                                />
-                            </div>
-                            <div className="mt-4 flex justify-end gap-2">
-                                <button
-                                    onClick={() => {
-                                        setStartDate("");
-                                        setEndDate("");
+            {
+                isFilterOpen && mounted && createPortal(
+                    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                        <div className="mx-4 w-auto rounded-lg bg-white p-0 shadow-lg dark:bg-gray-dark">
+
+                            <div className="flex flex-col gap-4">
+                                <DateRangeFilter
+                                    startDate={startDate}
+                                    endDate={endDate}
+                                    onApply={(start, end) => {
+                                        setStartDate(start);
+                                        setEndDate(end);
+                                        setIsFilterOpen(false);
                                     }}
-                                    className="rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
-                                >
-                                    Reset
-                                </button>
-                                <button
-                                    onClick={() => setIsFilterOpen(false)}
-                                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-90"
-                                >
-                                    Apply
-                                </button>
+                                    onCancel={() => setIsFilterOpen(false)}
+                                />
                             </div>
                         </div>
-                    </div>
-                </div>,
-                document.body
-            )}
+                    </div>,
+                    document.body
+                )
+            }
 
             <Table>
                 <TableHeader>
-                    <TableRow className="border-t border-stroke bg-green-light-7 dark:border-dark-3 dark:bg-dark-2">
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-11">
+                    <TableRow className="border-t border-stroke bg-green-light-7 hover:bg-green-light-7 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-dark-2">
+                        {showCheckboxes && (
+                            <TableHead className="w-[50px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap xl:pl-7.5">
+                                <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
+                                    checked={currentData.length > 0 && selectedRows.size === currentData.length}
+                                    onChange={toggleAll}
+                                />
+                            </TableHead>
+                        )}
+                        <TableHead className={`min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap ${!showCheckboxes ? "xl:pl-7.5" : ""}`}>
                             First Name
                         </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Last Name
                         </TableHead>
-                        <TableHead className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Email ID
                         </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Phone No
                         </TableHead>
-                        <TableHead className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Vehicle Reg Date
                         </TableHead>
-                        <TableHead className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Customer Reg Date
                         </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Vehicle Type
                         </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Manufacturer
                         </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Vehicle Model
                         </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Vehicle Variant
                         </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Device Brand
                         </TableHead>
-                        <TableHead className="min-w-[100px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Version
                         </TableHead>
-                        <TableHead className="min-w-[100px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Navigation
                         </TableHead>
-                        <TableHead className="min-w-[100px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Trip
                         </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                            Subscription
+                        </TableHead>
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                            Check In
+                        </TableHead>
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Device Model
                         </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Device Platform
                         </TableHead>
                     </TableRow>
@@ -330,75 +337,96 @@ export function CustomersTable() {
                             key={key}
                             className="border-t border-stroke dark:border-dark-3"
                         >
-                            <TableCell className="px-4 py-5 pl-9 dark:border-dark-3 xl:pl-11">
-                                <p className="font-medium text-dark dark:text-white">
+                            {showCheckboxes && (
+                                <TableCell className="px-4 py-4 pl-6 dark:border-dark-3 xl:pl-7.5">
+                                    <input
+                                        type="checkbox"
+                                        className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
+                                        checked={selectedRows.has(customer.email)}
+                                        onChange={() => toggleRow(customer.email)}
+                                    />
+                                </TableCell>
+                            )}
+                            <TableCell className={`px-4 py-4 dark:border-dark-3 ${!showCheckboxes ? "pl-6 xl:pl-7.5" : ""}`}>
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.firstName}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="font-medium text-dark dark:text-white">
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.lastName}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">{customer.email}</p>
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.email}</p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">{customer.phone}</p>
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.phone}</p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
-                                    {customer.vehicleRegDate}
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                    {new Date(customer.vehicleRegDate).toLocaleDateString('en-GB')}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
-                                    {customer.customerRegDate}
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                    {new Date(customer.customerRegDate).toLocaleDateString('en-GB')}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.vehicleType}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
+
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.manufacturer}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.vehicleModel}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.vehicleVariant}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.deviceBrand}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">{customer.version}</p>
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.version}</p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.navigation}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">{customer.trip}</p>
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.trip}</p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                    {customer.subscription}
+                                </p>
+                            </TableCell>
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                    {customer.checkIn}
+                                </p>
+                            </TableCell>
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.deviceModel}
                                 </p>
                             </TableCell>
-                            <TableCell className="px-4 py-5 dark:border-dark-3">
-                                <p className="text-dark dark:text-white">
+                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                     {customer.devicePlatform}
                                 </p>
                             </TableCell>
@@ -412,7 +440,7 @@ export function CustomersTable() {
                     <select
                         value={rowsPerPage}
                         onChange={handleRowsPerPageChange}
-                        className="bg-transparent font-medium text-dark outline-none dark:text-white"
+                        className="bg-transparent text-sm font-medium text-dark outline-none dark:text-white"
                     >
                         <option value={10}>10</option>
                         <option value={15}>15</option>
@@ -431,18 +459,18 @@ export function CustomersTable() {
                             disabled={currentPage === 1}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronLeftIcon className="h-4 w-4" />
+                            <ChevronLeftIcon className="h-5 w-5" />
                         </button>
                         <button
                             onClick={handleNextPage}
                             disabled={currentPage === totalPages}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronRightIcon className="h-4 w-4" />
+                            <ChevronRightIcon className="h-5 w-5" />
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function Logo() {
   return (
-    <div className="relative h-12 w-48">
+    <div className="relative h-8 w-32">
       <Image
         src="/images/logo/logo.svg"
         fill

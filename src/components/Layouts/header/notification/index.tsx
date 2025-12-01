@@ -9,7 +9,7 @@ export function Notification() {
 
   return (
     <div
-      className="grid size-12 place-items-center rounded-full border bg-gray-2 text-dark outline-none dark:border-dark-4 dark:bg-dark-3 dark:text-white"
+      className="grid size-10 place-items-center rounded-full border bg-gray-2 text-dark outline-none dark:border-dark-4 dark:bg-dark-3 dark:text-white"
       aria-label="Notifications"
     >
       <span className="relative">

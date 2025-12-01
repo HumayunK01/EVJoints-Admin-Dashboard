@@ -13,7 +13,7 @@ export function UserInfo() {
     <div className="flex items-center gap-3">
       <Image
         src={USER.img}
-        className="size-12 rounded-full object-cover"
+        className="size-10 rounded-full object-cover"
         alt={`Avatar of ${USER.name}`}
         role="presentation"
         width={200}

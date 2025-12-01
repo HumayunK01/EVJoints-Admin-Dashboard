@@ -55,7 +55,7 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "max-w-[290px] shrink-0 overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-linear dark:border-gray-800 dark:bg-gray-dark",
+          "max-w-[240px] shrink-0 overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-linear dark:border-gray-800 dark:bg-gray-dark",
           isMobile ? "fixed bottom-0 top-0 z-50" : "sticky top-0 h-screen",
           isOpen ? "w-full" : "w-0",
         )}
@@ -63,7 +63,7 @@ export function Sidebar() {
         aria-hidden={!isOpen}
         inert={!isOpen}
       >
-        <div className="flex h-full flex-col py-10 pl-[25px] pr-[7px]">
+        <div className="flex h-full flex-col py-6 pl-5 pr-3">
           <div className="relative pr-4.5">
             <Link
               href={"/"}
@@ -86,12 +86,10 @@ export function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <div className="custom-scrollbar mt-6 flex-1 overflow-y-auto pr-3 min-[850px]:mt-10">
+          <div className="custom-scrollbar mt-4 flex-1 overflow-y-auto pr-3 min-[850px]:mt-6">
             {NAV_DATA.map((section) => (
               <div key={section.label} className="mb-6">
-                <h2 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">
-                  {section.label}
-                </h2>
+
 
                 <nav role="navigation" aria-label={section.label}>
                   <ul className="space-y-2">
@@ -124,7 +122,7 @@ export function Sidebar() {
 
                             {expandedItems.includes(item.title) && (
                               <ul
-                                className="ml-9 mr-0 space-y-1.5 pb-[15px] pr-0 pt-2"
+                                className="ml-6 mr-0 space-y-1.5 pb-3 pr-0 pt-2"
                                 role="menu"
                               >
                                 {item.items.map((subItem) => (

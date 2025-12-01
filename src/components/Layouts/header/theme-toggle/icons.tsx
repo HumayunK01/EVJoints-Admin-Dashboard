@@ -3,8 +3,8 @@ import type { SVGProps } from "react";
 export function Sun(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
-      width={20}
-      height={20}
+      width={16}
+      height={16}
       viewBox="0 0 20 20"
       fill="currentColor"
       {...props}
@@ -17,8 +17,8 @@ export function Sun(props: SVGProps<SVGSVGElement>) {
 export function Moon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
-      width={20}
-      height={20}
+      width={16}
+      height={16}
       viewBox="0 0 20 20"
       fill="currentColor"
       {...props}

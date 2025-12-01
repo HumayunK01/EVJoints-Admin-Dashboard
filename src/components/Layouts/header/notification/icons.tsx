@@ -2,7 +2,7 @@ import { SVGProps } from "react";
 
 export function BellIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg width={20} height={20} viewBox="0 0 20 20" fill="none" {...props}>
+    <svg width={16} height={16} viewBox="0 0 20 20" fill="none" {...props}>
       <path
         fillRule="evenodd"
         clipRule="evenodd"
