@@ -24,10 +24,14 @@ import {
     DropdownTrigger,
 } from "@/components/ui/dropdown";
 
-import customersData from "@/data/customers.json";
+import { type Customer } from "@/lib/api";
 import { DateRangeFilter } from "./DateRangeFilter";
 
-export function CustomersTable() {
+interface CustomersTableProps {
+    customers: Customer[];
+}
+
+export function CustomersTable({ customers: initialData }: CustomersTableProps) {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +45,12 @@ export function CustomersTable() {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
     const [mounted, setMounted] = useState(false);
+    // Use the passed prop as the initial data
+    const data = initialData;
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         setMounted(true);
@@ -55,7 +65,7 @@ export function CustomersTable() {
     }, [showCheckboxes]);
 
     const filteredData = useMemo(() => {
-        return customersData.filter((customer) => {
+        return data.filter((customer) => {
             const matchesSearch = Object.values(customer).some((value) =>
                 String(value).toLowerCase().includes(searchTerm.toLowerCase())
             );
@@ -72,8 +82,8 @@ export function CustomersTable() {
     }, [searchTerm, startDate, endDate, filterSubscription, filterVehicleType]);
 
     // Extract unique options for filters
-    const subscriptionOptions = useMemo(() => Array.from(new Set(customersData.map(c => c.subscription))), []);
-    const vehicleTypeOptions = useMemo(() => Array.from(new Set(customersData.map(c => c.vehicleType))), []);
+    const subscriptionOptions = useMemo(() => Array.from(new Set(data.map(c => c.subscription))), [data]);
+    const vehicleTypeOptions = useMemo(() => Array.from(new Set(data.map(c => c.vehicleType))), [data]);
 
     const sortedData = useMemo(() => {
         return [...filteredData].sort((a, b) => {
@@ -135,7 +145,8 @@ export function CustomersTable() {
     };
 
     const handleDownload = (format: "csv" | "excel") => {
-        const headers = Object.keys(customersData[0]).join(",");
+        if (data.length === 0) return;
+        const headers = Object.keys(data[0]).join(",");
 
         // Determine which data to download: selected rows or all filtered data
         const dataToDownload = selectedRows.size > 0
