@@ -16,7 +16,7 @@ import {
     ChevronDownIcon,
 } from "@/assets/icons";
 import { DownloadIcon } from "./icons";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Fragment } from "react";
 import { createPortal } from "react-dom";
 import {
     Dropdown,
@@ -44,6 +44,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [mounted, setMounted] = useState(false);
     // Use the passed prop as the initial data
     const data = initialData;
@@ -136,6 +137,16 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
         setSelectedRows(newSelected);
     };
 
+    const toggleExpand = (email: string) => {
+        const newExpanded = new Set(expandedRows);
+        if (newExpanded.has(email)) {
+            newExpanded.delete(email);
+        } else {
+            newExpanded.add(email);
+        }
+        setExpandedRows(newExpanded);
+    };
+
     const toggleAll = () => {
         if (selectedRows.size === currentData.length) {
             setSelectedRows(new Set());
@@ -146,16 +157,82 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
 
     const handleDownload = (format: "csv" | "excel") => {
         if (data.length === 0) return;
-        const headers = Object.keys(data[0]).join(",");
+
+        const headers = [
+            "First Name",
+            "Last Name",
+            "Email",
+            "Phone",
+            "Vehicle Reg Date",
+            "Customer Reg Date",
+            "Vehicle Type",
+            "Manufacturer",
+            "Vehicle Model",
+            "Vehicle Variant",
+            "Device Brand",
+            "Version",
+            "Navigation",
+            "Trip",
+            "Check In",
+            "Subscription",
+            "Device Model",
+            "Device Platform"
+        ];
 
         // Determine which data to download: selected rows or all filtered data
         const dataToDownload = selectedRows.size > 0
             ? sortedData.filter(row => selectedRows.has(row.email))
             : sortedData;
 
+        const rows = dataToDownload.flatMap(customer => {
+            if (customer.vehicles && customer.vehicles.length > 0) {
+                return customer.vehicles.map(vehicle => [
+                    customer.firstName,
+                    customer.lastName,
+                    customer.email,
+                    customer.phone,
+                    vehicle.vehicleRegDate,
+                    customer.customerRegDate,
+                    vehicle.vehicleType,
+                    vehicle.manufacturer,
+                    vehicle.vehicleModel,
+                    vehicle.vehicleVariant,
+                    customer.deviceBrand,
+                    customer.version,
+                    customer.navigation,
+                    customer.trip,
+                    customer.checkIn,
+                    customer.subscription,
+                    customer.deviceModel,
+                    customer.devicePlatform
+                ]);
+            } else {
+                return [[
+                    customer.firstName,
+                    customer.lastName,
+                    customer.email,
+                    customer.phone,
+                    customer.vehicleRegDate,
+                    customer.customerRegDate,
+                    customer.vehicleType,
+                    customer.manufacturer,
+                    customer.vehicleModel,
+                    customer.vehicleVariant,
+                    customer.deviceBrand,
+                    customer.version,
+                    customer.navigation,
+                    customer.trip,
+                    customer.checkIn,
+                    customer.subscription,
+                    customer.deviceModel,
+                    customer.devicePlatform
+                ]];
+            }
+        });
+
         const csvContent = [
-            headers,
-            ...dataToDownload.map((row) => Object.values(row).join(",")),
+            headers.join(","),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
         ].join("\n");
 
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -322,8 +399,11 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
             <Table>
                 <TableHeader>
                     <TableRow className="border-t border-stroke bg-green-light-7 hover:bg-green-light-7 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-dark-2">
+                        <TableHead className="w-[20px] px-2 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                            {/* Chevron Column */}
+                        </TableHead>
                         {showCheckboxes && (
-                            <TableHead className="w-[50px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap xl:pl-7.5">
+                            <TableHead className="w-[50px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                                 <input
                                     type="checkbox"
                                     className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
@@ -332,7 +412,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                 />
                             </TableHead>
                         )}
-                        <TableHead className={`min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap ${!showCheckboxes ? "xl:pl-7.5" : ""}`}>
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             First Name
                         </TableHead>
                         <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
@@ -391,123 +471,191 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                 </TableHeader>
                 <TableBody>
                     {currentData.length > 0 ? (
-                        currentData.map((customer, key) => (
-                            <TableRow
-                                key={key}
-                                className="border-t border-stroke dark:border-dark-3"
-                            >
-                                {showCheckboxes && (
-                                    <TableCell className="px-4 py-4 pl-6 dark:border-dark-3 xl:pl-7.5">
-                                        <input
-                                            type="checkbox"
-                                            className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
-                                            checked={selectedRows.has(customer.email)}
-                                            onChange={() => toggleRow(customer.email)}
-                                        />
-                                    </TableCell>
-                                )}
-                                <TableCell className={`px-4 py-4 dark:border-dark-3 ${!showCheckboxes ? "pl-6 xl:pl-7.5" : ""}`}>
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.firstName}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.lastName}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.email}</p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.phone}</p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {new Date(customer.vehicleRegDate).toLocaleDateString('en-GB')}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {new Date(customer.customerRegDate).toLocaleDateString('en-GB')}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.vehicleType}
-                                    </p>
-                                </TableCell>
+                        currentData.map((customer, key) => {
+                            const isExpanded = expandedRows.has(customer.email);
+                            const hasMultipleVehicles = customer.vehicles && customer.vehicles.length > 1;
 
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.manufacturer}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.vehicleModel}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.vehicleVariant}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.deviceBrand}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.version}</p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <span
-                                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.navigation === "Yes"
-                                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                            }`}
+                            return (
+                                <Fragment key={customer.email}>
+                                    <TableRow
+                                        className="border-t border-stroke dark:border-dark-3"
                                     >
-                                        {customer.navigation}
-                                    </span>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <span
-                                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.trip === "Yes"
-                                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                            }`}
-                                    >
-                                        {customer.trip}
-                                    </span>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <span
-                                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.checkIn === "Yes"
-                                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                            }`}
-                                    >
-                                        {customer.checkIn}
-                                    </span>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.subscription}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.deviceModel}
-                                    </p>
-                                </TableCell>
-                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                        {customer.devicePlatform}
-                                    </p>
-                                </TableCell>
-                            </TableRow>
-                        ))
+                                        <TableCell className="px-2 py-4">
+                                            {hasMultipleVehicles && (
+                                                <button
+                                                    onClick={() => toggleExpand(customer.email)}
+                                                    className="text-dark dark:text-white hover:text-primary"
+                                                >
+                                                    {isExpanded ? (
+                                                        <ChevronDownIcon className="h-5 w-5 rotate-180" />
+                                                    ) : (
+                                                        <ChevronDownIcon className="h-5 w-5" />
+                                                    )}
+                                                </button>
+                                            )}
+                                        </TableCell>
+                                        {showCheckboxes && (
+                                            <TableCell className="px-4 py-4">
+                                                <input
+                                                    type="checkbox"
+                                                    className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
+                                                    checked={selectedRows.has(customer.email)}
+                                                    onChange={() => toggleRow(customer.email)}
+                                                />
+                                            </TableCell>
+                                        )}
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.firstName}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.lastName}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.email}</p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.phone}</p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {new Date(customer.vehicleRegDate).toLocaleDateString('en-GB')}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {new Date(customer.customerRegDate).toLocaleDateString('en-GB')}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.vehicleType}
+                                            </p>
+                                        </TableCell>
+
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.manufacturer}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.vehicleModel}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.vehicleVariant}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.deviceBrand}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.version}</p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <span
+                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.navigation === "Yes"
+                                                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                                    }`}
+                                            >
+                                                {customer.navigation}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <span
+                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.trip === "Yes"
+                                                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                                    }`}
+                                            >
+                                                {customer.trip}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <span
+                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.checkIn === "Yes"
+                                                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                                    }`}
+                                            >
+                                                {customer.checkIn}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.subscription}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.deviceModel}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.devicePlatform}
+                                            </p>
+                                        </TableCell>
+                                    </TableRow>
+
+                                    {isExpanded && customer.vehicles && customer.vehicles.slice(1).map((vehicle, vIdx) => (
+                                        <TableRow
+                                            key={`${customer.email}-v-${vIdx}`}
+                                            className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-white/5"
+                                        >
+                                            <TableCell className="px-2 py-4"></TableCell>
+                                            {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                    {new Date(vehicle.vehicleRegDate).toLocaleDateString('en-GB')}
+                                                </p>
+                                            </TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                    {vehicle.vehicleType}
+                                                </p>
+                                            </TableCell>
+                                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                    {vehicle.manufacturer}
+                                                </p>
+                                            </TableCell>
+                                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                    {vehicle.vehicleModel}
+                                                </p>
+                                            </TableCell>
+                                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                    {vehicle.vehicleVariant}
+                                                </p>
+                                            </TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                            <TableCell className="px-4 py-4"></TableCell>
+                                        </TableRow>
+                                    ))}
+                                </Fragment>
+                            );
+                        })
                     ) : (
                         <TableRow>
                             <TableCell colSpan={20} className="h-24 text-center">

@@ -17,7 +17,30 @@
         "deviceModel": "Redmi Note 12 Pro",
         "devicePlatform": "Android",
         "subscription": "Premium",
-        "checkIn": "Yes"
+        "checkIn": "Yes",
+        "vehicles": [
+            {
+                "vehicleRegDate": "2025-11-05",
+                "vehicleType": "Four Wheeler",
+                "manufacturer": "Tata Motors",
+                "vehicleModel": "Tata Tigor EV",
+                "vehicleVariant": "Gen 3"
+            },
+            {
+                "vehicleRegDate": "2024-01-15",
+                "vehicleType": "Two Wheeler",
+                "manufacturer": "Ola Electric",
+                "vehicleModel": "S1 Pro",
+                "vehicleVariant": "Standard"
+            },
+            {
+                "vehicleRegDate": "2023-08-20",
+                "vehicleType": "Four Wheeler",
+                "manufacturer": "MG Motors",
+                "vehicleModel": "ZS EV",
+                "vehicleVariant": "Excite"
+            }
+        ]
     },
     {
         "firstName": "Aditi",
@@ -57,7 +80,30 @@
         "deviceModel": "Galaxy A54",
         "devicePlatform": "Android",
         "subscription": "Gold",
-        "checkIn": "Yes"
+        "checkIn": "Yes",
+        "vehicles": [
+            {
+                "vehicleRegDate": "2025-11-08",
+                "vehicleType": "Three Wheeler",
+                "manufacturer": "MG Motors",
+                "vehicleModel": "MG ZS EV",
+                "vehicleVariant": "Exclusive"
+            },
+            {
+                "vehicleRegDate": "2024-05-20",
+                "vehicleType": "Two Wheeler",
+                "manufacturer": "Ather Energy",
+                "vehicleModel": "Ather 450X",
+                "vehicleVariant": "Gen 3"
+            },
+            {
+                "vehicleRegDate": "2023-11-15",
+                "vehicleType": "Four Wheeler",
+                "manufacturer": "Hyundai",
+                "vehicleModel": "Kona Electric",
+                "vehicleVariant": "Premium"
+            }
+        ]
     },
     {
         "firstName": "Neha",
@@ -77,7 +123,30 @@
         "deviceModel": "OnePlus 11R",
         "devicePlatform": "Android",
         "subscription": "Premium",
-        "checkIn": "Yes"
+        "checkIn": "Yes",
+        "vehicles": [
+            {
+                "vehicleRegDate": "2025-11-10",
+                "vehicleType": "Four Wheeler",
+                "manufacturer": "Hyundai",
+                "vehicleModel": "Ather 450X",
+                "vehicleVariant": "Long Range"
+            },
+            {
+                "vehicleRegDate": "2025-02-10",
+                "vehicleType": "Four Wheeler",
+                "manufacturer": "Tata Motors",
+                "vehicleModel": "Nexon EV",
+                "vehicleVariant": "Max XZ+"
+            },
+            {
+                "vehicleRegDate": "2024-09-05",
+                "vehicleType": "Two Wheeler",
+                "manufacturer": "TVS",
+                "vehicleModel": "iQube",
+                "vehicleVariant": "S"
+            }
+        ]
     },
     {
         "firstName": "Saurabh",
@@ -117,7 +186,30 @@
         "deviceModel": "iPhone 14 Pro",
         "devicePlatform": "iOS",
         "subscription": "Gold",
-        "checkIn": "Yes"
+        "checkIn": "Yes",
+        "vehicles": [
+            {
+                "vehicleRegDate": "2025-11-14",
+                "vehicleType": "Three Wheeler",
+                "manufacturer": "MG Motors",
+                "vehicleModel": "Tata Tigor EV",
+                "vehicleVariant": "Gen 3"
+            },
+            {
+                "vehicleRegDate": "2024-12-01",
+                "vehicleType": "Three Wheeler",
+                "manufacturer": "Mahindra",
+                "vehicleModel": "Treo",
+                "vehicleVariant": "Yaari"
+            },
+            {
+                "vehicleRegDate": "2023-06-30",
+                "vehicleType": "Four Wheeler",
+                "manufacturer": "BYD",
+                "vehicleModel": "Atto 3",
+                "vehicleVariant": "Superior"
+            }
+        ]
     },
     {
         "firstName": "Arjun",
@@ -277,7 +369,30 @@
         "deviceModel": "Realme GT Neo 5",
         "devicePlatform": "Android",
         "subscription": "Basic",
-        "checkIn": "Yes"
+        "checkIn": "Yes",
+        "vehicles": [
+            {
+                "vehicleRegDate": "2025-11-30",
+                "vehicleType": "Two Wheeler",
+                "manufacturer": "Mahindra Electric",
+                "vehicleModel": "Ather 450X",
+                "vehicleVariant": "Long Range"
+            },
+            {
+                "vehicleRegDate": "2024-08-15",
+                "vehicleType": "Four Wheeler",
+                "manufacturer": "Tata Motors",
+                "vehicleModel": "Tiago EV",
+                "vehicleVariant": "XT Long Range"
+            },
+            {
+                "vehicleRegDate": "2023-03-10",
+                "vehicleType": "Two Wheeler",
+                "manufacturer": "Ola Electric",
+                "vehicleModel": "S1 Air",
+                "vehicleVariant": "Standard"
+            }
+        ]
     },
     {
         "firstName": "Harleen",

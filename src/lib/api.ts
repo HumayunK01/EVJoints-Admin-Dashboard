@@ -19,6 +19,13 @@ export interface Customer {
     subscription: string;
     deviceModel: string;
     devicePlatform: string;
+    vehicles?: {
+        vehicleRegDate: string;
+        vehicleType: string;
+        manufacturer: string;
+        vehicleModel: string;
+        vehicleVariant: string;
+    }[];
 }
 
 export async function getCustomers(): Promise<Customer[]> {

@@ -92,9 +92,9 @@ export function DateRangeFilter({ startDate, endDate, onApply, onCancel, onClear
     };
 
     return (
-        <div className="flex w-full max-w-[600px] flex-col rounded-lg bg-white shadow-lg dark:bg-gray-dark md:flex-row">
+        <div className="flex w-full max-w-[480px] flex-col rounded-lg bg-white shadow-lg dark:bg-gray-dark md:flex-row">
             {/* Sidebar */}
-            <div className="w-full border-b border-stroke p-2 dark:border-dark-3 md:w-48 md:border-b-0 md:border-r">
+            <div className="w-full border-b border-stroke p-2 dark:border-dark-3 md:w-40 md:border-b-0 md:border-r">
                 <div className="mb-2 px-3 py-2 text-sm font-medium text-dark dark:text-white">Custom</div>
                 <ul className="space-y-1">
                     {PRESETS.map((preset) => (
@@ -133,7 +133,50 @@ export function DateRangeFilter({ startDate, endDate, onApply, onCancel, onClear
                     </div>
                 </div>
 
-                <div ref={calendarRef} className="mb-4 flex justify-center [&_.flatpickr-calendar]:!shadow-none [&_.flatpickr-calendar]:!w-full"></div>
+                <div className="mb-4">
+                    <style>{`
+                        .flatpickr-calendar {
+                            width: 100% !important;
+                        }
+                        .flatpickr-rContainer {
+                            width: 100% !important;
+                        }
+                        .flatpickr-days {
+                            width: 100% !important;
+                            border: none !important;
+                        }
+                        .dayContainer {
+                            width: 100% !important;
+                            min-width: 0 !important;
+                            max-width: none !important;
+                            justify-content: space-between !important;
+                        }
+                        .flatpickr-day {
+                            height: 30px !important;
+                            line-height: 30px !important;
+                            max-width: none !important;
+                            flex-basis: 14.28% !important;
+                        }
+                        .flatpickr-current-month {
+                            font-size: 100% !important;
+                            padding-top: 10px !important;
+                            width: 100% !important;
+                            left: 0 !important;
+                        }
+                        .flatpickr-month {
+                            height: 40px !important;
+                            width: 100% !important;
+                        }
+                        .flatpickr-weekdaycontainer {
+                            width: 100% !important;
+                            display: flex !important;
+                        }
+                        .flatpickr-weekday {
+                            flex: 1 !important;
+                        }
+                    `}</style>
+                    <div ref={calendarRef} className="[&_.flatpickr-calendar]:!shadow-none"></div>
+                </div>
 
                 <div className="mt-auto flex justify-between border-t border-stroke pt-4 dark:border-dark-3">
                     {onClear && (

@@ -1,4 +1,4 @@
-import "@/css/satoshi.css";
+import { Inter } from "next/font/google";
 import "@/css/style.css";
 import "flatpickr/dist/flatpickr.min.css";
 
@@ -12,6 +12,8 @@ import NextTopLoader from "nextjs-toploader";
 import type { PropsWithChildren } from "react";
 import { Providers } from "./providers";
 
+const inter = Inter({ subsets: ["latin"] });
+
 export const metadata: Metadata = {
   title: {
     template: "%s | EVJoints Admin",
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="overflow-x-hidden" suppressHydrationWarning>
+      <body className={`overflow-x-hidden ${inter.className}`} suppressHydrationWarning>
         <Providers>
           <NextTopLoader color="#22AD5C" showSpinner={false} />
 

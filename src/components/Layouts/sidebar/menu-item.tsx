@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useSidebarContext } from "./sidebar-context";
 
 const menuItemBaseStyles = cva(
-  "rounded-lg px-3.5 text-sm font-medium text-dark-4 transition-all duration-200 dark:text-dark-6",
+  "rounded-lg px-3.5 text-sm font-medium transition-all duration-200",
   {
     variants: {
       isActive: {
-        true: "bg-[rgba(87,80,241,0.07)] text-primary hover:bg-[rgba(87,80,241,0.07)] dark:bg-[#FFFFFF1A] dark:text-white",
+        true: "bg-primary/10 text-primary dark:bg-primary/20 dark:text-white",
         false:
-          "hover:bg-gray-100 hover:text-dark hover:dark:bg-[#FFFFFF1A] hover:dark:text-white",
+          "text-gray-500 hover:bg-gray-100 hover:text-dark dark:text-gray-400 hover:dark:bg-gray-800 hover:dark:text-white",
       },
     },
     defaultVariants: {
@@ -51,10 +51,13 @@ export function MenuItem(
     <button
       onClick={props.onClick}
       aria-expanded={props.isActive}
-      className={menuItemBaseStyles({
-        isActive: props.isActive,
-        className: "flex w-full items-center gap-3 py-3",
-      })}
+      className={cn(
+        menuItemBaseStyles({
+          isActive: props.isActive,
+          className: "flex w-full items-center gap-3 py-3",
+        }),
+        props.className,
+      )}
     >
       {props.children}
     </button>

@@ -102,6 +102,12 @@ export function Sidebar() {
                                 ({ url }) => url === pathname,
                               )}
                               onClick={() => toggleExpanded(item.title)}
+                              className={cn(
+                                "group",
+                                item.items.some(({ url }) => url === pathname)
+                                  ? "bg-primary text-white hover:bg-primary/90 dark:bg-primary dark:text-white"
+                                  : "text-gray-600 dark:text-gray-400"
+                              )}
                             >
                               <item.icon
                                 className="size-6 shrink-0"
@@ -122,7 +128,7 @@ export function Sidebar() {
 
                             {expandedItems.includes(item.title) && (
                               <ul
-                                className="ml-6 mr-0 space-y-1.5 pb-3 pr-0 pt-2"
+                                className="space-y-1.5 pb-3 pt-2"
                                 role="menu"
                               >
                                 {item.items.map((subItem) => (
@@ -131,6 +137,7 @@ export function Sidebar() {
                                       as="link"
                                       href={subItem.url}
                                       isActive={pathname === subItem.url}
+                                      className="pl-9"
                                     >
                                       <span>{subItem.title}</span>
                                     </MenuItem>
