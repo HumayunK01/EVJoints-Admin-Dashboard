@@ -11,6 +11,8 @@ type SidebarContextType = {
   setIsOpen: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
+  isMinimized: boolean;
+  toggleMinimize: () => void;
 };
 
 const SidebarContext = createContext<SidebarContextType | null>(null);
@@ -31,11 +33,13 @@ export function SidebarProvider({
   defaultOpen?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [isMinimized, setIsMinimized] = useState(false);
   const isMobile = useIsMobile();
 
   useEffect(() => {
     if (isMobile) {
       setIsOpen(false);
+      setIsMinimized(false); // Reset minimize on mobile
     } else {
       setIsOpen(true);
     }
@@ -43,6 +47,10 @@ export function SidebarProvider({
 
   function toggleSidebar() {
     setIsOpen((prev) => !prev);
+  }
+
+  function toggleMinimize() {
+    setIsMinimized((prev) => !prev);
   }
 
   return (
@@ -53,6 +61,8 @@ export function SidebarProvider({
         setIsOpen,
         isMobile,
         toggleSidebar,
+        isMinimized,
+        toggleMinimize,
       }}
     >
       {children}

@@ -12,16 +12,11 @@ import { useSidebarContext } from "./sidebar-context";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
+  const { setIsOpen, isOpen, isMobile, toggleSidebar, isMinimized, toggleMinimize } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   const toggleExpanded = (title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
-
-    // Uncomment the following line to enable multiple expanded items
-    // setExpandedItems((prev) =>
-    //   prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title],
-    // );
   };
 
   useEffect(() => {
@@ -55,22 +50,34 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "max-w-[240px] shrink-0 overflow-hidden border-r border-gray-200 bg-white transition-[width] duration-200 ease-linear dark:border-gray-800 dark:bg-gray-dark",
+          "max-w-[240px] shrink-0 border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-dark",
           isMobile ? "fixed bottom-0 top-0 z-50" : "sticky top-0 h-screen",
-          isOpen ? "w-full" : "w-0",
+          isOpen ? (isMinimized && !isMobile ? "w-[90px]" : "w-[240px]") : "w-0",
         )}
         aria-label="Main navigation"
         aria-hidden={!isOpen}
         inert={!isOpen}
       >
-        <div className="flex h-full flex-col py-6 pl-5 pr-3">
-          <div className="relative pr-4.5">
+        <div className={cn("flex h-full flex-col py-6", isMinimized && !isMobile ? "items-center" : "pl-5 pr-3")}>
+          <div
+            className={cn(
+              "relative flex items-center",
+              isMinimized && !isMobile ? "justify-center group min-h-[44px] w-full" : "justify-between pr-4.5",
+            )}
+          >
             <Link
               href={"/"}
               onClick={() => isMobile && toggleSidebar()}
-              className="px-0 py-2.5 min-[850px]:py-0"
+              className={cn("block py-2.5 min-[850px]:py-0", isMinimized && !isMobile && "flex justify-center items-center w-full")}
             >
-              <Logo />
+              {isMinimized && !isMobile ? (
+                <Logo
+                  src="/images/logo/logo-icon.svg"
+                  className="size-11 transition-opacity duration-300 group-hover:opacity-0"
+                />
+              ) : (
+                <Logo />
+              )}
             </Link>
 
             {isMobile && (
@@ -83,14 +90,26 @@ export function Sidebar() {
                 <ArrowLeftIcon className="ml-auto size-7" />
               </button>
             )}
+
+            {!isMobile && (
+              <button
+                onClick={toggleMinimize}
+                className={cn(
+                  "flex size-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm hover:bg-gray-100 hover:text-dark dark:border-gray-800 dark:bg-gray-dark dark:text-gray-400 hover:dark:bg-gray-800 hover:dark:text-white",
+                  isMinimized
+                    ? "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 rotate-180 z-50 transition-opacity duration-300"
+                    : "static size-8"
+                )}
+              >
+                <ArrowLeftIcon className="size-5" />
+              </button>
+            )}
           </div>
 
           {/* Navigation */}
-          <div className="custom-scrollbar mt-4 flex-1 overflow-y-auto pr-3 min-[850px]:mt-6">
+          <div className={cn("custom-scrollbar mt-4 flex-1 overflow-y-auto min-[850px]:mt-6", isMinimized && !isMobile ? "w-full flex flex-col items-center" : "pr-3")}>
             {NAV_DATA.map((section) => (
               <div key={section.label} className="mb-6">
-
-
                 <nav role="navigation" aria-label={section.label}>
                   <ul className="space-y-2">
                     {section.items.map((item) => (
@@ -101,12 +120,20 @@ export function Sidebar() {
                               isActive={item.items.some(
                                 ({ url }) => url === pathname,
                               )}
-                              onClick={() => toggleExpanded(item.title)}
+                              onClick={() => {
+                                if (isMinimized && !isMobile) {
+                                  toggleMinimize();
+                                  setTimeout(() => toggleExpanded(item.title), 100);
+                                } else {
+                                  toggleExpanded(item.title);
+                                }
+                              }}
                               className={cn(
                                 "group",
                                 item.items.some(({ url }) => url === pathname)
                                   ? "bg-primary text-white hover:bg-primary/90 dark:bg-primary dark:text-white"
-                                  : "text-gray-600 dark:text-gray-400"
+                                  : "text-gray-600 dark:text-gray-400",
+                                isMinimized && !isMobile ? "justify-center px-4 gap-0" : "gap-3"
                               )}
                             >
                               <item.icon
@@ -114,19 +141,21 @@ export function Sidebar() {
                                 aria-hidden="true"
                               />
 
-                              <span>{item.title}</span>
+                              <span className={cn("overflow-hidden transition-all duration-300 ease-in-out whitespace-nowrap", isMinimized && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100")}>
+                                {item.title}
+                              </span>
 
                               <ChevronUp
                                 className={cn(
-                                  "ml-auto rotate-180 transition-transform duration-200",
-                                  expandedItems.includes(item.title) &&
-                                  "rotate-0",
+                                  "ml-auto transition-all duration-300 ease-in-out",
+                                  expandedItems.includes(item.title) ? "rotate-0" : "rotate-180",
+                                  isMinimized && !isMobile ? "w-0 opacity-0" : "w-4 opacity-100"
                                 )}
                                 aria-hidden="true"
                               />
                             </MenuItem>
 
-                            {expandedItems.includes(item.title) && (
+                            {expandedItems.includes(item.title) && (!isMinimized || isMobile) && (
                               <ul
                                 className="space-y-1.5 pb-3 pt-2"
                                 role="menu"
@@ -162,7 +191,7 @@ export function Sidebar() {
 
                             return (
                               <MenuItem
-                                className="flex items-center gap-3 py-3"
+                                className={cn("flex items-center py-3", isMinimized && !isMobile ? "justify-center px-4 gap-0" : "gap-3")}
                                 as="link"
                                 href={href}
                                 isActive={pathname === href}
@@ -172,7 +201,9 @@ export function Sidebar() {
                                   aria-hidden="true"
                                 />
 
-                                <span>{item.title}</span>
+                                <span className={cn("overflow-hidden transition-all duration-300 ease-in-out whitespace-nowrap", isMinimized && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100")}>
+                                  {item.title}
+                                </span>
                               </MenuItem>
                             );
                           })()

@@ -1,12 +1,21 @@
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-export function Logo() {
+export function Logo({
+  className,
+  imageClassName,
+  src = "/images/logo/logo.svg",
+}: {
+  className?: string;
+  imageClassName?: string;
+  src?: string;
+}) {
   return (
-    <div className="relative h-8 w-32">
+    <div className={cn("relative h-8 w-32", className)}>
       <Image
-        src="/images/logo/logo.svg"
+        src={src}
         fill
-        className="object-contain"
+        className={cn("object-contain", imageClassName)}
         alt="NextAdmin logo"
         role="presentation"
         quality={100}
