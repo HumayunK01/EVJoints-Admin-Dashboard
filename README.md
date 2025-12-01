@@ -2,7 +2,7 @@
 
 A modern, responsive admin dashboard built for managing EV charging stations and customer data. This project is built using **Next.js**, **Tailwind CSS**, and **TypeScript**.
 
-![Dashboard Preview](public/images/preview.png)
+![Dashboard Preview](public/images/newpreview.png)
 
 ## 🚀 Features Implemented
 
