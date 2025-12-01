@@ -52,7 +52,7 @@ export function Sidebar() {
         className={cn(
           "max-w-[240px] shrink-0 border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-dark",
           isMobile ? "fixed bottom-0 top-0 z-50" : "sticky top-0 h-screen",
-          isOpen ? (isMinimized && !isMobile ? "w-[90px]" : "w-[240px]") : "w-0",
+          isOpen ? (isMinimized && !isMobile ? "w-[80px]" : "w-[240px]") : "w-0",
         )}
         aria-label="Main navigation"
         aria-hidden={!isOpen}
@@ -73,7 +73,7 @@ export function Sidebar() {
               {isMinimized && !isMobile ? (
                 <Logo
                   src="/images/logo/logo-icon.svg"
-                  className="size-11 transition-opacity duration-300 group-hover:opacity-0"
+                  className="size-11 transition-opacity duration-300 group-hover:opacity-0 rounded-lg overflow-hidden"
                 />
               ) : (
                 <Logo />
@@ -133,7 +133,7 @@ export function Sidebar() {
                                 item.items.some(({ url }) => url === pathname)
                                   ? "bg-primary text-white hover:bg-primary/90 dark:bg-primary dark:text-white"
                                   : "text-gray-600 dark:text-gray-400",
-                                isMinimized && !isMobile ? "justify-center px-4 gap-0" : "gap-3"
+                                isMinimized && !isMobile ? "justify-center px-3 gap-0" : "gap-3"
                               )}
                             >
                               <item.icon
@@ -191,7 +191,7 @@ export function Sidebar() {
 
                             return (
                               <MenuItem
-                                className={cn("flex items-center py-3", isMinimized && !isMobile ? "justify-center px-4 gap-0" : "gap-3")}
+                                className={cn("flex items-center py-3", isMinimized && !isMobile ? "justify-center px-3 gap-0" : "gap-3")}
                                 as="link"
                                 href={href}
                                 isActive={pathname === href}
