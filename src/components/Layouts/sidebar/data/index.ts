@@ -11,6 +11,7 @@ export const NAV_DATA = [
           {
             title: "Customers",
             url: "/",
+            icon: Icons.User,
           },
         ],
       },
