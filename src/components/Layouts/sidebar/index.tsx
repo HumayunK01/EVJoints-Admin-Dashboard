@@ -50,7 +50,7 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "max-w-[240px] shrink-0 border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-dark",
+          "max-w-[240px] shrink-0 border-r border-gray-200 bg-white transition-[width] duration-300 ease-in-out dark:border-gray-800 dark:bg-gray-dark overflow-hidden",
           isMobile ? "fixed bottom-0 top-0 z-50" : "sticky top-0 h-screen",
           isOpen ? (isMinimized && !isMobile ? "w-[80px]" : "w-[240px]") : "w-0",
         )}
