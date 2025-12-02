@@ -38,8 +38,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
     const [sortOption, setSortOption] = useState("Newest First");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
-    const [filterSubscription, setFilterSubscription] = useState("");
-    const [filterVehicleType, setFilterVehicleType] = useState("");
+
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -75,16 +74,12 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                 (!startDate || new Date(customer.customerRegDate) >= new Date(startDate)) &&
                 (!endDate || new Date(customer.customerRegDate) <= new Date(endDate));
 
-            const matchesSubscription = !filterSubscription || customer.subscription === filterSubscription;
-            const matchesVehicleType = !filterVehicleType || customer.vehicleType === filterVehicleType;
-
-            return matchesSearch && matchesDate && matchesSubscription && matchesVehicleType;
+            return matchesSearch && matchesDate;
         });
-    }, [searchTerm, startDate, endDate, filterSubscription, filterVehicleType]);
+    }, [searchTerm, startDate, endDate]);
 
     // Extract unique options for filters
-    const subscriptionOptions = useMemo(() => Array.from(new Set(data.map(c => c.subscription))), [data]);
-    const vehicleTypeOptions = useMemo(() => Array.from(new Set(data.map(c => c.vehicleType))), [data]);
+
 
     const sortedData = useMemo(() => {
         return [...filteredData].sort((a, b) => {
@@ -163,20 +158,20 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
             "Last Name",
             "Email",
             "Phone",
-            "Vehicle Reg Date",
             "Customer Reg Date",
+            "Vehicle Reg Date",
+            "Subscription",
             "Vehicle Type",
             "Manufacturer",
             "Vehicle Model",
             "Vehicle Variant",
             "Device Brand",
+            "Device Model",
+            "Device Platform",
             "Version",
             "Navigation",
             "Trip",
-            "Check In",
-            "Subscription",
-            "Device Model",
-            "Device Platform"
+            "Check In"
         ];
 
         // Determine which data to download: selected rows or all filtered data
@@ -191,20 +186,20 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                     customer.lastName,
                     customer.email,
                     customer.phone,
-                    vehicle.vehicleRegDate,
                     customer.customerRegDate,
+                    vehicle.vehicleRegDate,
+                    customer.subscription,
                     vehicle.vehicleType,
                     vehicle.manufacturer,
                     vehicle.vehicleModel,
                     vehicle.vehicleVariant,
                     customer.deviceBrand,
+                    customer.deviceModel,
+                    customer.devicePlatform,
                     customer.version,
                     customer.navigation,
                     customer.trip,
-                    customer.checkIn,
-                    customer.subscription,
-                    customer.deviceModel,
-                    customer.devicePlatform
+                    customer.checkIn
                 ]);
             } else {
                 return [[
@@ -212,20 +207,20 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                     customer.lastName,
                     customer.email,
                     customer.phone,
-                    customer.vehicleRegDate,
                     customer.customerRegDate,
+                    customer.vehicleRegDate,
+                    customer.subscription,
                     customer.vehicleType,
                     customer.manufacturer,
                     customer.vehicleModel,
                     customer.vehicleVariant,
                     customer.deviceBrand,
+                    customer.deviceModel,
+                    customer.devicePlatform,
                     customer.version,
                     customer.navigation,
                     customer.trip,
-                    customer.checkIn,
-                    customer.subscription,
-                    customer.deviceModel,
-                    customer.devicePlatform
+                    customer.checkIn
                 ]];
             }
         });
@@ -350,47 +345,8 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                             onClear={() => {
                                 setStartDate("");
                                 setEndDate("");
-                                setFilterSubscription("");
-                                setFilterVehicleType("");
                             }}
-                        >
-                            <div className="flex gap-4 md:flex-row">
-                                <div className="w-1/2 md:w-1/2">
-                                    <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                        Subscription Type
-                                    </label>
-                                    <select
-                                        value={filterSubscription}
-                                        onChange={(e) => setFilterSubscription(e.target.value)}
-                                        className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white dark:focus:border-primary"
-                                    >
-                                        <option value="">All</option>
-                                        {subscriptionOptions.map((option) => (
-                                            <option key={option} value={option}>
-                                                {option}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="w-1/2 md:w-1/2">
-                                    <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                        Vehicle Type
-                                    </label>
-                                    <select
-                                        value={filterVehicleType}
-                                        onChange={(e) => setFilterVehicleType(e.target.value)}
-                                        className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white dark:focus:border-primary"
-                                    >
-                                        <option value="">All</option>
-                                        {vehicleTypeOptions.map((option) => (
-                                            <option key={option} value={option}>
-                                                {option}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </DateRangeFilter>
+                        />
                     </div>,
                     document.body
                 )
@@ -425,15 +381,17 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                             Phone No
                         </TableHead>
                         <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Vehicle Reg Date
+                            Customer Reg Date
                         </TableHead>
                         <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Customer Reg Date
+                            Vehicle Reg Date
+                        </TableHead>
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                            Subscription
                         </TableHead>
                         <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Vehicle Type
                         </TableHead>
-
                         <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Manufacturer
                         </TableHead>
@@ -446,6 +404,12 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                         <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Device Brand
                         </TableHead>
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                            Device Model
+                        </TableHead>
+                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                            Device Platform
+                        </TableHead>
                         <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Version
                         </TableHead>
@@ -457,15 +421,6 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                         </TableHead>
                         <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Check In
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Subscription
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Device Model
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Device Platform
                         </TableHead>
                     </TableRow>
                 </TableHeader>
@@ -522,12 +477,17 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {new Date(customer.customerRegDate).toLocaleDateString('en-GB')}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                                 {new Date(customer.vehicleRegDate).toLocaleDateString('en-GB')}
                                             </p>
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {new Date(customer.customerRegDate).toLocaleDateString('en-GB')}
+                                                {customer.subscription}
                                             </p>
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
@@ -554,6 +514,16 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                                 {customer.deviceBrand}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.deviceModel}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.devicePlatform}
                                             </p>
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
@@ -589,21 +559,6 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                                 {customer.checkIn}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.subscription}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.deviceModel}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.devicePlatform}
-                                            </p>
-                                        </TableCell>
                                     </TableRow>
 
                                     {isExpanded && customer.vehicles && customer.vehicles.slice(1).map((vehicle, vIdx) => (
@@ -613,6 +568,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                         >
                                             <TableCell className="px-2 py-4"></TableCell>
                                             {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
+                                            <TableCell className="px-4 py-4"></TableCell>
                                             <TableCell className="px-4 py-4"></TableCell>
                                             <TableCell className="px-4 py-4"></TableCell>
                                             <TableCell className="px-4 py-4"></TableCell>
@@ -643,7 +599,6 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                                     {vehicle.vehicleVariant}
                                                 </p>
                                             </TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
                                             <TableCell className="px-4 py-4"></TableCell>
                                             <TableCell className="px-4 py-4"></TableCell>
                                             <TableCell className="px-4 py-4"></TableCell>
