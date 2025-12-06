@@ -1,0 +1,57 @@
+[
+    {
+        "id": "1",
+        "firstName": "Harleen",
+        "lastName": "Kaur",
+        "source": "Connaught Place",
+        "destination": "Gurgaon Cyber Hub",
+        "dateTime": "2025-12-01T10:30:00",
+        "navigation": "Yes",
+        "checkIn": "Yes",
+        "tripStatus": "On Going Test"
+    },
+    {
+        "id": "2",
+        "firstName": "Mohit",
+        "lastName": "Chauhan",
+        "source": "Noida Sector 18",
+        "destination": "Greater Noida",
+        "dateTime": "2025-11-30T14:15:00",
+        "navigation": "No",
+        "checkIn": "No",
+        "tripStatus": "Enquired"
+    },
+    {
+        "id": "3",
+        "firstName": "Divya",
+        "lastName": "Rathore",
+        "source": "Vasant Kunj",
+        "destination": "Saket Select City",
+        "dateTime": "2025-11-29T09:00:00",
+        "navigation": "Yes",
+        "checkIn": "No",
+        "tripStatus": "Saved"
+    },
+    {
+        "id": "4",
+        "firstName": "Rohan",
+        "lastName": "Verma",
+        "source": "Dwarka Sector 21",
+        "destination": "IGI Airport T3",
+        "dateTime": "2025-11-28T18:45:00",
+        "navigation": "Yes",
+        "checkIn": "Yes",
+        "tripStatus": "On Going Test"
+    },
+    {
+        "id": "5",
+        "firstName": "Sana",
+        "lastName": "Qureshi",
+        "source": "Lajpat Nagar",
+        "destination": "Nehru Place",
+        "dateTime": "2025-11-27T12:20:00",
+        "navigation": "No",
+        "checkIn": "Yes",
+        "tripStatus": "Saved"
+    }
+]

@@ -13,6 +13,11 @@ export const NAV_DATA = [
             url: "/",
             icon: Icons.User,
           },
+          {
+            title: "Trip Details",
+            url: "/trip-details",
+            icon: Icons.Table,
+          },
         ],
       },
     ],

@@ -1,4 +1,5 @@
 import customersData from "@/data/customers.json";
+import tripsData from "@/data/trips.json";
 
 export interface Customer {
     firstName: string;
@@ -51,4 +52,20 @@ export async function getCustomers(): Promise<Customer[]> {
     */
 
     return customersData;
+}
+
+export interface Trip {
+    id: string;
+    firstName: string;
+    lastName: string;
+    source: string;
+    destination: string;
+    dateTime: string;
+    navigation: string;
+    checkIn: string;
+    tripStatus: string;
+}
+
+export async function getTrips(): Promise<Trip[]> {
+    return tripsData;
 }
