@@ -184,7 +184,7 @@ export function TripDetailsTable({ trips: initialData }: TripDetailsTableProps) 
     const getStatusColor = (status: string) => {
         switch (status) {
             case "On Going Test":
-                return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+                return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400";
             case "Saved":
                 return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
             case "Enquired":
@@ -337,10 +337,10 @@ export function TripDetailsTable({ trips: initialData }: TripDetailsTableProps) 
                         <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Customer Name
                         </TableHead>
-                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white">
                             Source
                         </TableHead>
-                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white">
                             Destination
                         </TableHead>
                         <TableHead className="min-w-[180px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
@@ -380,12 +380,12 @@ export function TripDetailsTable({ trips: initialData }: TripDetailsTableProps) 
                                     </p>
                                 </TableCell>
                                 <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                    <p className="text-sm text-dark dark:text-white whitespace-normal break-words">
                                         {trip.source}
                                     </p>
                                 </TableCell>
                                 <TableCell className="px-4 py-4 dark:border-dark-3">
-                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                    <p className="text-sm text-dark dark:text-white whitespace-normal break-words">
                                         {trip.destination}
                                     </p>
                                 </TableCell>
