@@ -100,3 +100,85 @@ export interface StationSubmission {
 export async function getStationSubmissions(): Promise<StationSubmission[]> {
     return stationSubmissionsData as StationSubmission[];
 }
+
+
+// --- Trip Check-ins API ---
+
+export interface TripCheckin extends Trip {
+    user_phone?: string | null;
+    ev?: {
+        brand: string;
+        model: string;
+        variant: string;
+    } | null;
+    rating?: number | null;
+    feedback_provided?: boolean | null;
+    charging_time?: string | null;
+    connector?: string | null;
+    rate_per_unit?: number | null;
+    units_charged?: number | null;
+    amount?: number | null;
+    evolts_earned?: number | null; // Stored EVolts
+    photos?: { url: string; filename: string }[];
+    audit_log?: {
+        action: string;
+        admin?: string | null;
+        timestamp: string;
+        notes: string;
+    }[];
+    flags?: {
+        duplicate?: boolean;
+        amount_mismatch?: boolean;
+    };
+    story_opt_in?: boolean | null;
+    story_status?: "Pending" | "Approved" | "Rejected" | null;
+    blog_link?: string | null;
+}
+
+export async function getTripCheckins(): Promise<TripCheckin[]> {
+    // Merge existing tripsData with default optional fields for the new page
+    return tripsData.map((trip: any) => ({
+        ...trip,
+        user_phone: null,
+        ev: { brand: "Tata", model: "Nexon EV", variant: "XZ+" },
+        rating: Math.random() > 0.5 ? Math.floor(Math.random() * 5) + 1 : null,
+        feedback_provided: Math.random() > 0.5,
+        charging_time: "00:45",
+        connector: "CCS 2",
+        rate_per_unit: 18.5,
+        units_charged: 20,
+        amount: 370,
+        evolts_earned: null, // Let the page compute it initially
+        photos: [],
+        audit_log: [],
+        flags: {},
+        story_opt_in: Math.random() > 0.7,
+        story_status: "Pending",
+        blog_link: null
+    }));
+}
+
+export async function getCheckinById(id: string): Promise<TripCheckin | undefined> {
+    const list = await getTripCheckins();
+    return list.find(t => t.id === id);
+}
+
+export async function editCheckin(id: string, editedFields: Partial<TripCheckin>, editReason: string, admin: string) {
+    console.log(`[Mock API] Editing checkin ${id}:`, editedFields, "Reason:", editReason, "Admin:", admin);
+    // In a real app, updated backend here
+    return true;
+}
+
+export async function approveCheckin(id: string, creditedEvolts: number, notifyWhatsapp: boolean, admin: string) {
+    console.log(`[Mock API] Approving checkin ${id} with ${creditedEvolts} EVolts. Notify: ${notifyWhatsapp}, Admin: ${admin}`);
+    return true;
+}
+
+export async function rejectCheckin(id: string, reason: string, admin: string) {
+    console.log(`[Mock API] Rejecting checkin ${id}. Reason: ${reason}, Admin: ${admin}`);
+    return true;
+}
+
+export async function postAudit(entry: any) {
+    console.log(`[Mock API] Audit Log:`, entry);
+}

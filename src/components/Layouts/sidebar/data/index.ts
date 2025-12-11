@@ -28,6 +28,11 @@ export const NAV_DATA = [
             title: "Station addition",
             url: "/station-submissions",
             icon: Icons.Alphabet,
+          },
+          {
+            title: "Trip Check-ins",
+            url: "/trip-checkins",
+            icon: Icons.Calendar,
           }
         ]
       }
