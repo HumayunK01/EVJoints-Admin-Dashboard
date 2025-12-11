@@ -6,7 +6,7 @@ export const NAV_DATA = [
     items: [
       {
         title: "Dashboard",
-        icon: Icons.HomeIcon,
+        icon: Icons.FourCircle,
         items: [
           {
             title: "Customers",
@@ -20,6 +20,17 @@ export const NAV_DATA = [
           },
         ],
       },
+      {
+        title: "Master",
+        icon: Icons.PieChart,
+        items: [
+          {
+            title: "Station addition",
+            url: "/station-submissions",
+            icon: Icons.Alphabet,
+          }
+        ]
+      }
     ],
   },
 ];

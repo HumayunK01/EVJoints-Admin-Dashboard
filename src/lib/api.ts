@@ -1,5 +1,5 @@
 import customersData from "@/data/customers.json";
-import tripsData from "@/data/trips.json";
+import stationSubmissionsData from "@/data/station-submissions.json";
 
 export interface Customer {
     firstName: string;
@@ -54,6 +54,8 @@ export async function getCustomers(): Promise<Customer[]> {
     return customersData;
 }
 
+import tripsData from "@/data/trips.json";
+
 export interface Trip {
     id: string;
     firstName: string;
@@ -68,4 +70,33 @@ export interface Trip {
 
 export async function getTrips(): Promise<Trip[]> {
     return tripsData;
+}
+
+export interface Connector {
+    name: string;
+    count: number;
+    type: "AC" | "DC";
+}
+
+export interface StationSubmission {
+    id: number;
+    submissionDate: string;
+    stationName: string;
+    userName: string;
+    userId: string;
+    networkName: string;
+    usageType: "Public" | "Private";
+    connectors: Connector[];
+    photos: string[];
+    status: "Pending" | "Approved" | "Rejected";
+    statusReason?: string;
+    contactNumber: string;
+    latitude: number;
+    longitude: number;
+    stationType: string;
+    eVolts: number;
+}
+
+export async function getStationSubmissions(): Promise<StationSubmission[]> {
+    return stationSubmissionsData as StationSubmission[];
 }
