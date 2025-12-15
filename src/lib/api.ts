@@ -139,25 +139,28 @@ export interface TripCheckin extends Trip {
 
 export async function getTripCheckins(): Promise<TripCheckin[]> {
     // Merge existing tripsData with default optional fields for the new page
-    return tripsData.map((trip: any) => ({
-        ...trip,
-        user_phone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-        ev: { brand: "Tata", model: "Nexon EV", variant: "XZ+" },
-        rating: Math.random() > 0.5 ? Math.floor(Math.random() * 5) + 1 : null,
-        feedback_provided: Math.random() > 0.5,
-        charging_time: "00:45",
-        connector: "CCS 2",
-        rate_per_unit: 18.5,
-        units_charged: 20,
-        amount: 370,
-        evolts_earned: null, // Let the page compute it initially
-        photos: [],
-        audit_log: [],
-        flags: {},
-        story_opt_in: Math.random() > 0.7,
-        story_status: "Pending",
-        blog_link: null
-    }));
+    return tripsData.map((trip: any) => {
+        const customer = customersData.find((c: any) => c.firstName === trip.firstName && c.lastName === trip.lastName);
+        return {
+            ...trip,
+            user_phone: customer ? customer.phone : null,
+            ev: { brand: "Tata", model: "Nexon EV", variant: "XZ+" },
+            rating: Math.random() > 0.5 ? Math.floor(Math.random() * 5) + 1 : null,
+            feedback_provided: Math.random() > 0.5,
+            charging_time: "00:45",
+            connector: "CCS 2",
+            rate_per_unit: 18.5,
+            units_charged: 20,
+            amount: 370,
+            evolts_earned: null, // Let the page compute it initially
+            photos: [],
+            audit_log: [],
+            flags: {},
+            story_opt_in: Math.random() > 0.7,
+            story_status: "Pending",
+            blog_link: null
+        };
+    });
 }
 
 export async function getCheckinById(id: string): Promise<TripCheckin | undefined> {
