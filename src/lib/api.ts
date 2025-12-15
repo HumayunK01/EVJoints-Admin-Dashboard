@@ -8,6 +8,7 @@ export interface Customer {
     phone: string;
     vehicleRegDate: string;
     customerRegDate: string;
+    registration_number?: string; // Added field
     vehicleType: string;
     manufacturer: string;
     vehicleModel: string;
@@ -21,6 +22,7 @@ export interface Customer {
     deviceModel: string;
     devicePlatform: string;
     vehicles?: {
+        registration_number?: string; // Added field
         vehicleRegDate: string;
         vehicleType: string;
         manufacturer: string;

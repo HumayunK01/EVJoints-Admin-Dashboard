@@ -160,6 +160,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
             "Phone",
             "Customer Reg Date",
             "Vehicle Reg Date",
+            "Registration Number",
             "Subscription",
             "Vehicle Type",
             "Manufacturer",
@@ -188,6 +189,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                     customer.phone,
                     customer.customerRegDate,
                     vehicle.vehicleRegDate,
+                    vehicle.registration_number || "N/A",
                     customer.subscription,
                     vehicle.vehicleType,
                     vehicle.manufacturer,
@@ -209,6 +211,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                     customer.phone,
                     customer.customerRegDate,
                     customer.vehicleRegDate,
+                    customer.registration_number || "N/A",
                     customer.subscription,
                     customer.vehicleType,
                     customer.manufacturer,
@@ -386,6 +389,9 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                         <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Vehicle Reg Date
                         </TableHead>
+                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                            Registration Number
+                        </TableHead>
                         <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                             Subscription
                         </TableHead>
@@ -487,6 +493,11 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {customer.registration_number || "N/A"}
+                                            </p>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
                                                 {customer.subscription}
                                             </p>
                                         </TableCell>
@@ -561,59 +572,65 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                         </TableCell>
                                     </TableRow>
 
-                                    {isExpanded && customer.vehicles && customer.vehicles.slice(1).map((vehicle, vIdx) => (
-                                        <TableRow
-                                            key={`${customer.email}-v-${vIdx}`}
-                                            className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-white/5"
-                                        >
-                                            <TableCell className="px-2 py-4"></TableCell>
-                                            {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                    {new Date(vehicle.vehicleRegDate).toLocaleDateString('en-GB')}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                    {vehicle.vehicleType}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                    {vehicle.manufacturer}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                    {vehicle.vehicleModel}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                    {vehicle.vehicleVariant}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                            <TableCell className="px-4 py-4"></TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {
+                                        isExpanded && customer.vehicles && customer.vehicles.slice(1).map((vehicle, vIdx) => (
+                                            <TableRow
+                                                key={`${customer.email}-v-${vIdx}`}
+                                                className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-white/5"
+                                            >
+                                                <TableCell className="px-2 py-4"></TableCell>
+                                                {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                        {new Date(vehicle.vehicleRegDate).toLocaleDateString('en-GB')}
+                                                    </p>
+                                                </TableCell>
+                                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                        {vehicle.registration_number || "N/A"}
+                                                    </p>
+                                                </TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                        {vehicle.vehicleType}
+                                                    </p>
+                                                </TableCell>
+                                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                        {vehicle.manufacturer}
+                                                    </p>
+                                                </TableCell>
+                                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                        {vehicle.vehicleModel}
+                                                    </p>
+                                                </TableCell>
+                                                <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                        {vehicle.vehicleVariant}
+                                                    </p>
+                                                </TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                                <TableCell className="px-4 py-4"></TableCell>
+                                            </TableRow>
+                                        ))}
                                 </Fragment>
                             );
                         })
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={20} className="h-24 text-center">
+                            <TableCell colSpan={21} className="h-24 text-center">
                                 <p className="text-sm text-dark dark:text-white">
                                     No customers found.
                                 </p>
@@ -621,7 +638,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                         </TableRow>
                     )}
                 </TableBody>
-            </Table>
+            </Table >
 
             <div className="flex items-center justify-end gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
                 <div className="flex items-center gap-2">

@@ -4,6 +4,7 @@
         "lastName": "Sharma",
         "email": "rahul.sharma92@gmail.com",
         "phone": "+918273645901",
+        "registration_number": "KA-01-EV-1001",
         "vehicleRegDate": "2025-11-05",
         "customerRegDate": "2025-11-02",
         "vehicleType": "Four Wheeler",
@@ -20,6 +21,7 @@
         "checkIn": "Yes",
         "vehicles": [
             {
+                "registration_number": "KA-01-EV-1001",
                 "vehicleRegDate": "2025-11-05",
                 "vehicleType": "Four Wheeler",
                 "manufacturer": "Tata Motors",
@@ -27,6 +29,7 @@
                 "vehicleVariant": "Gen 3"
             },
             {
+                "registration_number": "KA-01-EV-1002",
                 "vehicleRegDate": "2024-01-15",
                 "vehicleType": "Two Wheeler",
                 "manufacturer": "Ola Electric",
@@ -34,6 +37,7 @@
                 "vehicleVariant": "Standard"
             },
             {
+                "registration_number": "KA-01-EV-1003",
                 "vehicleRegDate": "2023-08-20",
                 "vehicleType": "Four Wheeler",
                 "manufacturer": "MG Motors",
@@ -47,6 +51,7 @@
         "lastName": "Menon",
         "email": "aditi.menon@outlook.com",
         "phone": "+919876543210",
+        "registration_number": "MH-02-EV-2045",
         "vehicleRegDate": "2025-11-06",
         "customerRegDate": "2025-11-04",
         "vehicleType": "Two Wheeler",
@@ -67,6 +72,7 @@
         "lastName": "Khan",
         "email": "imran.khan77@yahoo.com",
         "phone": "+917455889932",
+        "registration_number": "DL-3C-EV-5567",
         "vehicleRegDate": "2025-11-08",
         "customerRegDate": "2025-11-06",
         "vehicleType": "Three Wheeler",
@@ -83,6 +89,7 @@
         "checkIn": "Yes",
         "vehicles": [
             {
+                "registration_number": "DL-3C-EV-5567",
                 "vehicleRegDate": "2025-11-08",
                 "vehicleType": "Three Wheeler",
                 "manufacturer": "MG Motors",
@@ -90,6 +97,7 @@
                 "vehicleVariant": "Exclusive"
             },
             {
+                "registration_number": "MH-12-EV-9988",
                 "vehicleRegDate": "2024-05-20",
                 "vehicleType": "Two Wheeler",
                 "manufacturer": "Ather Energy",
@@ -97,6 +105,7 @@
                 "vehicleVariant": "Gen 3"
             },
             {
+                "registration_number": "UP-16-EV-3344",
                 "vehicleRegDate": "2023-11-15",
                 "vehicleType": "Four Wheeler",
                 "manufacturer": "Hyundai",
@@ -110,6 +119,7 @@
         "lastName": "Patel",
         "email": "neha.patel.work@gmail.com",
         "phone": "+918209556781",
+        "registration_number": "GJ-01-EV-7721",
         "vehicleRegDate": "2025-11-10",
         "customerRegDate": "2025-11-08",
         "vehicleType": "Four Wheeler",
@@ -126,6 +136,7 @@
         "checkIn": "Yes",
         "vehicles": [
             {
+                "registration_number": "GJ-01-EV-7721",
                 "vehicleRegDate": "2025-11-10",
                 "vehicleType": "Four Wheeler",
                 "manufacturer": "Hyundai",
@@ -133,6 +144,7 @@
                 "vehicleVariant": "Long Range"
             },
             {
+                "registration_number": "GJ-06-EV-4455",
                 "vehicleRegDate": "2025-02-10",
                 "vehicleType": "Four Wheeler",
                 "manufacturer": "Tata Motors",
@@ -140,6 +152,7 @@
                 "vehicleVariant": "Max XZ+"
             },
             {
+                "registration_number": "GJ-05-EV-1122",
                 "vehicleRegDate": "2024-09-05",
                 "vehicleType": "Two Wheeler",
                 "manufacturer": "TVS",
@@ -153,6 +166,7 @@
         "lastName": "Kulkarni",
         "email": "saurabh.kulkarni@rediffmail.com",
         "phone": "+919311224488",
+        "registration_number": "TN-07-EV-6612",
         "vehicleRegDate": "2025-11-12",
         "customerRegDate": "2025-11-10",
         "vehicleType": "Two Wheeler",
@@ -173,6 +187,7 @@
         "lastName": "Nair",
         "email": "priya.nair88@gmail.com",
         "phone": "+919645332781",
+        "registration_number": "KL-01-EV-8899",
         "vehicleRegDate": "2025-11-14",
         "customerRegDate": "2025-11-12",
         "vehicleType": "Three Wheeler",
@@ -189,6 +204,7 @@
         "checkIn": "Yes",
         "vehicles": [
             {
+                "registration_number": "KL-01-EV-8899",
                 "vehicleRegDate": "2025-11-14",
                 "vehicleType": "Three Wheeler",
                 "manufacturer": "MG Motors",
@@ -196,6 +212,7 @@
                 "vehicleVariant": "Gen 3"
             },
             {
+                "registration_number": "KL-07-EV-5544",
                 "vehicleRegDate": "2024-12-01",
                 "vehicleType": "Three Wheeler",
                 "manufacturer": "Mahindra",
@@ -203,6 +220,7 @@
                 "vehicleVariant": "Yaari"
             },
             {
+                "registration_number": "KL-11-EV-2233",
                 "vehicleRegDate": "2023-06-30",
                 "vehicleType": "Four Wheeler",
                 "manufacturer": "BYD",
@@ -216,6 +234,7 @@
         "lastName": "Reddy",
         "email": "arjun.reddy.work@outlook.com",
         "phone": "+918522334477",
+        "registration_number": "TS-09-EV-1234",
         "vehicleRegDate": "2025-11-16",
         "customerRegDate": "2025-11-14",
         "vehicleType": "Four Wheeler",
@@ -236,6 +255,7 @@
         "lastName": "Ansari",
         "email": "farhan.ansari92@yahoo.com",
         "phone": "+919834522110",
+        "registration_number": "WB-02-EV-4567",
         "vehicleRegDate": "2025-11-18",
         "customerRegDate": "2025-11-16",
         "vehicleType": "Two Wheeler",
@@ -256,6 +276,7 @@
         "lastName": "Iyer",
         "email": "meera.iyer@protonmail.com",
         "phone": "+917209887643",
+        "registration_number": "KA-51-EV-6789",
         "vehicleRegDate": "2025-11-20",
         "customerRegDate": "2025-11-18",
         "vehicleType": "Three Wheeler",
@@ -276,6 +297,7 @@
         "lastName": "Bansal",
         "email": "karan.bansal04@gmail.com",
         "phone": "+919781446220",
+        "registration_number": "PB-10-EV-9876",
         "vehicleRegDate": "2025-11-22",
         "customerRegDate": "2025-11-20",
         "vehicleType": "Four Wheeler",
@@ -296,6 +318,7 @@
         "lastName": "Qureshi",
         "email": "sana.qureshi99@gmail.com",
         "phone": "+919537662480",
+        "registration_number": "MP-04-EV-5432",
         "vehicleRegDate": "2025-11-24",
         "customerRegDate": "2025-11-22",
         "vehicleType": "Two Wheeler",
@@ -316,6 +339,7 @@
         "lastName": "Verma",
         "email": "rohan.v07@outlook.com",
         "phone": "+918240113578",
+        "registration_number": "HR-26-EV-1357",
         "vehicleRegDate": "2025-11-26",
         "customerRegDate": "2025-11-24",
         "vehicleType": "Three Wheeler",
@@ -336,6 +360,7 @@
         "lastName": "Rathore",
         "email": "divya.rathore@icloud.com",
         "phone": "+917958441220",
+        "registration_number": "RJ-14-EV-2468",
         "vehicleRegDate": "2025-11-28",
         "customerRegDate": "2025-11-26",
         "vehicleType": "Four Wheeler",
@@ -356,6 +381,7 @@
         "lastName": "Chauhan",
         "email": "mohit.chauhan77@yahoo.com",
         "phone": "+919811225934",
+        "registration_number": "DL-01-EV-3690",
         "vehicleRegDate": "2025-11-30",
         "customerRegDate": "2025-11-28",
         "vehicleType": "Two Wheeler",
@@ -372,6 +398,7 @@
         "checkIn": "Yes",
         "vehicles": [
             {
+                "registration_number": "DL-01-EV-3690",
                 "vehicleRegDate": "2025-11-30",
                 "vehicleType": "Two Wheeler",
                 "manufacturer": "Mahindra Electric",
@@ -379,6 +406,7 @@
                 "vehicleVariant": "Long Range"
             },
             {
+                "registration_number": "DL-04-EV-1122",
                 "vehicleRegDate": "2024-08-15",
                 "vehicleType": "Four Wheeler",
                 "manufacturer": "Tata Motors",
@@ -386,6 +414,7 @@
                 "vehicleVariant": "XT Long Range"
             },
             {
+                "registration_number": "DL-08-EV-7788",
                 "vehicleRegDate": "2023-03-10",
                 "vehicleType": "Two Wheeler",
                 "manufacturer": "Ola Electric",
@@ -399,6 +428,7 @@
         "lastName": "Kaur",
         "email": "harleen.kaur22@gmail.com",
         "phone": "+918673552190",
+        "registration_number": "HP-01-EV-9510",
         "vehicleRegDate": "2025-12-01",
         "customerRegDate": "2025-11-30",
         "vehicleType": "Three Wheeler",
