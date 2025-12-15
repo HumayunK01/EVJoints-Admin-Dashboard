@@ -141,7 +141,7 @@ export async function getTripCheckins(): Promise<TripCheckin[]> {
     // Merge existing tripsData with default optional fields for the new page
     return tripsData.map((trip: any) => ({
         ...trip,
-        user_phone: null,
+        user_phone: `+91 ${Math.floor(Math.random() * 9000000000) + 1000000000}`,
         ev: { brand: "Tata", model: "Nexon EV", variant: "XZ+" },
         rating: Math.random() > 0.5 ? Math.floor(Math.random() * 5) + 1 : null,
         feedback_provided: Math.random() > 0.5,

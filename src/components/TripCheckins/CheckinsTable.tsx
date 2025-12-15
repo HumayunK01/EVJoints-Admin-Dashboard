@@ -147,18 +147,18 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
                             <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Date</TableHead>
                             <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Time</TableHead>
                             <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">User Name</TableHead>
+                            <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Phone</TableHead>
                             <TableHead className="min-w-[250px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Source</TableHead>
                             <TableHead className="min-w-[250px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Destination</TableHead>
-                            <TableHead className="min-w-[80px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Nav</TableHead>
-                            <TableHead className="min-w-[80px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Check-In</TableHead>
-                            <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Status</TableHead>
-
                             {hasEvData && (
                                 <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">EV</TableHead>
                             )}
                             {(hasCharging) && (
                                 <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Charging</TableHead>
                             )}
+                            <TableHead className="min-w-[80px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Nav</TableHead>
+                            <TableHead className="min-w-[80px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Check-In</TableHead>
+                            <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Status</TableHead>
 
                             <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">EVolts</TableHead>
                             <TableHead className="px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">Actions</TableHead>
@@ -189,11 +189,31 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
                                             </span>
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
+                                            <span className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                {item.user_phone || "N/A"}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <span className="text-sm text-dark dark:text-white whitespace-normal break-words">{item.source}</span>
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <span className="text-sm text-dark dark:text-white whitespace-normal break-words">{item.destination}</span>
                                         </TableCell>
+                                        {hasEvData && (
+                                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                <span className="text-sm text-dark dark:text-white">{item.ev ? `${item.ev.brand} ${item.ev.model}` : "-"}</span>
+                                            </TableCell>
+                                        )}
+
+                                        {hasCharging && (
+                                            <TableCell className="px-4 py-4 dark:border-dark-3">
+                                                <div className="flex flex-col text-xs text-dark dark:text-white">
+                                                    {item.units_charged && <span>{item.units_charged} kWh</span>}
+                                                    {item.amount && <span>₹{item.amount}</span>}
+                                                </div>
+                                            </TableCell>
+                                        )}
+
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.navigation === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`}>
                                                 {item.navigation}
@@ -212,21 +232,6 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
                                                 {item.tripStatus}
                                             </span>
                                         </TableCell>
-
-                                        {hasEvData && (
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <span className="text-sm text-dark dark:text-white">{item.ev ? `${item.ev.brand} ${item.ev.model}` : "-"}</span>
-                                            </TableCell>
-                                        )}
-
-                                        {hasCharging && (
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <div className="flex flex-col text-xs text-dark dark:text-white">
-                                                    {item.units_charged && <span>{item.units_charged} kWh</span>}
-                                                    {item.amount && <span>₹{item.amount}</span>}
-                                                </div>
-                                            </TableCell>
-                                        )}
 
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <div className="flex items-center gap-1">
