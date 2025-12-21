@@ -3,21 +3,27 @@
         "id": 1,
         "submissionDate": "2024-12-01T10:30:00Z",
         "stationName": "Green Park Charging Station",
+        "stationNumber": "GPCS-001",
         "userName": "Rahul Sharma",
         "userId": "rahul.sharma92@gmail.com",
         "networkName": "Tata Power",
         "usageType": "Public",
         "stationType": "Mall",
+        "operationalHours": "24/7",
         "connectors": [
             {
                 "name": "CCS 2",
                 "count": 2,
-                "type": "DC"
+                "type": "DC",
+                "powerRating": "50 kW",
+                "tariff": "₹18/kWh"
             },
             {
                 "name": "Type 2",
                 "count": 1,
-                "type": "AC"
+                "type": "AC",
+                "powerRating": "7.4 kW",
+                "tariff": "₹12/kWh"
             }
         ],
         "photos": [
@@ -34,22 +40,27 @@
         "id": 2,
         "submissionDate": "2024-12-02T14:15:00Z",
         "stationName": "Menon Residence Charger",
+        "stationNumber": "MRC-002",
         "userName": "Aditi Menon",
         "userId": "aditi.menon@outlook.com",
         "networkName": "Private",
         "usageType": "Private",
         "stationType": "Residential",
+        "operationalHours": "9 AM - 9 PM",
         "connectors": [
             {
                 "name": "Wall Socket",
                 "count": 1,
-                "type": "AC"
+                "type": "AC",
+                "powerRating": "3.3 kW",
+                "tariff": "₹10/kWh"
             }
         ],
         "photos": [
             "photo3.jpg"
         ],
         "status": "Approved",
+        "approvalDate": "2024-12-03T10:00:00Z",
         "contactNumber": "+919876543210",
         "latitude": 19.076,
         "longitude": 72.877,
@@ -59,21 +70,27 @@
         "id": 3,
         "submissionDate": "2024-12-03T09:45:00Z",
         "stationName": "City Mall EV Hub",
+        "stationNumber": "CMEH-003",
         "userName": "Imran Khan",
         "userId": "imran.khan77@yahoo.com",
         "networkName": "Zeon Charging",
         "usageType": "Public",
         "stationType": "Mall",
+        "operationalHours": "10 AM - 10 PM",
         "connectors": [
             {
                 "name": "CCS 2",
                 "count": 4,
-                "type": "DC"
+                "type": "DC",
+                "powerRating": "60 kW",
+                "tariff": "₹20/kWh"
             },
             {
                 "name": "CHAdeMO",
                 "count": 1,
-                "type": "DC"
+                "type": "DC",
+                "powerRating": "50 kW",
+                "tariff": "₹19/kWh"
             }
         ],
         "photos": [
@@ -91,16 +108,20 @@
         "id": 4,
         "submissionDate": "2024-12-05T11:20:00Z",
         "stationName": "Highway Inn Fast Charge",
+        "stationNumber": "HIFC-004",
         "userName": "Neha Patel",
         "userId": "neha.patel.work@gmail.com",
         "networkName": "Statiq",
         "usageType": "Public",
         "stationType": "Highway",
+        "operationalHours": "24/7",
         "connectors": [
             {
                 "name": "CCS 2",
                 "count": 2,
-                "type": "DC"
+                "type": "DC",
+                "powerRating": "120 kW",
+                "tariff": "₹22/kWh"
             }
         ],
         "photos": [
@@ -116,20 +137,25 @@
         "id": 5,
         "submissionDate": "2024-12-06T16:45:00Z",
         "stationName": "Kulkarni Villa Point",
+        "stationNumber": "KVP-005",
         "userName": "Saurabh Kulkarni",
         "userId": "saurabh.kulkarni@rediffmail.com",
         "networkName": "Private",
         "usageType": "Private",
         "stationType": "Residential",
+        "operationalHours": "6 AM - 10 PM",
         "connectors": [
             {
                 "name": "Type 2",
                 "count": 1,
-                "type": "AC"
+                "type": "AC",
+                "powerRating": "7.4 kW",
+                "tariff": "₹10/kWh"
             }
         ],
         "photos": [],
         "status": "Approved",
+        "approvalDate": "2024-12-07T09:30:00Z",
         "contactNumber": "+919311224488",
         "latitude": 18.5204,
         "longitude": 73.8567,
@@ -139,16 +165,20 @@
         "id": 6,
         "submissionDate": "2024-12-07T10:10:00Z",
         "stationName": "Tech Park Public Charger",
+        "stationNumber": "TPPC-006",
         "userName": "Priya Nair",
         "userId": "priya.nair88@gmail.com",
         "networkName": "Ather Grid",
         "usageType": "Public",
         "stationType": "Office Complex",
+        "operationalHours": "8 AM - 8 PM",
         "connectors": [
             {
                 "name": "Ather Connector",
                 "count": 3,
-                "type": "DC"
+                "type": "DC",
+                "powerRating": "30 kW",
+                "tariff": "₹16/kWh"
             }
         ],
         "photos": [
@@ -165,21 +195,27 @@
         "id": 7,
         "submissionDate": "2024-12-08T08:30:00Z",
         "stationName": "Reddy's Commercial Complex",
+        "stationNumber": "RCC-007",
         "userName": "Arjun Reddy",
         "userId": "arjun.reddy.work@outlook.com",
         "networkName": "ChargeZone",
         "usageType": "Public",
         "stationType": "Shopping Complex",
+        "operationalHours": "9 AM - 11 PM",
         "connectors": [
             {
                 "name": "CCS 2",
                 "count": 2,
-                "type": "DC"
+                "type": "DC",
+                "powerRating": "50 kW",
+                "tariff": "₹18/kWh"
             },
             {
                 "name": "Type 2",
                 "count": 2,
-                "type": "AC"
+                "type": "AC",
+                "powerRating": "7.4 kW",
+                "tariff": "₹12/kWh"
             }
         ],
         "photos": [

@@ -78,12 +78,15 @@ export interface Connector {
     name: string;
     count: number;
     type: "AC" | "DC";
+    powerRating?: string; // e.g., "7.4 kW", "50 kW"
+    tariff?: string; // e.g., "₹15/kWh"
 }
 
 export interface StationSubmission {
     id: number;
     submissionDate: string;
     stationName: string;
+    stationNumber?: string; // Station identification number
     userName: string;
     userId: string;
     networkName: string;
@@ -97,6 +100,8 @@ export interface StationSubmission {
     longitude: number;
     stationType: string;
     eVolts: number;
+    operationalHours?: string; // e.g., "24/7" or "9 AM - 6 PM"
+    approvalDate?: string; // Date when station was approved
 }
 
 export async function getStationSubmissions(): Promise<StationSubmission[]> {
