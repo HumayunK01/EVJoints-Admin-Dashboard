@@ -56,23 +56,9 @@ export async function getCustomers(): Promise<Customer[]> {
     return customersData;
 }
 
+// Trip data is now handled by TripCheckin interface and getTripCheckins() function below
+// The old Trip interface had incorrect types (source/destination as strings instead of LocationCoordinates)
 import tripsData from "@/data/trips.json";
-
-export interface Trip {
-    id: string;
-    firstName: string;
-    lastName: string;
-    source: string;
-    destination: string;
-    dateTime: string;
-    navigation: string;
-    checkIn: string;
-    tripStatus: string;
-}
-
-export async function getTrips(): Promise<Trip[]> {
-    return tripsData;
-}
 
 export interface Connector {
     name: string;
@@ -111,7 +97,57 @@ export async function getStationSubmissions(): Promise<StationSubmission[]> {
 
 // --- Trip Check-ins API ---
 
-export interface TripCheckin extends Trip {
+export interface LocationCoordinates {
+    latitude: number;
+    longitude: number;
+    address: string;
+}
+
+export interface TripCheckin {
+    id: string;
+    dateTime: string; // When user planned the trip
+    firstName: string;
+    lastName: string;
+    email: string;
+    mobileNumber: string;
+
+    // Route details with coordinates
+    source: LocationCoordinates;
+    stop1?: LocationCoordinates | null;
+    stop2?: LocationCoordinates | null;
+    stop3?: LocationCoordinates | null;
+    destination: LocationCoordinates;
+
+    // Trip metrics
+    totalKm: number;
+    stationConnectorCount: string; // e.g., "5 stations, 12 connectors"
+    chargingStopsCount: number; // Number suggested by system
+
+    // EV Details
+    evModel: string;
+    evVariant: string;
+    evBatteryCapacity: string; // e.g., "40 kWh"
+
+    // Engagement
+    evolts: number;
+    feedback?: string | null;
+    navigation: "Yes" | "No";
+    checkIn: "Yes" | "No";
+
+    // Status
+    tripStatus: "Planned" | "Ongoing" | "Completed" | "Cancelled";
+    tripCompletionStatus?: "Successful" | "Failed" | null;
+
+    // Trip Story
+    hasTripStory: "Yes" | "No";
+    storyStatus?: "Pending" | "Approved" | "Rejected" | null;
+    blogLink?: string | null;
+
+    // Approval tracking
+    approvalDate?: string | null;
+    approvedBy?: string | null;
+
+    // Legacy fields for backward compatibility
     user_phone?: string | null;
     ev?: {
         brand: string;
@@ -125,7 +161,7 @@ export interface TripCheckin extends Trip {
     rate_per_unit?: number | null;
     units_charged?: number | null;
     amount?: number | null;
-    evolts_earned?: number | null; // Stored EVolts
+    evolts_earned?: number | null;
     photos?: { url: string; filename: string }[];
     audit_log?: {
         action: string;
@@ -138,34 +174,11 @@ export interface TripCheckin extends Trip {
         amount_mismatch?: boolean;
     };
     story_opt_in?: boolean | null;
-    story_status?: "Pending" | "Approved" | "Rejected" | null;
-    blog_link?: string | null;
 }
 
 export async function getTripCheckins(): Promise<TripCheckin[]> {
-    // Merge existing tripsData with default optional fields for the new page
-    return tripsData.map((trip: any) => {
-        const customer = customersData.find((c: any) => c.firstName === trip.firstName && c.lastName === trip.lastName);
-        return {
-            ...trip,
-            user_phone: customer ? customer.phone : null,
-            ev: { brand: "Tata", model: "Nexon EV", variant: "XZ+" },
-            rating: Math.random() > 0.5 ? Math.floor(Math.random() * 5) + 1 : null,
-            feedback_provided: Math.random() > 0.5,
-            charging_time: "00:45",
-            connector: "CCS 2",
-            rate_per_unit: 18.5,
-            units_charged: 20,
-            amount: 370,
-            evolts_earned: null, // Let the page compute it initially
-            photos: [],
-            audit_log: [],
-            flags: {},
-            story_opt_in: Math.random() > 0.7,
-            story_status: "Pending",
-            blog_link: null
-        };
-    });
+    // Return the comprehensive trip data with all new fields
+    return tripsData as TripCheckin[];
 }
 
 export async function getCheckinById(id: string): Promise<TripCheckin | undefined> {
