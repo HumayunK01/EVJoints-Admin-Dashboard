@@ -28,26 +28,28 @@ export default function CheckinDetailModal({ isOpen, onClose, data, onEdit }: Pr
                     <h4 className="font-semibold mb-2">User Details</h4>
                     <div className="space-y-2 text-sm">
                         <p><span className="text-gray-500">Name:</span> {data.firstName} {data.lastName}</p>
-                        <p><span className="text-gray-500">Phone:</span> {data.user_phone || "N/A"}</p>
-                        <p><span className="text-gray-500">EV:</span> {data.ev ? `${data.ev.brand} ${data.ev.model}` : "N/A"}</p>
+                        <p><span className="text-gray-500">Email:</span> {data.email}</p>
+                        <p><span className="text-gray-500">Phone:</span> {data.mobileNumber}</p>
+                        <p><span className="text-gray-500">EV:</span> {data.evModel} {data.evVariant}</p>
+                        <p><span className="text-gray-500">Battery:</span> {data.evBatteryCapacity}</p>
                     </div>
                 </div>
 
                 {/* Middle: Trip Details */}
                 <div className="col-span-2 space-y-4">
                     <div className="border rounded-lg p-4">
-                        <h4 className="font-bold mb-3">Trip info</h4>
+                        <h4 className="font-bold mb-3">Trip Info</h4>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                                 <p className="text-gray-500 text-xs">Source</p>
-                                <p>{data.source}</p>
+                                <p>{data.source.address}</p>
                             </div>
                             <div>
                                 <p className="text-gray-500 text-xs">Destination</p>
-                                <p>{data.destination}</p>
+                                <p>{data.destination.address}</p>
                             </div>
                             <div>
-                                <p className="text-gray-500 text-xs">Date</p>
+                                <p className="text-gray-500 text-xs">Date & Time</p>
                                 <p>{new Date(data.dateTime).toLocaleString()}</p>
                             </div>
                             <div>
@@ -55,6 +57,14 @@ export default function CheckinDetailModal({ isOpen, onClose, data, onEdit }: Pr
                                 <span className="inline-block px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-xs font-medium border">
                                     {data.tripStatus}
                                 </span>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-xs">Total Distance</p>
+                                <p>{data.totalKm} km</p>
+                            </div>
+                            <div>
+                                <p className="text-gray-500 text-xs">Charging Stops</p>
+                                <p>{data.chargingStopsCount}</p>
                             </div>
                         </div>
                     </div>
@@ -71,33 +81,42 @@ export default function CheckinDetailModal({ isOpen, onClose, data, onEdit }: Pr
                                 <p>{data.checkIn}</p>
                             </div>
                             <div>
-                                <p className="text-gray-500 text-xs">Rating</p>
-                                <p>{data.rating ? `${data.rating} / 5` : "N/A"}</p>
+                                <p className="text-gray-500 text-xs">EVolts</p>
+                                <p>{data.evolts}</p>
                             </div>
                             <div>
-                                <p className="text-gray-500 text-xs">Feedback</p>
-                                <p>{data.feedback_provided ? "Yes" : "No"}</p>
+                                <p className="text-gray-500 text-xs">Completion Status</p>
+                                <p>{data.tripCompletionStatus || "N/A"}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="border rounded-lg p-4">
-                        <h4 className="font-bold mb-3">Charging</h4>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                                <p className="text-gray-500 text-xs">Units</p>
-                                <p>{data.units_charged || 0} kWh</p>
-                            </div>
-                            <div>
-                                <p className="text-gray-500 text-xs">Rate</p>
-                                <p>₹{data.rate_per_unit || 0}</p>
-                            </div>
-                            <div>
-                                <p className="text-gray-500 text-xs">Amount</p>
-                                <p>₹{data.amount || 0}</p>
+                    {data.feedback && (
+                        <div className="border rounded-lg p-4">
+                            <h4 className="font-bold mb-3">Feedback</h4>
+                            <p className="text-sm">{data.feedback}</p>
+                        </div>
+                    )}
+
+                    {data.hasTripStory === "Yes" && (
+                        <div className="border rounded-lg p-4">
+                            <h4 className="font-bold mb-3">Trip Story</h4>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <p className="text-gray-500 text-xs">Status</p>
+                                    <p>{data.storyStatus || "Pending"}</p>
+                                </div>
+                                {data.blogLink && (
+                                    <div>
+                                        <p className="text-gray-500 text-xs">Blog Link</p>
+                                        <a href={data.blogLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                                            View Story
+                                        </a>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 
