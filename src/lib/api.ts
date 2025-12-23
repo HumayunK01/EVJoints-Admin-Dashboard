@@ -88,6 +88,7 @@ export interface StationSubmission {
     eVolts: number;
     operationalHours?: string; // e.g., "24/7" or "9 AM - 6 PM"
     approvalDate?: string; // Date when station was approved
+    addedByType?: "EV Owner" | "Station Owner" | "CPO"; // Who added this station
 }
 
 export async function getStationSubmissions(): Promise<StationSubmission[]> {

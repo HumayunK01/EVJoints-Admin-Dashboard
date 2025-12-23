@@ -1,6 +1,7 @@
 [
     {
         "id": 1,
+        "addedByType": "EV Owner",
         "submissionDate": "2024-12-01T10:30:00Z",
         "stationName": "Green Park Charging Station",
         "stationNumber": "GPCS-001",
@@ -38,6 +39,7 @@
     },
     {
         "id": 2,
+        "addedByType": "Station Owner",
         "submissionDate": "2024-12-02T14:15:00Z",
         "stationName": "Menon Residence Charger",
         "stationNumber": "MRC-002",
@@ -68,6 +70,7 @@
     },
     {
         "id": 3,
+        "addedByType": "CPO",
         "submissionDate": "2024-12-03T09:45:00Z",
         "stationName": "City Mall EV Hub",
         "stationNumber": "CMEH-003",
@@ -106,6 +109,7 @@
     },
     {
         "id": 4,
+        "addedByType": "EV Owner",
         "submissionDate": "2024-12-05T11:20:00Z",
         "stationName": "Highway Inn Fast Charge",
         "stationNumber": "HIFC-004",
@@ -135,6 +139,7 @@
     },
     {
         "id": 5,
+        "addedByType": "Station Owner",
         "submissionDate": "2024-12-06T16:45:00Z",
         "stationName": "Kulkarni Villa Point",
         "stationNumber": "KVP-005",
@@ -163,6 +168,7 @@
     },
     {
         "id": 6,
+        "addedByType": "CPO",
         "submissionDate": "2024-12-07T10:10:00Z",
         "stationName": "Tech Park Public Charger",
         "stationNumber": "TPPC-006",
@@ -193,6 +199,7 @@
     },
     {
         "id": 7,
+        "addedByType": "EV Owner",
         "submissionDate": "2024-12-08T08:30:00Z",
         "stationName": "Reddy's Commercial Complex",
         "stationNumber": "RCC-007",
@@ -229,6 +236,7 @@
     },
     {
         "id": 8,
+        "addedByType": "Station Owner",
         "submissionDate": "2024-12-09T11:00:00Z",
         "stationName": "Westside EV Spot",
         "stationNumber": "WES-008",
@@ -259,6 +267,7 @@
     },
     {
         "id": 9,
+        "addedByType": "CPO",
         "submissionDate": "2024-12-10T14:30:00Z",
         "stationName": "Iyer Eco Point",
         "stationNumber": "IEP-009",
@@ -286,6 +295,7 @@
     },
     {
         "id": 10,
+        "addedByType": "EV Owner",
         "submissionDate": "2024-12-11T08:45:00Z",
         "stationName": "Punjab Highway Stop",
         "stationNumber": "PHS-010",
@@ -325,6 +335,7 @@
     },
     {
         "id": 11,
+        "addedByType": "Station Owner",
         "submissionDate": "2024-12-12T16:20:00Z",
         "stationName": "Lake View Charge",
         "stationNumber": "LVC-011",
@@ -354,6 +365,7 @@
     },
     {
         "id": 12,
+        "addedByType": "CPO",
         "submissionDate": "2024-12-13T12:00:00Z",
         "stationName": "Cyber City Hub",
         "stationNumber": "CCH-012",
@@ -385,6 +397,7 @@
     },
     {
         "id": 13,
+        "addedByType": "EV Owner",
         "submissionDate": "2024-12-14T09:10:00Z",
         "stationName": "Pink City Charger",
         "stationNumber": "PCC-013",
@@ -422,6 +435,7 @@
     },
     {
         "id": 14,
+        "addedByType": "Station Owner",
         "submissionDate": "2024-12-15T15:50:00Z",
         "stationName": "Delhi Central Power",
         "stationNumber": "DCP-014",
@@ -449,6 +463,7 @@
     },
     {
         "id": 15,
+        "addedByType": "CPO",
         "submissionDate": "2024-12-16T10:00:00Z",
         "stationName": "Hilltop Charge",
         "stationNumber": "HTC-015",

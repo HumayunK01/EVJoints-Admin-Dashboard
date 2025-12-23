@@ -53,6 +53,7 @@ const STATION_FIELDS: ModalFieldConfig[] = [
     { label: "Station Number", key: "stationNumber", type: "text", placeholder: "e.g., GPCS-001", section: "Station Information" },
     { label: "Network Name", key: "networkName", type: "text", required: true, placeholder: "e.g., Tata Power", section: "Station Information" },
     { label: "Station Type", key: "stationType", type: "text", placeholder: "e.g., Mall, Highway, Residential", section: "Station Information" },
+    { label: "Added By", key: "addedByType", type: "select", options: ["EV Owner", "Station Owner", "CPO"], section: "Station Information" },
     { label: "Usage Type", key: "usageType", type: "select", required: true, options: ["Public", "Private"], section: "Station Information" },
     { label: "Operational Hours", key: "operationalHours", type: "text", placeholder: "e.g., 24/7 or 9 AM - 6 PM", section: "Station Information" },
     { label: "Latitude", key: "latitude", type: "number", required: true, placeholder: "e.g., 28.556", section: "Location & Contact" },
@@ -567,6 +568,18 @@ export default function StationSubmissionsTable({
             header: "Date",
             minWidth: "100px",
             render: (item: StationSubmission) => new Date(item.submissionDate).toLocaleDateString()
+        },
+        {
+            header: "Added By",
+            minWidth: "120px",
+            render: (item: StationSubmission) => (
+                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.addedByType === 'Station Owner' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
+                    item.addedByType === 'CPO' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                    }`}>
+                    {item.addedByType || '-'}
+                </span>
+            )
         },
         { header: "Customer Name", accessor: "userName", minWidth: "150px", render: (item: StationSubmission) => <span className="text-primary font-medium">{item.userName}</span> },
         { header: "Customer Phone", accessor: "contactNumber", minWidth: "130px" },
