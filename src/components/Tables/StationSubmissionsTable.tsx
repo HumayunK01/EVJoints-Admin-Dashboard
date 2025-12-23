@@ -24,9 +24,80 @@ import {
 import { PreviewIcon, DownloadIcon } from "@/components/Tables/icons";
 import { DateRangeFilter } from "@/components/Tables/DateRangeFilter";
 
+interface ColumnConfig {
+    header: string;
+    minWidth?: string;
+    accessor?: keyof StationSubmission;
+    render?: (item: StationSubmission) => React.ReactNode;
+    isConnector?: boolean;
+    renderConnector?: (connector: Connector) => React.ReactNode;
+    align?: "left" | "center" | "right";
+}
+
 interface StationSubmissionsTableProps {
     submissions: StationSubmission[];
 }
+
+interface ModalFieldConfig {
+    label: string;
+    key: keyof StationSubmission;
+    type: "text" | "number" | "select" | "tel";
+    required?: boolean;
+    placeholder?: string;
+    options?: string[]; // For select
+    section: "Station Information" | "Location & Contact";
+}
+
+const STATION_FIELDS: ModalFieldConfig[] = [
+    { label: "Station Name", key: "stationName", type: "text", required: true, placeholder: "Enter station name", section: "Station Information" },
+    { label: "Station Number", key: "stationNumber", type: "text", placeholder: "e.g., GPCS-001", section: "Station Information" },
+    { label: "Network Name", key: "networkName", type: "text", required: true, placeholder: "e.g., Tata Power", section: "Station Information" },
+    { label: "Station Type", key: "stationType", type: "text", placeholder: "e.g., Mall, Highway, Residential", section: "Station Information" },
+    { label: "Usage Type", key: "usageType", type: "select", required: true, options: ["Public", "Private"], section: "Station Information" },
+    { label: "Operational Hours", key: "operationalHours", type: "text", placeholder: "e.g., 24/7 or 9 AM - 6 PM", section: "Station Information" },
+    { label: "Latitude", key: "latitude", type: "number", required: true, placeholder: "e.g., 28.556", section: "Location & Contact" },
+    { label: "Longitude", key: "longitude", type: "number", required: true, placeholder: "e.g., 77.09", section: "Location & Contact" },
+    { label: "Contact Number", key: "contactNumber", type: "tel", required: true, placeholder: "+91XXXXXXXXXX", section: "Location & Contact" },
+];
+
+interface ConnectorFieldConfig {
+    label: string;
+    key: keyof Connector;
+    type: "text" | "number" | "select";
+    width?: "full" | "half";
+    options?: string[];
+}
+
+const CONNECTOR_FIELDS: ConnectorFieldConfig[] = [
+    { label: "Name", key: "name", type: "text", width: "full" },
+    { label: "Count", key: "count", type: "number", width: "half" },
+    { label: "Type", key: "type", type: "select", options: ["AC", "DC"], width: "half" },
+    { label: "Power", key: "powerRating", type: "text", width: "half" },
+    { label: "Tariff", key: "tariff", type: "text", width: "half" },
+];
+
+// --- Dynamic Configuration Constants ---
+
+// Fields to include in the global search
+const SEARCH_FIELDS: (keyof StationSubmission)[] = [
+    "stationName",
+    "stationNumber",
+    "userName",
+    "userId",
+    "networkName",
+    "stationType",
+    "contactNumber"
+];
+
+// Configuration for dynamic filters
+interface FilterConfigItem {
+    key: keyof StationSubmission;
+    label: string;
+}
+
+const FILTER_CONFIG: FilterConfigItem[] = [
+    { key: "status", label: "Status" },
+];
 
 interface PhotoViewerProps {
     photos: string[];
@@ -69,63 +140,87 @@ interface ActionModalProps {
 }
 
 function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
-    const [stationName, setStationName] = useState("");
-    const [stationNumber, setStationNumber] = useState("");
-    const [networkName, setNetworkName] = useState("");
-    const [usageType, setUsageType] = useState<"Public" | "Private">("Public");
-    const [stationType, setStationType] = useState("");
-    const [operationalHours, setOperationalHours] = useState("");
-    const [latitude, setLatitude] = useState("");
-    const [longitude, setLongitude] = useState("");
-    const [contactNumber, setContactNumber] = useState("");
-    const [selectedConnectorIdx, setSelectedConnectorIdx] = useState<number>(0);
+    // Single state object for all station fields
+    const [formData, setFormData] = useState<Partial<StationSubmission>>({});
     const [connectors, setConnectors] = useState<Connector[]>([]);
 
     useEffect(() => {
         if (station) {
-            setStationName(station.stationName);
-            setStationNumber(station.stationNumber || "");
-            setNetworkName(station.networkName);
-            setUsageType(station.usageType);
-            setStationType(station.stationType);
-            setOperationalHours(station.operationalHours || "");
-            setLatitude(station.latitude.toString());
-            setLongitude(station.longitude.toString());
-            setContactNumber(station.contactNumber);
+            setFormData({
+                ...station,
+                latitude: station.latitude, // Keep as numbers in state, input handles conversion
+                longitude: station.longitude
+            });
             setConnectors(JSON.parse(JSON.stringify(station.connectors))); // Deep copy
         }
     }, [station]);
 
     if (!isOpen || !station) return null;
 
-    const handleConnectorChange = (field: keyof Connector, value: string) => {
+    const handleConnectorChange = (index: number, field: keyof Connector, value: string) => {
         const updated = [...connectors];
         if (field === 'count') {
-            updated[selectedConnectorIdx] = { ...updated[selectedConnectorIdx], [field]: parseInt(value) || 0 };
+            updated[index] = { ...updated[index], [field]: parseInt(value) || 0 };
         } else {
-            updated[selectedConnectorIdx] = { ...updated[selectedConnectorIdx], [field]: value };
+            updated[index] = { ...updated[index], [field]: value };
         }
         setConnectors(updated);
     };
 
-    const handleSave = () => {
+    const handleAddConnector = () => {
+        setConnectors([...connectors, {
+            name: "New Connector",
+            count: 1,
+            type: "AC",
+            powerRating: "",
+            tariff: ""
+        }]);
+    };
+
+    const handleDeleteConnector = (index: number) => {
+        const updated = connectors.filter((_, idx) => idx !== index);
+        setConnectors(updated);
+    };
+
+    const handleInputChange = (key: keyof StationSubmission, value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            [key]: key === 'latitude' || key === 'longitude' ? parseFloat(value) : value
+        }));
+    };
+
+    const handleSave = (newStatus?: 'Approved' | 'Rejected', reason?: string) => {
+        if (!station || !formData) return;
+
         const updated: StationSubmission = {
-            ...station,
-            stationName,
-            stationNumber,
-            networkName,
-            usageType,
-            stationType,
-            operationalHours,
-            latitude: parseFloat(latitude),
-            longitude: parseFloat(longitude),
-            contactNumber,
+            ...station, // Keep ID, dates, etc.
+            ...formData as StationSubmission, // Overwrite with edited fields
             connectors,
         };
+
+        if (newStatus) {
+            updated.status = newStatus;
+            if (newStatus === 'Approved') {
+                updated.approvalDate = new Date().toISOString();
+                updated.statusReason = undefined;
+            } else if (newStatus === 'Rejected') {
+                updated.statusReason = reason;
+                updated.approvalDate = undefined;
+            }
+        }
 
         onSave(updated);
         onClose();
     };
+
+    const handleReject = () => {
+        const reason = window.prompt("Please enter a reason for rejection:");
+        if (reason !== null) {
+            handleSave('Rejected', reason);
+        }
+    };
+
+
 
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
@@ -143,232 +238,132 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
                 </div>
 
                 <div className="space-y-6 pb-6">
-                    {/* Station Information Section */}
-                    <div>
-                        <h4 className="mb-3 text-sm font-semibold text-dark dark:text-white uppercase tracking-wide">
-                            Station Information
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Station Name <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={stationName}
-                                    onChange={(e) => setStationName(e.target.value)}
-                                    placeholder="Enter station name"
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Station Number
-                                </label>
-                                <input
-                                    type="text"
-                                    value={stationNumber}
-                                    onChange={(e) => setStationNumber(e.target.value)}
-                                    placeholder="e.g., GPCS-001"
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Network Name <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={networkName}
-                                    onChange={(e) => setNetworkName(e.target.value)}
-                                    placeholder="e.g., Tata Power"
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Station Type
-                                </label>
-                                <input
-                                    type="text"
-                                    value={stationType}
-                                    onChange={(e) => setStationType(e.target.value)}
-                                    placeholder="e.g., Mall, Highway, Residential"
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Usage Type <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={usageType}
-                                    onChange={(e) => setUsageType(e.target.value as "Public" | "Private")}
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                >
-                                    <option value="Public">Public</option>
-                                    <option value="Private">Private</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Operational Hours
-                                </label>
-                                <input
-                                    type="text"
-                                    value={operationalHours}
-                                    onChange={(e) => setOperationalHours(e.target.value)}
-                                    placeholder="e.g., 24/7 or 9 AM - 6 PM"
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                />
+                    {/* Dynamic Station Fields */}
+                    {["Station Information", "Location & Contact"].map((section) => (
+                        <div key={section}>
+                            <h4 className="mb-3 text-sm font-semibold text-dark dark:text-white uppercase tracking-wide">
+                                {section}
+                            </h4>
+                            <div className={`grid grid-cols-1 ${section === "Location & Contact" ? "md:grid-cols-3" : "md:grid-cols-2"} gap-4`}>
+                                {STATION_FIELDS.filter(f => f.section === section).map((field) => (
+                                    <div key={field.key}>
+                                        <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+                                            {field.label} {field.required && <span className="text-red-500">*</span>}
+                                        </label>
+                                        {field.type === "select" ? (
+                                            <select
+                                                value={(formData[field.key] as string) || ""}
+                                                onChange={(e) => handleInputChange(field.key, e.target.value)}
+                                                className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
+                                            >
+                                                {field.options?.map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type={field.type}
+                                                step={field.type === "number" ? "any" : undefined}
+                                                value={formData[field.key] !== undefined && formData[field.key] !== null ? String(formData[field.key]) : ""}
+                                                onChange={(e) => handleInputChange(field.key, e.target.value)}
+                                                placeholder={field.placeholder}
+                                                className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
+                                            />
+                                        )}
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </div>
-
-                    {/* Location & Contact Section */}
-                    <div>
-                        <h4 className="mb-3 text-sm font-semibold text-dark dark:text-white uppercase tracking-wide">
-                            Location & Contact
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Latitude <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    value={latitude}
-                                    onChange={(e) => setLatitude(e.target.value)}
-                                    placeholder="e.g., 28.556"
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Longitude <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    value={longitude}
-                                    onChange={(e) => setLongitude(e.target.value)}
-                                    placeholder="e.g., 77.09"
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                />
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Contact Number <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={contactNumber}
-                                    onChange={(e) => setContactNumber(e.target.value)}
-                                    placeholder="+91XXXXXXXXXX"
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                />
-                            </div>
-                        </div>
-                    </div>
+                    ))}
 
                     {/* Connector Configuration Section */}
                     <div>
                         <h4 className="mb-3 text-sm font-semibold text-dark dark:text-white uppercase tracking-wide">
                             Connector Configuration
                         </h4>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                    Select Connector to Edit
-                                </label>
-                                <select
-                                    value={selectedConnectorIdx}
-                                    onChange={(e) => setSelectedConnectorIdx(Number(e.target.value))}
-                                    className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                >
-                                    {connectors.map((conn, idx) => (
-                                        <option key={idx} value={idx}>
-                                            Connector {idx + 1}: {conn.name} ({conn.type}) - {conn.count}x
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {connectors.map((connector, idx) => (
+                                <div key={idx} className="rounded-lg border border-stroke p-4 dark:border-dark-3 bg-gray-50 dark:bg-dark-2 relative group">
+                                    <div className="flex justify-between items-center mb-3 border-b border-stroke dark:border-dark-3 pb-2">
+                                        <h5 className="text-sm font-bold text-dark dark:text-white">
+                                            Connector #{idx + 1}
+                                        </h5>
+                                        <button
+                                            onClick={() => handleDeleteConnector(idx)}
+                                            className="text-red-500 hover:text-red-700 transition-colors p-1"
+                                            title="Delete Connector"
+                                        >
+                                            <XIcon className="h-4 w-4" />
+                                        </button>
+                                    </div>
 
-                            {connectors[selectedConnectorIdx] && (
-                                <div className="rounded-lg border border-stroke p-4 dark:border-dark-3 bg-gray-50 dark:bg-dark-2">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                                Connector Name
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={connectors[selectedConnectorIdx].name}
-                                                onChange={(e) => handleConnectorChange('name', e.target.value)}
-                                                placeholder="e.g., CCS 2, Type 2"
-                                                className="w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                                Count
-                                            </label>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                value={connectors[selectedConnectorIdx].count}
-                                                onChange={(e) => handleConnectorChange('count', e.target.value)}
-                                                className="w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                                Type
-                                            </label>
-                                            <select
-                                                value={connectors[selectedConnectorIdx].type}
-                                                onChange={(e) => handleConnectorChange('type', e.target.value)}
-                                                className="w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
-                                            >
-                                                <option value="AC">AC</option>
-                                                <option value="DC">DC</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                                Power Rating
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={connectors[selectedConnectorIdx].powerRating || ""}
-                                                onChange={(e) => handleConnectorChange('powerRating', e.target.value)}
-                                                placeholder="e.g., 50 kW, 7.4 kW"
-                                                className="w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
-                                            />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                                Tariff
-                                            </label>
-                                            <input
-                                                type="text"
-                                                value={connectors[selectedConnectorIdx].tariff || ""}
-                                                onChange={(e) => handleConnectorChange('tariff', e.target.value)}
-                                                placeholder="e.g., ₹18/kWh, ₹12/kWh"
-                                                className="w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
-                                            />
+                                    <div className="flex flex-col gap-3">
+                                        {/* Dynamic Connector Fields */}
+                                        <div className="flex flex-wrap -mx-1">
+                                            {CONNECTOR_FIELDS.map((field) => (
+                                                <div key={field.key} className={`${field.width === 'half' ? 'w-1/2' : 'w-full'} px-1 mb-2`}>
+                                                    <label className="mb-1 block text-xs font-medium text-dark dark:text-white">
+                                                        {field.label}
+                                                    </label>
+                                                    {field.type === 'select' ? (
+                                                        <select
+                                                            value={connector[field.key] as string}
+                                                            onChange={(e) => handleConnectorChange(idx, field.key, e.target.value)}
+                                                            className="w-full rounded border-[1.5px] border-stroke bg-white px-2 py-1.5 text-sm text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
+                                                        >
+                                                            {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                                                        </select>
+                                                    ) : (
+                                                        <input
+                                                            type={field.type}
+                                                            min={field.type === 'number' ? "1" : undefined}
+                                                            value={connector[field.key] || ""}
+                                                            onChange={(e) => handleConnectorChange(idx, field.key, e.target.value)}
+                                                            className="w-full rounded border-[1.5px] border-stroke bg-white px-2 py-1.5 text-sm text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
+                                                        />
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
-                            )}
+                            ))}
+
+                            {/* Add New Connector Card */}
+                            <button
+                                onClick={handleAddConnector}
+                                className="flex min-h-[250px] flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5 p-6 hover:bg-primary/10 transition-colors"
+                            >
+                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                </div>
+                                <span className="font-medium text-primary">Add New Connector</span>
+                            </button>
                         </div>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="flex gap-3 pt-4 border-t border-stroke dark:border-dark-3">
+                        {station.status === 'Pending' && (
+                            <>
+                                <button
+                                    onClick={() => handleSave('Approved')}
+                                    className="flex-1 rounded-lg bg-green-500 px-6 py-3 font-medium text-white hover:bg-green-600 transition-colors"
+                                >
+                                    Approve
+                                </button>
+                                <button
+                                    onClick={handleReject}
+                                    className="flex-1 rounded-lg bg-red-500 px-6 py-3 font-medium text-white hover:bg-red-600 transition-colors"
+                                >
+                                    Reject
+                                </button>
+                            </>
+                        )}
                         <button
-                            onClick={handleSave}
+                            onClick={() => handleSave()}
                             className="flex-1 rounded-lg bg-primary px-6 py-3 font-medium text-white hover:bg-primary/90 transition-colors"
                         >
                             Save Changes
@@ -394,10 +389,9 @@ export default function StationSubmissionsTable({
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
-    // Filters
+    // Dynamic Filters State
+    const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
     const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState<string>("All");
-    const [networkFilter, setNetworkFilter] = useState<string>("All");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
 
@@ -414,28 +408,54 @@ export default function StationSubmissionsTable({
         setMounted(true);
     }, []);
 
-    const networks = useMemo(() => Array.from(new Set(data.map((item) => item.networkName))), [data]);
+    // Derived unique values for each filter key
+    const filterOptions = useMemo(() => {
+        const options: Record<string, string[]> = {};
+        FILTER_CONFIG.forEach(({ key }) => {
+            const uniqueValues = Array.from(new Set(data.map((item) => String(item[key] || ""))));
+            options[key] = uniqueValues.filter(Boolean).sort();
+        });
+        return options;
+    }, [data]);
 
     const filteredData = useMemo(() => {
         return data.filter((item) => {
-            const matchesSearch =
-                item.stationName.toLowerCase().includes(search.toLowerCase()) ||
-                item.userName.toLowerCase().includes(search.toLowerCase()) ||
-                item.networkName.toLowerCase().includes(search.toLowerCase());
+            // 1. Search Logic
+            const matchesSearch = search === "" || SEARCH_FIELDS.some((field) => {
+                const val = item[field];
+                return val && String(val).toLowerCase().includes(search.toLowerCase());
+            });
 
-            const matchesStatus =
-                statusFilter === "All" || item.status === statusFilter;
+            // 2. Dynamic Filters Logic
+            const matchesFilters = FILTER_CONFIG.every(({ key }) => {
+                const activeValue = activeFilters[key];
+                // If no filter selected for this key (or "All"), match everything
+                if (!activeValue || activeValue === "All") return true;
+                return String(item[key]) === activeValue;
+            });
 
-            const matchesNetwork =
-                networkFilter === "All" || item.networkName === networkFilter;
-
+            // 3. Date Range Logic
             const matchesDate =
                 (!startDate || new Date(item.submissionDate) >= new Date(startDate)) &&
                 (!endDate || new Date(item.submissionDate) <= new Date(endDate));
 
-            return matchesSearch && matchesStatus && matchesNetwork && matchesDate;
+            return matchesSearch && matchesFilters && matchesDate;
         });
-    }, [data, search, statusFilter, networkFilter, startDate, endDate]);
+    }, [data, search, activeFilters, startDate, endDate]);
+
+    // Handlers
+    const handleFilterChange = (key: string, value: string) => {
+        setActiveFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const clearFilters = () => {
+        setActiveFilters({});
+        setSearch("");
+        setStartDate("");
+        setEndDate("");
+    };
+
+
 
     const totalPages = Math.ceil(filteredData.length / rowsPerPage);
     const startIndex = (currentPage - 1) * rowsPerPage;
@@ -541,6 +561,99 @@ export default function StationSubmissionsTable({
         document.body.removeChild(link);
     };
 
+    const columns: ColumnConfig[] = useMemo(() => [
+        { header: "ID", accessor: "id", minWidth: "60px" },
+        {
+            header: "Date",
+            minWidth: "100px",
+            render: (item: StationSubmission) => new Date(item.submissionDate).toLocaleDateString()
+        },
+        { header: "Customer Name", accessor: "userName", minWidth: "150px", render: (item: StationSubmission) => <span className="text-primary font-medium">{item.userName}</span> },
+        { header: "Customer Phone", accessor: "contactNumber", minWidth: "130px" },
+        { header: "Latitude", accessor: "latitude", minWidth: "100px" },
+        { header: "Longitude", accessor: "longitude", minWidth: "100px" },
+        { header: "Network Name", accessor: "networkName", minWidth: "150px", render: (item: StationSubmission) => <span className="font-medium">{item.networkName}</span> },
+        { header: "Station Name", accessor: "stationName", minWidth: "180px" },
+        { header: "Station Number", accessor: "stationNumber", minWidth: "130px", render: (item: StationSubmission) => item.stationNumber || "-" },
+        {
+            header: "Connector Type",
+            minWidth: "120px",
+            isConnector: true,
+            renderConnector: (c: Connector) => c.type
+        },
+        {
+            header: "Connectors",
+            minWidth: "150px",
+            isConnector: true,
+            renderConnector: (c: Connector) => `${c.count}x ${c.name}`
+        },
+        {
+            header: "Power Rating",
+            minWidth: "120px",
+            isConnector: true,
+            renderConnector: (c: Connector) => c.powerRating || "-"
+        },
+        {
+            header: "Tariff",
+            minWidth: "100px",
+            isConnector: true,
+            renderConnector: (c: Connector) => c.tariff || "-"
+        },
+        {
+            header: "Usage Type",
+            minWidth: "100px",
+            render: (item: StationSubmission) => (
+                <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${item.usageType === 'Public' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
+                    {item.usageType}
+                </span>
+            )
+        },
+        { header: "Operational Hr", accessor: "operationalHours", minWidth: "140px", render: (item: StationSubmission) => item.operationalHours || "-" },
+        {
+            header: "Photo",
+            minWidth: "80px",
+            render: (item: StationSubmission) => item.photos.length > 0 ? (
+                <button
+                    onClick={() => handlePhotoClick(item.photos, item.stationName)}
+                    className="text-sm font-medium text-primary hover:underline"
+                >
+                    {item.photos.length}
+                </button>
+            ) : <span className="text-gray-500">0</span>
+        },
+        {
+            header: "Status",
+            minWidth: "100px",
+            render: (item: StationSubmission) => (
+                <span
+                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.status === "Approved"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                        : item.status === "Rejected"
+                            ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                        }`}
+                >
+                    {item.status}
+                </span>
+            )
+        },
+        { header: "EVolts", accessor: "eVolts", minWidth: "80px", align: "center", render: (item: StationSubmission) => <span className="font-bold">{item.status === "Approved" ? item.eVolts : 0}</span> },
+        { header: "Approval Date", minWidth: "120px", render: (item: StationSubmission) => item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-" },
+        {
+            header: "Actions",
+            minWidth: "100px",
+            render: (item: StationSubmission) => (
+                <button
+                    onClick={() => handleActionClick(item)}
+                    className="text-dark hover:text-primary dark:text-white"
+                    title="Edit"
+                >
+                    <PencilSquareIcon className="h-5 w-5" />
+                </button>
+            )
+        }
+    ], [handlePhotoClick, handleActionClick]);
+
     return (
         <div className="max-w-full rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
             {/* Header and Filters */}
@@ -566,32 +679,31 @@ export default function StationSubmissionsTable({
 
                     <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
                         {/* Status Filter */}
-                        <div className="relative">
-                            <select
-                                value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="appearance-none rounded-lg border border-stroke bg-transparent px-3 py-2 text-sm font-medium text-dark outline-none hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 pr-8"
-                            >
-                                <option value="All">All Status</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Approved">Approved</option>
-                                <option value="Rejected">Rejected</option>
-                            </select>
-                            <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
-                        </div>
+                        {/* Dynamic Filters */}
+                        {FILTER_CONFIG.map((filter) => (
+                            <div key={filter.key} className="relative">
+                                <select
+                                    value={activeFilters[filter.key] || "All"}
+                                    onChange={(e) => handleFilterChange(filter.key, e.target.value)}
+                                    className="appearance-none rounded-lg border border-stroke bg-transparent px-3 py-2 text-sm font-medium text-dark outline-none hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 pr-8 max-w-[150px]"
+                                >
+                                    <option value="All">All {filter.label === 'Status' ? 'Status' : filter.label + 's'}</option>
+                                    {filterOptions[filter.key]?.map((opt) => (
+                                        <option key={opt} value={opt}>{opt}</option>
+                                    ))}
+                                </select>
+                                <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
+                            </div>
+                        ))}
 
-                        {/* Network Filter */}
-                        <div className="relative">
-                            <select
-                                value={networkFilter}
-                                onChange={(e) => setNetworkFilter(e.target.value)}
-                                className="appearance-none rounded-lg border border-stroke bg-transparent px-3 py-2 text-sm font-medium text-dark outline-none hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 pr-8"
+                        {(Object.keys(activeFilters).length > 0 || startDate || endDate || search) && (
+                            <button
+                                onClick={clearFilters}
+                                className="text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400"
                             >
-                                <option value="All">All Networks</option>
-                                {networks.map(n => <option key={n} value={n}>{n}</option>)}
-                            </select>
-                            <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
-                        </div>
+                                Clear
+                            </button>
+                        )}
 
                         <button
                             onClick={() => setIsFilterOpen(true)}
@@ -637,66 +749,15 @@ export default function StationSubmissionsTable({
                 <Table>
                     <TableHeader>
                         <TableRow className="border-t border-stroke bg-green-light-7 hover:bg-green-light-7 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-dark-2">
-                            <TableHead className="min-w-[60px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                ID
-                            </TableHead>
-                            <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Date
-                            </TableHead>
-                            <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Customer Name
-                            </TableHead>
-                            <TableHead className="min-w-[130px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Customer Phone
-                            </TableHead>
-                            <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Latitude
-                            </TableHead>
-                            <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Longitude
-                            </TableHead>
-                            <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Network Name
-                            </TableHead>
-                            <TableHead className="min-w-[180px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Station Name
-                            </TableHead>
-                            <TableHead className="min-w-[130px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Station Number
-                            </TableHead>
-                            <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Connector Type
-                            </TableHead>
-                            <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Connectors
-                            </TableHead>
-                            <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Power Rating
-                            </TableHead>
-                            <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Tariff
-                            </TableHead>
-                            <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Usage Type
-                            </TableHead>
-                            <TableHead className="min-w-[140px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Operational Hr
-                            </TableHead>
-                            <TableHead className="min-w-[80px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Photo
-                            </TableHead>
-                            <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Status
-                            </TableHead>
-                            <TableHead className="min-w-[80px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                EVolt
-                            </TableHead>
-                            <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Approval Date
-                            </TableHead>
-                            <TableHead className="px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                Actions
-                            </TableHead>
+                            {columns.map((col, idx) => (
+                                <TableHead
+                                    key={idx}
+                                    className={`px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap ${col.minWidth ? `min-w-[${col.minWidth}]` : ''}`}
+                                    style={{ minWidth: col.minWidth, textAlign: col.align }}
+                                >
+                                    {col.header}
+                                </TableHead>
+                            ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -707,197 +768,47 @@ export default function StationSubmissionsTable({
 
                                 return (
                                     <React.Fragment key={item.id}>
-                                        {/* Main Row */}
                                         <TableRow className="border-t border-stroke dark:border-dark-3">
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm font-medium text-dark dark:text-white">
-                                                    {item.id}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                    {new Date(item.submissionDate).toLocaleDateString()}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-primary font-medium">
-                                                    {item.userName}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white">{item.contactNumber}</p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white">{item.latitude}</p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white">{item.longitude}</p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white font-medium">
-                                                    {item.networkName}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white">{item.stationName}</p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white">{item.stationNumber || "-"}</p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <div className="flex items-center gap-2">
-                                                    <p className="text-sm text-dark dark:text-white">
-                                                        {hasMultipleConnectors && !isExpanded
-                                                            ? Array.from(new Set(item.connectors.map(c => c.type))).join('/')
-                                                            : item.connectors[0].type}
-                                                    </p>
-                                                    {hasMultipleConnectors && (
-                                                        <button
-                                                            onClick={() => toggleExpand(item.id)}
-                                                            className="text-primary hover:text-primary/80"
-                                                        >
-                                                            <ChevronDownIcon className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="text-sm text-dark dark:text-white">
-                                                        {hasMultipleConnectors && !isExpanded ? (
-                                                            <div className="flex flex-col gap-0.5">
-                                                                {item.connectors.map((c, idx) => (
-                                                                    <div key={idx}>
-                                                                        {c.count}x {c.name}
-                                                                    </div>
-                                                                ))}
+                                            {columns.map((col, idx) => (
+                                                <TableCell key={idx} className="px-4 py-4 dark:border-dark-3" align={col.align}>
+                                                    {col.isConnector ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="text-sm text-dark dark:text-white">
+                                                                {hasMultipleConnectors ? "Multiple" : col.renderConnector?.(item.connectors[0])}
                                                             </div>
-                                                        ) : (
-                                                            `${item.connectors[0].count}x ${item.connectors[0].name}`
-                                                        )}
-                                                    </div>
-                                                    {hasMultipleConnectors && (
-                                                        <button
-                                                            onClick={() => toggleExpand(item.id)}
-                                                            className="text-primary hover:text-primary/80"
-                                                        >
-                                                            <ChevronDownIcon className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                                        </button>
+                                                            {hasMultipleConnectors && (
+                                                                <button
+                                                                    onClick={() => toggleExpand(item.id)}
+                                                                    className="text-primary hover:text-primary/80"
+                                                                >
+                                                                    <ChevronDownIcon className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-sm text-dark dark:text-white">
+                                                            {col.render ? col.render(item) : (item[col.accessor as keyof StationSubmission] as React.ReactNode)}
+                                                        </div>
                                                     )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white">
-                                                    {hasMultipleConnectors && !isExpanded
-                                                        ? "Multiple"
-                                                        : item.connectors[0].powerRating || "-"}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="text-sm text-dark dark:text-white">
-                                                        {hasMultipleConnectors && !isExpanded ? (
-                                                            <div className="flex flex-col gap-0.5">
-                                                                {item.connectors.map((c, idx) => (
-                                                                    <div key={idx}>
-                                                                        {c.tariff || "-"}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            item.connectors[0].tariff || "-"
-                                                        )}
-                                                    </div>
-                                                    {hasMultipleConnectors && (
-                                                        <button
-                                                            onClick={() => toggleExpand(item.id)}
-                                                            className="text-primary hover:text-primary/80"
-                                                        >
-                                                            <ChevronDownIcon className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${item.usageType === 'Public' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
-                                                    {item.usageType}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white">
-                                                    {item.operationalHours || "-"}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                {item.photos.length > 0 ? (
-                                                    <button
-                                                        onClick={() => handlePhotoClick(item.photos, item.stationName)}
-                                                        className="text-sm font-medium text-primary hover:underline"
-                                                    >
-                                                        {item.photos.length}
-                                                    </button>
-                                                ) : (
-                                                    <p className="text-sm text-gray-500">0</p>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <span
-                                                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.status === "Approved"
-                                                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                                        : item.status === "Rejected"
-                                                            ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                                        }`}
-                                                >
-                                                    {item.status}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm font-bold text-dark dark:text-white text-center">
-                                                    {item.status === "Approved" ? item.eVolts : 0}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                    {item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-"}
-                                                </p>
-                                            </TableCell>
-                                            <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                <button
-                                                    onClick={() => handleActionClick(item)}
-                                                    className="text-dark hover:text-primary dark:text-white"
-                                                    title="Edit"
-                                                >
-                                                    <PencilSquareIcon className="h-5 w-5" />
-                                                </button>
-                                            </TableCell>
+                                                </TableCell>
+                                            ))}
                                         </TableRow>
 
-                                        {/* Expanded Connector Rows */}
-                                        {isExpanded && hasMultipleConnectors && item.connectors.map((connector, idx) => (
-                                            <TableRow key={`${item.id}-connector-${idx}`} className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-dark-3">
-                                                <TableCell colSpan={9} className="px-4 py-2"></TableCell>
-                                                <TableCell className="px-4 py-2 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white pl-6">
-                                                        {connector.type}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell className="px-4 py-2 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white pl-6">
-                                                        {connector.count}x {connector.name}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell className="px-4 py-2 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white">
-                                                        {connector.powerRating || "-"}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell className="px-4 py-2 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white">
-                                                        {connector.tariff || "-"}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell colSpan={7} className="px-4 py-2"></TableCell>
+                                        {/* Expanded Connector Rows - Dynamic */}
+                                        {isExpanded && hasMultipleConnectors && item.connectors.map((connector, cIdx) => (
+                                            <TableRow key={`${item.id}-c-${cIdx}`} className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-dark-3">
+                                                {columns.map((col, idx) => (
+                                                    <TableCell key={idx} className="px-4 py-2 dark:border-dark-3">
+                                                        {col.isConnector ? (
+                                                            <div className="text-sm text-dark dark:text-white pl-0">
+                                                                {col.renderConnector?.(connector)}
+                                                            </div>
+                                                        ) : (
+                                                            // Empty cells for non-connector columns to maintain alignment
+                                                            <div />
+                                                        )}
+                                                    </TableCell>
+                                                ))}
                                             </TableRow>
                                         ))}
                                     </React.Fragment>
@@ -905,7 +816,7 @@ export default function StationSubmissionsTable({
                             })
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={20} className="h-24 text-center">
+                                <TableCell colSpan={columns.length} className="h-24 text-center">
                                     <p className="text-sm text-dark dark:text-white">
                                         No submissions found.
                                     </p>

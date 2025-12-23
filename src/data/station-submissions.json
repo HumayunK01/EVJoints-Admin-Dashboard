@@ -226,5 +226,262 @@
         "latitude": 17.3850,
         "longitude": 78.4867,
         "eVolts": 0
+    },
+    {
+        "id": 8,
+        "submissionDate": "2024-12-09T11:00:00Z",
+        "stationName": "Westside EV Spot",
+        "stationNumber": "WES-008",
+        "userName": "Farhan Ansari",
+        "userId": "farhan.ansari92@yahoo.com",
+        "networkName": "Tata Power",
+        "usageType": "Public",
+        "stationType": "Mall",
+        "operationalHours": "10 AM - 10 PM",
+        "connectors": [
+            {
+                "name": "CCS 2",
+                "count": 2,
+                "type": "DC",
+                "powerRating": "30 kW",
+                "tariff": "₹19/kWh"
+            }
+        ],
+        "photos": [
+            "photo11.jpg"
+        ],
+        "status": "Approved",
+        "approvalDate": "2024-12-10T09:15:00Z",
+        "contactNumber": "+919834522110",
+        "latitude": 22.5726,
+        "longitude": 88.3639,
+        "eVolts": 3
+    },
+    {
+        "id": 9,
+        "submissionDate": "2024-12-10T14:30:00Z",
+        "stationName": "Iyer Eco Point",
+        "stationNumber": "IEP-009",
+        "userName": "Meera Iyer",
+        "userId": "meera.iyer@protonmail.com",
+        "networkName": "Private",
+        "usageType": "Private",
+        "stationType": "Residential",
+        "operationalHours": "24/7",
+        "connectors": [
+            {
+                "name": "Wall Socket",
+                "count": 1,
+                "type": "AC",
+                "powerRating": "3.3 kW",
+                "tariff": "₹0/kWh"
+            }
+        ],
+        "photos": [],
+        "status": "Pending",
+        "contactNumber": "+917209887643",
+        "latitude": 12.9716,
+        "longitude": 77.5946,
+        "eVolts": 0
+    },
+    {
+        "id": 10,
+        "submissionDate": "2024-12-11T08:45:00Z",
+        "stationName": "Punjab Highway Stop",
+        "stationNumber": "PHS-010",
+        "userName": "Karan Bansal",
+        "userId": "karan.bansal04@gmail.com",
+        "networkName": "Statiq",
+        "usageType": "Public",
+        "stationType": "Highway",
+        "operationalHours": "24/7",
+        "connectors": [
+            {
+                "name": "CCS 2",
+                "count": 4,
+                "type": "DC",
+                "powerRating": "150 kW",
+                "tariff": "₹21/kWh"
+            },
+            {
+                "name": "Type 2",
+                "count": 2,
+                "type": "AC",
+                "powerRating": "22 kW",
+                "tariff": "₹15/kWh"
+            }
+        ],
+        "photos": [
+            "photo12.jpg",
+            "photo13.jpg",
+            "photo14.jpg"
+        ],
+        "status": "Approved",
+        "approvalDate": "2024-12-12T10:00:00Z",
+        "contactNumber": "+919781446220",
+        "latitude": 30.9010,
+        "longitude": 75.8573,
+        "eVolts": 3
+    },
+    {
+        "id": 11,
+        "submissionDate": "2024-12-12T16:20:00Z",
+        "stationName": "Lake View Charge",
+        "stationNumber": "LVC-011",
+        "userName": "Sana Qureshi",
+        "userId": "sana.qureshi99@gmail.com",
+        "networkName": "Jio-bp",
+        "usageType": "Public",
+        "stationType": "Tourist Spot",
+        "operationalHours": "6 AM - 8 PM",
+        "connectors": [
+            {
+                "name": "GB/T",
+                "count": 2,
+                "type": "DC",
+                "powerRating": "30 kW",
+                "tariff": "₹17/kWh"
+            }
+        ],
+        "photos": [
+            "photo15.jpg"
+        ],
+        "status": "Pending",
+        "contactNumber": "+919537662480",
+        "latitude": 23.2599,
+        "longitude": 77.4126,
+        "eVolts": 0
+    },
+    {
+        "id": 12,
+        "submissionDate": "2024-12-13T12:00:00Z",
+        "stationName": "Cyber City Hub",
+        "stationNumber": "CCH-012",
+        "userName": "Rohan Verma",
+        "userId": "rohan.v07@outlook.com",
+        "networkName": "BluSmart",
+        "usageType": "Public",
+        "stationType": "Office Complex",
+        "operationalHours": "8 AM - 10 PM",
+        "connectors": [
+            {
+                "name": "CCS 2",
+                "count": 6,
+                "type": "DC",
+                "powerRating": "60 kW",
+                "tariff": "₹18/kWh"
+            }
+        ],
+        "photos": [
+            "photo16.jpg",
+            "photo17.jpg"
+        ],
+        "status": "Approved",
+        "approvalDate": "2024-12-14T11:30:00Z",
+        "contactNumber": "+918240113578",
+        "latitude": 28.4595,
+        "longitude": 77.0266,
+        "eVolts": 3
+    },
+    {
+        "id": 13,
+        "submissionDate": "2024-12-14T09:10:00Z",
+        "stationName": "Pink City Charger",
+        "stationNumber": "PCC-013",
+        "userName": "Divya Rathore",
+        "userId": "divya.rathore@icloud.com",
+        "networkName": "Rajasthan EV",
+        "usageType": "Public",
+        "stationType": "Hotel",
+        "operationalHours": "24/7",
+        "connectors": [
+            {
+                "name": "Type 2",
+                "count": 3,
+                "type": "AC",
+                "powerRating": "7.4 kW",
+                "tariff": "₹12/kWh"
+            },
+            {
+                "name": "CCS 2",
+                "count": 1,
+                "type": "DC",
+                "powerRating": "25 kW",
+                "tariff": "₹16/kWh"
+            }
+        ],
+        "photos": [
+            "photo18.jpg"
+        ],
+        "status": "Rejected",
+        "statusReason": "Incomplete documentation",
+        "contactNumber": "+917958441220",
+        "latitude": 26.9124,
+        "longitude": 75.7873,
+        "eVolts": 0
+    },
+    {
+        "id": 14,
+        "submissionDate": "2024-12-15T15:50:00Z",
+        "stationName": "Delhi Central Power",
+        "stationNumber": "DCP-014",
+        "userName": "Mohit Chauhan",
+        "userId": "mohit.chauhan77@yahoo.com",
+        "networkName": "BSES",
+        "usageType": "Public",
+        "stationType": "Public Parking",
+        "operationalHours": "24/7",
+        "connectors": [
+            {
+                "name": "Bharat DC001",
+                "count": 4,
+                "type": "DC",
+                "powerRating": "15 kW",
+                "tariff": "₹14/kWh"
+            }
+        ],
+        "photos": [],
+        "status": "Pending",
+        "contactNumber": "+919811225934",
+        "latitude": 28.7041,
+        "longitude": 77.1025,
+        "eVolts": 0
+    },
+    {
+        "id": 15,
+        "submissionDate": "2024-12-16T10:00:00Z",
+        "stationName": "Hilltop Charge",
+        "stationNumber": "HTC-015",
+        "userName": "Harleen Kaur",
+        "userId": "harleen.kaur22@gmail.com",
+        "networkName": "Private",
+        "usageType": "Private",
+        "stationType": "Hotel/Resort",
+        "operationalHours": "24/7",
+        "connectors": [
+            {
+                "name": "Wall Socket",
+                "count": 2,
+                "type": "AC",
+                "powerRating": "3.3 kW",
+                "tariff": "₹0/kWh"
+            },
+            {
+                "name": "Type 2",
+                "count": 1,
+                "type": "AC",
+                "powerRating": "11 kW",
+                "tariff": "₹10/kWh"
+            }
+        ],
+        "photos": [
+            "photo19.jpg"
+        ],
+        "status": "Approved",
+        "approvalDate": "2024-12-17T09:00:00Z",
+        "contactNumber": "+918673552190",
+        "latitude": 31.1048,
+        "longitude": 77.1734,
+        "eVolts": 3
     }
 ]
