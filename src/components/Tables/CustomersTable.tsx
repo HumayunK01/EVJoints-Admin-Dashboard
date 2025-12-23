@@ -27,6 +27,62 @@ import {
 import { type Customer } from "@/lib/api";
 import { DateRangeFilter } from "./DateRangeFilter";
 
+// Configuration for columns that should show expand/collapse icons
+const EXPANDABLE_COLUMNS = [
+    'vehicleRegDate',
+    'registration_number',
+    'vehicleType',
+    'manufacturer',
+    'vehicleModel',
+    'vehicleVariant'
+] as const;
+
+// Helper function to check if a column should show expand/collapse icon
+const isExpandableColumn = (columnName: string): boolean => {
+    return EXPANDABLE_COLUMNS.includes(columnName as any);
+};
+
+// Helper component for cells with expand/collapse functionality
+interface ExpandableCellProps {
+    value: string | number;
+    hasMultipleEntries: boolean;
+    isExpanded: boolean;
+    onToggle: () => void;
+    showExpandIcon: boolean;
+    formatValue?: (value: string | number) => string;
+}
+
+const ExpandableCell = ({
+    value,
+    hasMultipleEntries,
+    isExpanded,
+    onToggle,
+    showExpandIcon,
+    formatValue
+}: ExpandableCellProps) => {
+    const displayValue = formatValue ? formatValue(value) : String(value);
+
+    return (
+        <div className="flex items-center gap-2">
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                {displayValue}
+            </p>
+            {hasMultipleEntries && showExpandIcon && (
+                <button
+                    onClick={onToggle}
+                    className="text-dark dark:text-white hover:text-primary flex-shrink-0"
+                >
+                    {isExpanded ? (
+                        <ChevronDownIcon className="h-5 w-5 rotate-180" />
+                    ) : (
+                        <ChevronDownIcon className="h-5 w-5" />
+                    )}
+                </button>
+            )}
+        </div>
+    );
+};
+
 interface CustomersTableProps {
     customers: Customer[];
 }
@@ -358,9 +414,6 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
             <Table>
                 <TableHeader>
                     <TableRow className="border-t border-stroke bg-green-light-7 hover:bg-green-light-7 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-dark-2">
-                        <TableHead className="w-[20px] px-2 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            {/* Chevron Column */}
-                        </TableHead>
                         {showCheckboxes && (
                             <TableHead className="w-[50px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                                 <input
@@ -434,27 +487,14 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                     {currentData.length > 0 ? (
                         currentData.map((customer, key) => {
                             const isExpanded = expandedRows.has(customer.email);
-                            const hasMultipleVehicles = customer.vehicles && customer.vehicles.length > 1;
+                            const hasMultipleVehicles = !!(customer.vehicles && customer.vehicles.length > 1);
 
                             return (
                                 <Fragment key={customer.email}>
                                     <TableRow
                                         className="border-t border-stroke dark:border-dark-3"
                                     >
-                                        <TableCell className="px-2 py-4">
-                                            {hasMultipleVehicles && (
-                                                <button
-                                                    onClick={() => toggleExpand(customer.email)}
-                                                    className="text-dark dark:text-white hover:text-primary"
-                                                >
-                                                    {isExpanded ? (
-                                                        <ChevronDownIcon className="h-5 w-5 rotate-180" />
-                                                    ) : (
-                                                        <ChevronDownIcon className="h-5 w-5" />
-                                                    )}
-                                                </button>
-                                            )}
-                                        </TableCell>
+
                                         {showCheckboxes && (
                                             <TableCell className="px-4 py-4">
                                                 <input
@@ -487,14 +527,23 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                             </p>
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {new Date(customer.vehicleRegDate).toLocaleDateString('en-GB')}
-                                            </p>
+                                            <ExpandableCell
+                                                value={customer.vehicleRegDate}
+                                                hasMultipleEntries={hasMultipleVehicles}
+                                                isExpanded={isExpanded}
+                                                onToggle={() => toggleExpand(customer.email)}
+                                                showExpandIcon={isExpandableColumn('vehicleRegDate')}
+                                                formatValue={(val) => new Date(String(val)).toLocaleDateString('en-GB')}
+                                            />
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.registration_number || "N/A"}
-                                            </p>
+                                            <ExpandableCell
+                                                value={customer.registration_number || "N/A"}
+                                                hasMultipleEntries={hasMultipleVehicles}
+                                                isExpanded={isExpanded}
+                                                onToggle={() => toggleExpand(customer.email)}
+                                                showExpandIcon={isExpandableColumn('registration_number')}
+                                            />
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <p className="text-sm text-dark dark:text-white whitespace-nowrap">
@@ -502,25 +551,41 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                             </p>
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.vehicleType}
-                                            </p>
+                                            <ExpandableCell
+                                                value={customer.vehicleType}
+                                                hasMultipleEntries={hasMultipleVehicles}
+                                                isExpanded={isExpanded}
+                                                onToggle={() => toggleExpand(customer.email)}
+                                                showExpandIcon={isExpandableColumn('vehicleType')}
+                                            />
                                         </TableCell>
 
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.manufacturer}
-                                            </p>
+                                            <ExpandableCell
+                                                value={customer.manufacturer}
+                                                hasMultipleEntries={hasMultipleVehicles}
+                                                isExpanded={isExpanded}
+                                                onToggle={() => toggleExpand(customer.email)}
+                                                showExpandIcon={isExpandableColumn('manufacturer')}
+                                            />
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.vehicleModel}
-                                            </p>
+                                            <ExpandableCell
+                                                value={customer.vehicleModel}
+                                                hasMultipleEntries={hasMultipleVehicles}
+                                                isExpanded={isExpanded}
+                                                onToggle={() => toggleExpand(customer.email)}
+                                                showExpandIcon={isExpandableColumn('vehicleModel')}
+                                            />
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.vehicleVariant}
-                                            </p>
+                                            <ExpandableCell
+                                                value={customer.vehicleVariant}
+                                                hasMultipleEntries={hasMultipleVehicles}
+                                                isExpanded={isExpanded}
+                                                onToggle={() => toggleExpand(customer.email)}
+                                                showExpandIcon={isExpandableColumn('vehicleVariant')}
+                                            />
                                         </TableCell>
                                         <TableCell className="px-4 py-4 dark:border-dark-3">
                                             <p className="text-sm text-dark dark:text-white whitespace-nowrap">
@@ -578,7 +643,6 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                                 key={`${customer.email}-v-${vIdx}`}
                                                 className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-white/5"
                                             >
-                                                <TableCell className="px-2 py-4"></TableCell>
                                                 {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
                                                 <TableCell className="px-4 py-4"></TableCell>
                                                 <TableCell className="px-4 py-4"></TableCell>
@@ -630,7 +694,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                         })
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={21} className="h-24 text-center">
+                            <TableCell colSpan={20} className="h-24 text-center">
                                 <p className="text-sm text-dark dark:text-white">
                                     No customers found.
                                 </p>
