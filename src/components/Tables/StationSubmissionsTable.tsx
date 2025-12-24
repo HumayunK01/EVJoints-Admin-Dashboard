@@ -24,6 +24,10 @@ import {
 import { PreviewIcon, DownloadIcon } from "@/components/Tables/icons";
 import { DateRangeFilter } from "@/components/Tables/DateRangeFilter";
 
+import { NETWORK_NAMES } from "@/data/networks";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { cn } from "@/lib/utils";
+
 interface ColumnConfig {
     header: string;
     minWidth?: string;
@@ -43,6 +47,7 @@ interface ModalFieldConfig {
     key: keyof StationSubmission;
     type: "text" | "number" | "select" | "tel";
     required?: boolean;
+    readOnly?: boolean;
     placeholder?: string;
     options?: string[]; // For select
     section: "Station Information" | "Location & Contact";
@@ -50,8 +55,15 @@ interface ModalFieldConfig {
 
 const STATION_FIELDS: ModalFieldConfig[] = [
     { label: "Station Name", key: "stationName", type: "text", required: true, placeholder: "Enter station name", section: "Station Information" },
-    { label: "Station Number", key: "stationNumber", type: "text", placeholder: "e.g., GPCS-001", section: "Station Information" },
-    { label: "Network Name", key: "networkName", type: "text", required: true, placeholder: "e.g., Tata Power", section: "Station Information" },
+    { label: "Stations ID", key: "stationNumber", type: "text", readOnly: true, section: "Station Information" },
+    {
+        label: "Network Name",
+        key: "networkName",
+        type: "select",
+        required: true,
+        options: NETWORK_NAMES,
+        section: "Station Information"
+    },
     { label: "Station Type", key: "stationType", type: "text", placeholder: "e.g., Mall, Highway, Residential", section: "Station Information" },
     { label: "Added By", key: "addedByType", type: "select", options: ["EV Owner", "Station Owner", "CPO"], section: "Station Information" },
     { label: "Usage Type", key: "usageType", type: "select", required: true, options: ["Public", "Private"], section: "Station Information" },
@@ -252,15 +264,13 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
                                             {field.label} {field.required && <span className="text-red-500">*</span>}
                                         </label>
                                         {field.type === "select" ? (
-                                            <select
+                                            <SearchableSelect
+                                                options={field.options || []}
                                                 value={(formData[field.key] as string) || ""}
-                                                onChange={(e) => handleInputChange(field.key, e.target.value)}
-                                                className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                                            >
-                                                {field.options?.map(opt => (
-                                                    <option key={opt} value={opt}>{opt}</option>
-                                                ))}
-                                            </select>
+                                                onChange={(val) => handleInputChange(field.key, val)}
+                                                placeholder={`Select ${field.label}...`}
+                                                hideSearch={field.options && field.options.length <= 5}
+                                            />
                                         ) : (
                                             <input
                                                 type={field.type}
@@ -268,7 +278,11 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
                                                 value={formData[field.key] !== undefined && formData[field.key] !== null ? String(formData[field.key]) : ""}
                                                 onChange={(e) => handleInputChange(field.key, e.target.value)}
                                                 placeholder={field.placeholder}
-                                                className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
+                                                readOnly={field.readOnly}
+                                                className={cn(
+                                                    "w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white",
+                                                    field.readOnly && "cursor-not-allowed bg-gray-100 dark:bg-dark-2 text-gray-500"
+                                                )}
                                             />
                                         )}
                                     </div>
@@ -514,7 +528,7 @@ export default function StationSubmissionsTable({
             "Longitude",
             "Network Name",
             "Station Name",
-            "Station Number",
+            "Stations ID",
             "Connector Type",
             "Connectors",
             "Power Rating",
@@ -587,7 +601,7 @@ export default function StationSubmissionsTable({
         { header: "Longitude", accessor: "longitude", minWidth: "100px" },
         { header: "Network Name", accessor: "networkName", minWidth: "150px", render: (item: StationSubmission) => <span className="font-medium">{item.networkName}</span> },
         { header: "Station Name", accessor: "stationName", minWidth: "180px" },
-        { header: "Station Number", accessor: "stationNumber", minWidth: "130px", render: (item: StationSubmission) => item.stationNumber || "-" },
+        { header: "Stations ID", accessor: "stationNumber", minWidth: "130px", render: (item: StationSubmission) => item.stationNumber || "-" },
         {
             header: "Connector Type",
             minWidth: "120px",
