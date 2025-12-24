@@ -239,9 +239,14 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
             <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-white px-6 dark:bg-gray-dark">
                 <div className="mb-6 flex items-center justify-between sticky top-0 z-10 bg-white dark:bg-gray-dark -mx-6 px-6 pt-6 pb-4 border-b border-stroke dark:border-dark-3">
-                    <h3 className="text-xl font-bold text-dark dark:text-white">
-                        Edit Station Details
-                    </h3>
+                    <div>
+                        <h3 className="text-xl font-bold text-dark dark:text-white">
+                            Edit Station Details
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Submitted on {new Date(station.submissionDate).toLocaleDateString()} at {new Date(station.submissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                    </div>
                     <button
                         onClick={onClose}
                         className="text-dark hover:text-red-600 dark:text-white"
@@ -522,28 +527,31 @@ export default function StationSubmissionsTable({
         const headers = [
             "ID",
             "Date",
+            "Time",
             "Customer Name",
             "Customer Phone",
-            "Latitude",
-            "Longitude",
-            "Network Name",
+            "Lat",
+            "Long",
+            "Network",
             "Station Name",
-            "Stations ID",
-            "Connector Type",
+            "Station ID",
+            "Connector Types",
             "Connectors",
-            "Power Rating",
+            "Power",
             "Tariff",
-            "Usage Type",
-            "Operational Hours",
+            "Usage",
+            "Hours",
             "Photos",
             "Status",
             "EVolts",
-            "Approval Date"
+            "Approval Date",
+            "Approval Time"
         ];
 
         const rows = filteredData.map((item) => [
             item.id,
             new Date(item.submissionDate).toLocaleDateString(),
+            new Date(item.submissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             item.userName,
             item.contactNumber,
             item.latitude,
@@ -560,7 +568,8 @@ export default function StationSubmissionsTable({
             item.photos.length,
             item.status,
             item.eVolts,
-            item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-"
+            item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-",
+            item.approvalDate ? new Date(item.approvalDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"
         ]);
 
         const csvContent =
@@ -580,8 +589,21 @@ export default function StationSubmissionsTable({
         { header: "ID", accessor: "id", minWidth: "60px" },
         {
             header: "Date",
+            minWidth: "120px",
+            render: (item: StationSubmission) => (
+                <span className="text-sm font-medium text-dark dark:text-white">
+                    {new Date(item.submissionDate).toLocaleDateString()}
+                </span>
+            )
+        },
+        {
+            header: "Time",
             minWidth: "100px",
-            render: (item: StationSubmission) => new Date(item.submissionDate).toLocaleDateString()
+            render: (item: StationSubmission) => (
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(item.submissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+            )
         },
         {
             header: "Added By",
@@ -665,7 +687,24 @@ export default function StationSubmissionsTable({
             )
         },
         { header: "EVolts", accessor: "eVolts", minWidth: "80px", align: "center", render: (item: StationSubmission) => <span className="font-bold">{item.status === "Approved" ? item.eVolts : 0}</span> },
-        { header: "Approval Date", minWidth: "120px", render: (item: StationSubmission) => item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-" },
+        {
+            header: "Approval Date",
+            minWidth: "120px",
+            render: (item: StationSubmission) => item.approvalDate ? (
+                <span className="text-sm text-dark dark:text-white whitespace-nowrap">
+                    {new Date(item.approvalDate).toLocaleDateString()}
+                </span>
+            ) : <span className="text-sm text-gray-400">-</span>
+        },
+        {
+            header: "Approval Time",
+            minWidth: "120px",
+            render: (item: StationSubmission) => item.approvalDate ? (
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {new Date(item.approvalDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+            ) : <span className="text-sm text-gray-400">-</span>
+        },
         {
             header: "Actions",
             minWidth: "100px",
