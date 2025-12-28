@@ -165,7 +165,7 @@ const EditSubmissionModal: React.FC<EditSubmissionModalProps> = ({
                                         <input
                                             type="text"
                                             name="contactNumber"
-                                            value={formData.contactNumber}
+                                            value={formData.contactNumber || ''}
                                             onChange={handleChange}
                                             className="w-full rounded-md border border-stroke bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary active:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                                         />
@@ -204,7 +204,7 @@ const EditSubmissionModal: React.FC<EditSubmissionModalProps> = ({
                                     <input
                                         type="text"
                                         name="operationalHours"
-                                        value={formData.operationalHours}
+                                        value={formData.operationalHours || ''}
                                         onChange={handleChange}
                                         className="w-full rounded-md border border-stroke bg-white px-4 py-2.5 text-sm outline-none transition focus:border-primary active:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                                     />
@@ -269,7 +269,7 @@ const EditSubmissionModal: React.FC<EditSubmissionModalProps> = ({
                                                 <label className="mb-1 block text-xs font-medium text-gray-500">Power</label>
                                                 <input
                                                     type="text"
-                                                    value={connector.powerRating}
+                                                    value={connector.powerRating || ''}
                                                     onChange={(e) => handleConnectorChange(index, "powerRating", e.target.value)}
                                                     placeholder="e.g. 7.4kW"
                                                     className="w-full rounded border border-stroke bg-transparent px-3 py-1.5 text-sm outline-none focus:border-primary dark:border-strokedark"
@@ -279,7 +279,7 @@ const EditSubmissionModal: React.FC<EditSubmissionModalProps> = ({
                                                 <label className="mb-1 block text-xs font-medium text-gray-500">Tariff</label>
                                                 <input
                                                     type="text"
-                                                    value={connector.tariff}
+                                                    value={connector.tariff || ''}
                                                     onChange={(e) => handleConnectorChange(index, "tariff", e.target.value)}
                                                     placeholder="Rate"
                                                     className="w-full rounded border border-stroke bg-transparent px-3 py-1.5 text-sm outline-none focus:border-primary dark:border-strokedark"
