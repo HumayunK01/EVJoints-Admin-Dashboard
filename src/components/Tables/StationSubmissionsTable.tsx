@@ -449,22 +449,15 @@ export default function StationSubmissionsTable({
         setMounted(true);
     }, []);
 
-    // Fetch page data from backend
+    // Fetch page data from backend using API utility
     const fetchPage = async (page: number, limit: number) => {
         setIsLoading(true);
         try {
-            const response = await fetch(`http://localhost:4000/api/stations?page=${page}&limit=${limit}`, {
-                cache: "no-store",
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                setData(result.data);
-                setTotalRecords(result.pagination.total);
-                setCurrentPage(result.pagination.page);
-            } else {
-                console.error("Failed to fetch stations from backend");
-            }
+            const { getStationSubmissionsPaginated } = await import("@/lib/api");
+            const response = await getStationSubmissionsPaginated(page, limit);
+            setData(response.data);
+            setTotalRecords(response.pagination.total);
+            setCurrentPage(response.pagination.page);
         } catch (error) {
             console.error("Error fetching stations:", error);
         } finally {

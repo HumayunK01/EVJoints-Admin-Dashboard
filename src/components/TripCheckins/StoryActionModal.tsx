@@ -77,14 +77,14 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                             <div className="flex justify-between">
                                 <span className="text-sm font-medium text-dark dark:text-white">Route:</span>
                                 <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
-                                    {trip.source.address.split(',')[0]} → {trip.destination.address.split(',')[0]}
+                                    {trip.source.split(',')[0]} → {trip.destination.split(',')[0]}
                                 </span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-sm font-medium text-dark dark:text-white">Current Status:</span>
                                 <span className={`text-sm font-medium ${trip.storyStatus === "Approved" ? "text-green-600" :
-                                        trip.storyStatus === "Rejected" ? "text-red-600" :
-                                            "text-yellow-600"
+                                    trip.storyStatus === "Rejected" ? "text-red-600" :
+                                        "text-yellow-600"
                                     }`}>
                                     {trip.storyStatus || "Pending"}
                                 </span>

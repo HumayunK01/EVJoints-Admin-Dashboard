@@ -108,6 +108,14 @@ export interface StationSubmission {
 // TYPE DEFINITIONS - TRIP CHECK-INS
 // ============================================================================
 
+// Stop interface matching backend structure (lat/lng instead of latitude/longitude)
+export interface Stop {
+    address: string;
+    lat: number;
+    lng: number;
+}
+
+// Keep LocationCoordinates for components that need latitude/longitude
 export interface LocationCoordinates {
     latitude: number;
     longitude: number;
@@ -115,17 +123,17 @@ export interface LocationCoordinates {
 }
 
 export interface TripCheckin {
-    id: string;
+    id: number;                          // Changed from string to match backend
     dateTime: string;
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;                // Made nullable to match backend
     mobileNumber: string;
-    source: LocationCoordinates;
-    stop1?: LocationCoordinates | null;
-    stop2?: LocationCoordinates | null;
-    stop3?: LocationCoordinates | null;
-    destination: LocationCoordinates;
+    source: string;                      // Changed from LocationCoordinates to string
+    stop1?: Stop | null;                 // Changed to Stop interface with lat/lng
+    stop2?: Stop | null;
+    stop3?: Stop | null;
+    destination: string;                 // Changed from LocationCoordinates to string
     totalKm: number;
     stationConnectorCount: string;
     chargingStopsCount: number;
@@ -136,28 +144,18 @@ export interface TripCheckin {
     feedback?: string | null;
     navigation: "Yes" | "No";
     checkIn: "Yes" | "No";
-    tripStatus: "Planned" | "Ongoing" | "Completed" | "Cancelled";
-    tripCompletionStatus?: "Successful" | "Failed" | null;
+    tripStatus: "ENQUIRED" | "COMPLETED"; // Changed to match backend enum values
+    tripCompletionStatus?: string | null; // Made more flexible
     hasTripStory: "Yes" | "No";
-    storyStatus?: "Pending" | "Approved" | "Rejected" | null;
-    blogLink?: string | null;
+    storyStatus?: string | null;          // Made more flexible
+    blogLink?: string | null;             // Frontend-only field for story management
     approvalDate?: string | null;
     approvedBy?: string | null;
-    // Legacy fields for backward compatibility
-    user_phone?: string | null;
-    ev?: { brand: string; model: string; variant: string } | null;
+    // Legacy fields used by edit drawer
     rating?: number | null;
-    feedback_provided?: boolean | null;
-    charging_time?: string | null;
-    connector?: string | null;
     rate_per_unit?: number | null;
     units_charged?: number | null;
     amount?: number | null;
-    evolts_earned?: number | null;
-    photos?: { url: string; filename: string }[];
-    audit_log?: { action: string; admin?: string | null; timestamp: string; notes: string }[];
-    flags?: { duplicate?: boolean; amount_mismatch?: boolean };
-    story_opt_in?: boolean | null;
 }
 
 // ============================================================================
@@ -242,17 +240,38 @@ export async function getStationSubmissions(): Promise<StationSubmission[]> {
 // API FUNCTIONS - TRIP CHECK-INS
 // ============================================================================
 
+export interface TripCheckinsResponse {
+    data: TripCheckin[];
+    pagination: PaginationInfo;
+}
+
+export async function getTripCheckinsPaginated(
+    page: number = 1,
+    limit: number = 10
+): Promise<TripCheckinsResponse> {
+    try {
+        const result = await fetchApi<TripCheckinsResponse>(`/trips?page=${page}&limit=${limit}`);
+        console.log(`✅ Fetched trips page ${page} from backend`);
+        return result;
+    } catch (error) {
+        console.warn("⚠️ Backend unavailable for trips, using fallback data");
+        return simulatePagination(tripsData as TripCheckin[], page, limit);
+    }
+}
+
+// Legacy function for backward compatibility (deprecated)
 export async function getTripCheckins(): Promise<TripCheckin[]> {
+    console.warn("⚠️ getTripCheckins is deprecated, use getTripCheckinsPaginated instead");
     return tripsData as TripCheckin[];
 }
 
-export async function getCheckinById(id: string): Promise<TripCheckin | undefined> {
+export async function getCheckinById(id: number): Promise<TripCheckin | undefined> {
     const checkins = await getTripCheckins();
     return checkins.find((checkin) => checkin.id === id);
 }
 
 export async function editCheckin(
-    id: string,
+    id: number,
     editedFields: Partial<TripCheckin>,
     editReason: string,
     admin: string
@@ -263,7 +282,7 @@ export async function editCheckin(
 }
 
 export async function approveCheckin(
-    id: string,
+    id: number,
     creditedEvolts: number,
     notifyWhatsapp: boolean,
     admin: string
@@ -274,7 +293,7 @@ export async function approveCheckin(
 }
 
 export async function rejectCheckin(
-    id: string,
+    id: number,
     reason: string,
     admin: string
 ): Promise<boolean> {

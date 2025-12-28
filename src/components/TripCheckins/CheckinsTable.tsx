@@ -24,6 +24,11 @@ import StoryActionModal from "@/components/TripCheckins/StoryActionModal";
 
 interface CheckinsTableProps {
     initialData: TripCheckin[];
+    initialPagination: {
+        total: number;
+        page: number;
+        limit: number;
+    };
 }
 
 interface ColumnConfig {
@@ -35,13 +40,15 @@ interface ColumnConfig {
     className?: string;
 }
 
-export default function CheckinsTable({ initialData }: CheckinsTableProps) {
+export default function CheckinsTable({ initialData, initialPagination }: CheckinsTableProps) {
     const [data, setData] = useState<TripCheckin[]>(initialData);
+    const [totalRecords, setTotalRecords] = useState(initialPagination.total);
+    const [currentPage, setCurrentPage] = useState(initialPagination.page);
+    const [rowsPerPage, setRowsPerPage] = useState(initialPagination.limit);
+    const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [storyFilter, setStoryFilter] = useState("All");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
     const [mounted, setMounted] = useState(false);
 
     // Modal states
@@ -56,15 +63,15 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
         setMounted(true);
     }, []);
 
-    // Filter Logic
+    // Filter Logic (client-side filtering on current page data)
     const filteredData = useMemo(() => {
         return data.filter(item => {
             const matchesSearch =
                 item.firstName.toLowerCase().includes(search.toLowerCase()) ||
                 item.lastName.toLowerCase().includes(search.toLowerCase()) ||
-                item.email.toLowerCase().includes(search.toLowerCase()) ||
-                item.source.address.toLowerCase().includes(search.toLowerCase()) ||
-                item.destination.address.toLowerCase().includes(search.toLowerCase());
+                (item.email?.toLowerCase() || "").includes(search.toLowerCase()) ||
+                item.source.toLowerCase().includes(search.toLowerCase()) ||
+                item.destination.toLowerCase().includes(search.toLowerCase());
 
             const matchesStatus = statusFilter === "All" || item.tripStatus === statusFilter;
             const matchesStory = storyFilter === "All" ||
@@ -75,10 +82,61 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
         });
     }, [data, search, statusFilter, storyFilter]);
 
-    // Pagination
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const currentData = filteredData.slice(startIndex, startIndex + rowsPerPage);
+    // Server-side pagination
+    const totalPages = Math.ceil(totalRecords / rowsPerPage);
+    const currentData = filteredData; // Display filtered data from current page
+
+    // Pagination Handlers
+    const handleNextPage = async () => {
+        if (currentPage < totalPages && !loading) {
+            setLoading(true);
+            try {
+                const { getTripCheckinsPaginated } = await import("@/lib/api");
+                const response = await getTripCheckinsPaginated(currentPage + 1, rowsPerPage);
+                setData(response.data);
+                setTotalRecords(response.pagination.total);
+                setCurrentPage(response.pagination.page);
+            } catch (error) {
+                console.error("Error fetching next page:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handlePrevPage = async () => {
+        if (currentPage > 1 && !loading) {
+            setLoading(true);
+            try {
+                const { getTripCheckinsPaginated } = await import("@/lib/api");
+                const response = await getTripCheckinsPaginated(currentPage - 1, rowsPerPage);
+                setData(response.data);
+                setTotalRecords(response.pagination.total);
+                setCurrentPage(response.pagination.page);
+            } catch (error) {
+                console.error("Error fetching previous page:", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    const handleRowsPerPageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newLimit = Number(e.target.value);
+        setLoading(true);
+        try {
+            const { getTripCheckinsPaginated } = await import("@/lib/api");
+            const response = await getTripCheckinsPaginated(1, newLimit);
+            setData(response.data);
+            setTotalRecords(response.pagination.total);
+            setCurrentPage(1);
+            setRowsPerPage(newLimit);
+        } catch (error) {
+            console.error("Error changing page size:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Handlers
     const handleViewLocation = (location: LocationCoordinates, title: string) => {
@@ -144,17 +202,9 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
             header: "Source",
             minWidth: "250px",
             render: (item) => (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
-                        {item.source.address.split(',')[0]}
-                    </span>
-                    <button
-                        onClick={() => handleViewLocation(item.source, "Source Location")}
-                        className="text-primary hover:text-primary/80 whitespace-nowrap text-xs font-medium"
-                    >
-                        View
-                    </button>
-                </div>
+                <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
+                    {item.source.split(',')[0]}
+                </span>
             )
         },
         {
@@ -166,7 +216,10 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
                         {item.stop1.address.split(',')[0]}
                     </span>
                     <button
-                        onClick={() => handleViewLocation(item.stop1!, "Stop 1")}
+                        onClick={() => handleViewLocation(
+                            { latitude: item.stop1!.lat, longitude: item.stop1!.lng, address: item.stop1!.address },
+                            "Stop 1"
+                        )}
                         className="text-primary hover:text-primary/80 whitespace-nowrap text-xs font-medium"
                     >
                         View
@@ -183,7 +236,10 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
                         {item.stop2.address.split(',')[0]}
                     </span>
                     <button
-                        onClick={() => handleViewLocation(item.stop2!, "Stop 2")}
+                        onClick={() => handleViewLocation(
+                            { latitude: item.stop2!.lat, longitude: item.stop2!.lng, address: item.stop2!.address },
+                            "Stop 2"
+                        )}
                         className="text-primary hover:text-primary/80 whitespace-nowrap text-xs font-medium"
                     >
                         View
@@ -200,7 +256,10 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
                         {item.stop3.address.split(',')[0]}
                     </span>
                     <button
-                        onClick={() => handleViewLocation(item.stop3!, "Stop 3")}
+                        onClick={() => handleViewLocation(
+                            { latitude: item.stop3!.lat, longitude: item.stop3!.lng, address: item.stop3!.address },
+                            "Stop 3"
+                        )}
                         className="text-primary hover:text-primary/80 whitespace-nowrap text-xs font-medium"
                     >
                         View
@@ -212,17 +271,9 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
             header: "Destination",
             minWidth: "250px",
             render: (item) => (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
-                        {item.destination.address.split(',')[0]}
-                    </span>
-                    <button
-                        onClick={() => handleViewLocation(item.destination, "Destination")}
-                        className="text-primary hover:text-primary/80 whitespace-nowrap text-xs font-medium"
-                    >
-                        View
-                    </button>
-                </div>
+                <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
+                    {item.destination.split(',')[0]}
+                </span>
             )
         },
         {
@@ -317,11 +368,9 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
             minWidth: "120px",
             render: (item) => (
                 <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap
-                        ${item.tripStatus === 'Completed' ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
-                        item.tripStatus === 'Cancelled' ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" :
-                            item.tripStatus === 'Ongoing' ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" :
-                                "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"}`}>
-                    {item.tripStatus}
+                        ${item.tripStatus === 'COMPLETED' ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
+                        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"}`}>
+                    {item.tripStatus === 'ENQUIRED' ? 'Enquired' : 'Completed'}
                 </span>
             )
         },
@@ -418,10 +467,8 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
                             className="appearance-none rounded-lg border border-stroke bg-transparent px-3 py-2 text-sm font-medium text-dark outline-none hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 pr-8"
                         >
                             <option value="All">All Status</option>
-                            <option value="Planned">Planned</option>
-                            <option value="Ongoing">Ongoing</option>
-                            <option value="Completed">Completed</option>
-                            <option value="Cancelled">Cancelled</option>
+                            <option value="ENQUIRED">Enquired</option>
+                            <option value="COMPLETED">Completed</option>
                         </select>
                         <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
                     </div>
@@ -489,10 +536,7 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
                 <div className="flex items-center gap-2">
                     <select
                         value={rowsPerPage}
-                        onChange={(e) => {
-                            setRowsPerPage(Number(e.target.value));
-                            setCurrentPage(1);
-                        }}
+                        onChange={handleRowsPerPageChange}
                         className="bg-transparent text-sm font-medium text-dark outline-none dark:text-white"
                     >
                         <option value={10}>10</option>
@@ -502,21 +546,23 @@ export default function CheckinsTable({ initialData }: CheckinsTableProps) {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {loading && (
+                        <p className="text-sm font-medium text-dark dark:text-white">Loading...</p>
+                    )}
                     <p className="text-sm font-medium text-dark dark:text-white">
-                        {startIndex + 1}-{Math.min(startIndex + rowsPerPage, filteredData.length)} of{" "}
-                        {filteredData.length}
+                        {((currentPage - 1) * rowsPerPage) + 1}-{Math.min(currentPage * rowsPerPage, totalRecords)} of {totalRecords}
                     </p>
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
+                            onClick={handlePrevPage}
+                            disabled={currentPage === 1 || loading}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
                             <ChevronLeftIcon className="h-5 w-5" />
                         </button>
                         <button
-                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                            disabled={currentPage === totalPages}
+                            onClick={handleNextPage}
+                            disabled={currentPage === totalPages || loading}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
                             <ChevronRightIcon className="h-5 w-5" />

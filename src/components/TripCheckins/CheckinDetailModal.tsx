@@ -42,11 +42,11 @@ export default function CheckinDetailModal({ isOpen, onClose, data, onEdit }: Pr
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                                 <p className="text-gray-500 text-xs">Source</p>
-                                <p>{data.source.address}</p>
+                                <p>{data.source}</p>
                             </div>
                             <div>
                                 <p className="text-gray-500 text-xs">Destination</p>
-                                <p>{data.destination.address}</p>
+                                <p>{data.destination}</p>
                             </div>
                             <div>
                                 <p className="text-gray-500 text-xs">Date & Time</p>
