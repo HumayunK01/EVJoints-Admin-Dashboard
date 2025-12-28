@@ -39,7 +39,12 @@ interface ColumnConfig {
 }
 
 interface StationSubmissionsTableProps {
-    submissions: StationSubmission[];
+    initialData: StationSubmission[];
+    initialPagination: {
+        total: number;
+        page: number;
+        limit: number;
+    };
 }
 
 interface ModalFieldConfig {
@@ -111,6 +116,19 @@ interface FilterConfigItem {
 const FILTER_CONFIG: FilterConfigItem[] = [
     { key: "status", label: "Status" },
 ];
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
+const formatTime = (dateString: string) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const formatOptionalDate = (dateString: string | null | undefined) => dateString ? formatDate(dateString) : "-";
+const formatOptionalTime = (dateString: string | null | undefined) => dateString ? formatTime(dateString) : "-";
+
+// ============================================================================
+// PHOTO VIEWER COMPONENT
+// ============================================================================
 
 interface PhotoViewerProps {
     photos: string[];
@@ -402,11 +420,14 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
 }
 
 export default function StationSubmissionsTable({
-    submissions: initialSubmissions,
+    initialData,
+    initialPagination,
 }: StationSubmissionsTableProps) {
-    const [data, setData] = useState<StationSubmission[]>(initialSubmissions);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [data, setData] = useState<StationSubmission[]>(initialData);
+    const [currentPage, setCurrentPage] = useState(initialPagination.page);
+    const [rowsPerPage, setRowsPerPage] = useState(initialPagination.limit);
+    const [totalRecords, setTotalRecords] = useState(initialPagination.total);
+    const [isLoading, setIsLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
     // Dynamic Filters State
@@ -427,6 +448,29 @@ export default function StationSubmissionsTable({
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // Fetch page data from backend
+    const fetchPage = async (page: number, limit: number) => {
+        setIsLoading(true);
+        try {
+            const response = await fetch(`http://localhost:4000/api/stations?page=${page}&limit=${limit}`, {
+                cache: "no-store",
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                setData(result.data);
+                setTotalRecords(result.pagination.total);
+                setCurrentPage(result.pagination.page);
+            } else {
+                console.error("Failed to fetch stations from backend");
+            }
+        } catch (error) {
+            console.error("Error fetching stations:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Derived unique values for each filter key
     const filterOptions = useMemo(() => {
@@ -475,25 +519,51 @@ export default function StationSubmissionsTable({
         setEndDate("");
     };
 
+    // Server-side pagination (when no filters active)
+    const hasActiveFilters = useMemo(
+        () => search || startDate || endDate || Object.keys(activeFilters).length > 0,
+        [search, startDate, endDate, activeFilters]
+    );
 
+    const totalPages = hasActiveFilters
+        ? Math.ceil(filteredData.length / rowsPerPage)
+        : Math.ceil(totalRecords / rowsPerPage);
 
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const currentData = filteredData.slice(startIndex, endIndex);
+    const currentData = hasActiveFilters
+        ? filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+        : filteredData;
+
+    // Helper function to handle page navigation
+    const navigateToPage = (newPage: number) => {
+        if (!hasActiveFilters) {
+            fetchPage(newPage, rowsPerPage);
+        } else {
+            setCurrentPage(newPage);
+        }
+    };
 
     const handleNextPage = () => {
-        if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
+        if (currentPage < totalPages) {
+            navigateToPage(currentPage + 1);
+        }
     };
 
     const handlePrevPage = () => {
-        if (currentPage > 1) setCurrentPage((prev) => prev - 1);
+        if (currentPage > 1) {
+            navigateToPage(currentPage - 1);
+        }
     };
 
     const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setRowsPerPage(Number(e.target.value));
-        setCurrentPage(1);
+        const newLimit = Number(e.target.value);
+        setRowsPerPage(newLimit);
+        if (!hasActiveFilters) {
+            fetchPage(1, newLimit);
+        } else {
+            setCurrentPage(1);
+        }
     };
+
 
     const toggleExpand = (id: number) => {
         setExpandedRows((prev) => {
@@ -525,35 +595,18 @@ export default function StationSubmissionsTable({
 
     const handleExport = () => {
         const headers = [
-            "ID",
-            "Date",
-            "Time",
-            "Customer Name",
-            "Customer Phone",
-            "Lat",
-            "Long",
-            "Network",
-            "Station Name",
-            "Station ID",
-            "Connector Types",
-            "Connectors",
-            "Power",
-            "Tariff",
-            "Usage",
-            "Hours",
-            "Photos",
-            "Status",
-            "EVolts",
-            "Approval Date",
-            "Approval Time"
+            "ID", "Date", "Time", "Customer Name", "Customer Phone", "Lat", "Long",
+            "Network", "Station Name", "Station ID", "Connector Types", "Connectors",
+            "Power", "Tariff", "Usage", "Hours", "Photos", "Status", "EVolts",
+            "Approval Date", "Approval Time"
         ];
 
         const rows = filteredData.map((item) => [
             item.id,
-            new Date(item.submissionDate).toLocaleDateString(),
-            new Date(item.submissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            item.userName,
-            item.contactNumber,
+            formatDate(item.submissionDate),
+            formatTime(item.submissionDate),
+            item.userName || "-",
+            item.contactNumber || "-",
             item.latitude,
             item.longitude,
             item.networkName,
@@ -568,17 +621,15 @@ export default function StationSubmissionsTable({
             item.photos.length,
             item.status,
             item.eVolts,
-            item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-",
-            item.approvalDate ? new Date(item.approvalDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "-"
+            formatOptionalDate(item.approvalDate),
+            formatOptionalTime(item.approvalDate)
         ]);
 
-        const csvContent =
-            "data:text/csv;charset=utf-8," +
-            [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+        const csvContent = "data:text/csv;charset=utf-8," +
+            [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
 
-        const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
-        link.href = encodedUri;
+        link.href = encodeURI(csvContent);
         link.download = "station_submissions.csv";
         document.body.appendChild(link);
         link.click();
@@ -592,7 +643,7 @@ export default function StationSubmissionsTable({
             minWidth: "120px",
             render: (item: StationSubmission) => (
                 <span className="text-sm font-medium text-dark dark:text-white">
-                    {new Date(item.submissionDate).toLocaleDateString()}
+                    {formatDate(item.submissionDate)}
                 </span>
             )
         },
@@ -601,7 +652,7 @@ export default function StationSubmissionsTable({
             minWidth: "100px",
             render: (item: StationSubmission) => (
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(item.submissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {formatTime(item.submissionDate)}
                 </span>
             )
         },
@@ -617,8 +668,8 @@ export default function StationSubmissionsTable({
                 </span>
             )
         },
-        { header: "Customer Name", accessor: "userName", minWidth: "150px", render: (item: StationSubmission) => <span className="text-primary font-medium">{item.userName}</span> },
-        { header: "Customer Phone", accessor: "contactNumber", minWidth: "130px" },
+        { header: "Customer Name", accessor: "userName", minWidth: "150px", render: (item: StationSubmission) => <span className="text-primary font-medium">{item.userName || "-"}</span> },
+        { header: "Customer Phone", accessor: "contactNumber", minWidth: "130px", render: (item: StationSubmission) => item.contactNumber || "-" },
         { header: "Latitude", accessor: "latitude", minWidth: "100px" },
         { header: "Longitude", accessor: "longitude", minWidth: "100px" },
         { header: "Network Name", accessor: "networkName", minWidth: "150px", render: (item: StationSubmission) => <span className="font-medium">{item.networkName}</span> },
@@ -692,7 +743,7 @@ export default function StationSubmissionsTable({
             minWidth: "120px",
             render: (item: StationSubmission) => item.approvalDate ? (
                 <span className="text-sm text-dark dark:text-white whitespace-nowrap">
-                    {new Date(item.approvalDate).toLocaleDateString()}
+                    {formatDate(item.approvalDate)}
                 </span>
             ) : <span className="text-sm text-gray-400">-</span>
         },
@@ -701,7 +752,7 @@ export default function StationSubmissionsTable({
             minWidth: "120px",
             render: (item: StationSubmission) => item.approvalDate ? (
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(item.approvalDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {formatTime(item.approvalDate)}
                 </span>
             ) : <span className="text-sm text-gray-400">-</span>
         },
@@ -880,6 +931,14 @@ export default function StationSubmissionsTable({
                                     </React.Fragment>
                                 );
                             })
+                        ) : isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="h-24 text-center">
+                                    <div className="flex items-center justify-center">
+                                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-24 text-center">
@@ -909,8 +968,8 @@ export default function StationSubmissionsTable({
 
                 <div className="flex items-center gap-4">
                     <p className="text-sm font-medium text-dark dark:text-white">
-                        {startIndex + 1}-{Math.min(endIndex, filteredData.length)} of{" "}
-                        {filteredData.length}
+                        {((currentPage - 1) * rowsPerPage) + 1}-{Math.min(currentPage * rowsPerPage, hasActiveFilters ? filteredData.length : totalRecords)} of{" "}
+                        {hasActiveFilters ? filteredData.length : totalRecords}
                     </p>
                     <div className="flex items-center gap-2">
                         <button

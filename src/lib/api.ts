@@ -76,7 +76,7 @@ export interface CustomersResponse {
 export interface Connector {
     name: string;
     count: number;
-    type: "AC" | "DC";
+    type: string; // Changed from "AC" | "DC" to handle "-" from backend
     powerRating?: string;
     tariff?: string;
 }
@@ -86,21 +86,21 @@ export interface StationSubmission {
     submissionDate: string;
     stationName: string;
     stationNumber?: string;
-    userName: string;
-    userId: string;
+    userName: string | null; // Can be null in backend
+    userId?: string; // Optional - not always present in backend
     networkName: string;
     usageType: "Public" | "Private";
     connectors: Connector[];
     photos: string[];
     status: "Pending" | "Approved" | "Rejected";
     statusReason?: string;
-    contactNumber: string;
+    contactNumber: string | null; // Can be null or empty in backend
     latitude: number;
     longitude: number;
-    stationType: string;
+    stationType?: string; // Optional - not always present in backend
     eVolts: number;
     operationalHours?: string;
-    approvalDate?: string;
+    approvalDate?: string | null; // Can be null
     addedByType?: "EV Owner" | "Station Owner" | "CPO";
 }
 
@@ -213,7 +213,28 @@ export async function getCustomersPaginated(
 // API FUNCTIONS - STATION SUBMISSIONS
 // ============================================================================
 
+export interface StationSubmissionsResponse {
+    data: StationSubmission[];
+    pagination: PaginationInfo;
+}
+
+export async function getStationSubmissionsPaginated(
+    page: number = 1,
+    limit: number = 10
+): Promise<StationSubmissionsResponse> {
+    try {
+        const result = await fetchApi<StationSubmissionsResponse>(`/stations?page=${page}&limit=${limit}`);
+        console.log(`✅ Fetched stations page ${page} from backend`);
+        return result;
+    } catch (error) {
+        console.warn("⚠️ Backend unavailable for stations, using fallback data");
+        return simulatePagination(stationSubmissionsData as StationSubmission[], page, limit);
+    }
+}
+
+// Legacy function for backward compatibility (deprecated)
 export async function getStationSubmissions(): Promise<StationSubmission[]> {
+    console.warn("⚠️ getStationSubmissions is deprecated, use getStationSubmissionsPaginated instead");
     return stationSubmissionsData as StationSubmission[];
 }
 

@@ -1,7 +1,7 @@
 
 import StationSubmissionsTable from "@/components/Tables/StationSubmissionsTable";
 import { Metadata } from "next";
-import { getStationSubmissions } from "@/lib/api";
+import { getStationSubmissionsPaginated } from "@/lib/api";
 
 export const metadata: Metadata = {
     title: "Station Addition",
@@ -9,12 +9,16 @@ export const metadata: Metadata = {
 };
 
 export default async function StationSubmissionsPage() {
-    const submissions = await getStationSubmissions();
+    // Get first page with server-side pagination
+    const response = await getStationSubmissionsPaginated(1, 10);
 
     return (
         <>
             <div className="flex flex-col gap-10">
-                <StationSubmissionsTable submissions={submissions} />
+                <StationSubmissionsTable
+                    initialData={response.data}
+                    initialPagination={response.pagination}
+                />
             </div>
         </>
     );
