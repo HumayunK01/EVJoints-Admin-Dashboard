@@ -1,314 +1,381 @@
 "use client";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    SearchIcon,
-    FilterIcon,
-    SortIcon,
-    ChevronDownIcon,
-} from "@/assets/icons";
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ChevronLeftIcon, ChevronRightIcon, SearchIcon, FilterIcon, SortIcon, ChevronDownIcon } from "@/assets/icons";
 import { DownloadIcon } from "./icons";
 import { useState, useMemo, useEffect, Fragment } from "react";
 import { createPortal } from "react-dom";
-import {
-    Dropdown,
-    DropdownContent,
-    DropdownTrigger,
-} from "@/components/ui/dropdown";
-
+import { Dropdown, DropdownContent, DropdownTrigger } from "@/components/ui/dropdown";
 import { type Customer } from "@/lib/api";
 import { DateRangeFilter } from "./DateRangeFilter";
 
-// Configuration for columns that should show expand/collapse icons
-const EXPANDABLE_COLUMNS = [
-    'vehicleRegDate',
-    'registration_number',
-    'vehicleType',
-    'manufacturer',
-    'vehicleModel',
-    'vehicleVariant'
-] as const;
-
-// Helper function to check if a column should show expand/collapse icon
-const isExpandableColumn = (columnName: string): boolean => {
-    return EXPANDABLE_COLUMNS.includes(columnName as any);
+const formatDate = (dateString: any): string => {
+    if (!dateString) return "N/A";
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "N/A";
+        return date.toLocaleDateString('en-GB');
+    } catch {
+        return "N/A";
+    }
 };
 
-// Helper component for cells with expand/collapse functionality
+type ColumnConfig = {
+    key: string;
+    label: string;
+    minWidth?: string;
+    accessor?: (customer: Customer) => any;
+    render?: (value: any, customer: Customer) => React.ReactNode;
+    isExpandable?: boolean;
+    formatValue?: (value: any) => string;
+};
+
+const COLUMNS: ColumnConfig[] = [
+    { key: "firstName", label: "First Name", minWidth: "120px" },
+    { key: "lastName", label: "Last Name", minWidth: "120px" },
+    {
+        key: "email",
+        label: "Email ID",
+        minWidth: "150px",
+        render: (value) => (
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                {value || "N/A"}
+            </p>
+        )
+    },
+    { key: "phone", label: "Phone No", minWidth: "120px" },
+    {
+        key: "customerRegDate",
+        label: "Customer Reg Date",
+        minWidth: "150px",
+        formatValue: formatDate
+    },
+    {
+        key: "vehicleRegDate",
+        label: "Vehicle Reg Date",
+        minWidth: "150px",
+        isExpandable: true,
+        formatValue: formatDate
+    },
+    {
+        key: "registrationNumber",
+        label: "Registration Number",
+        minWidth: "150px",
+        isExpandable: true,
+        render: (value) => (
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                {value || "N/A"}
+            </p>
+        )
+    },
+    { key: "subscription", label: "Subscription", minWidth: "120px" },
+    { key: "vehicleType", label: "Vehicle Type", minWidth: "120px", isExpandable: true },
+    { key: "manufacturer", label: "Manufacturer", minWidth: "120px", isExpandable: true },
+    { key: "vehicleModel", label: "Vehicle Model", minWidth: "120px", isExpandable: true },
+    { key: "vehicleVariant", label: "Vehicle Variant", minWidth: "120px", isExpandable: true },
+    {
+        key: "deviceBrand",
+        label: "Device Brand",
+        minWidth: "120px",
+        render: (value) => (
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                {value || "N/A"}
+            </p>
+        )
+    },
+    {
+        key: "deviceModel",
+        label: "Device Model",
+        minWidth: "120px",
+        render: (value) => (
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                {value || "N/A"}
+            </p>
+        )
+    },
+    {
+        key: "devicePlatform",
+        label: "Device Platform",
+        minWidth: "120px",
+        render: (value) => (
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                {value || "N/A"}
+            </p>
+        )
+    },
+    {
+        key: "appVersion",
+        label: "App Version",
+        minWidth: "100px",
+        render: (value) => (
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                {value || "N/A"}
+            </p>
+        )
+    },
+    {
+        key: "navigation",
+        label: "Navigation",
+        minWidth: "100px",
+        render: (value) => (
+            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                }`}>
+                {value ? "Yes" : "No"}
+            </span>
+        )
+    },
+    {
+        key: "trip",
+        label: "Trip",
+        minWidth: "100px",
+        render: (value) => (
+            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                }`}>
+                {value ? "Yes" : "No"}
+            </span>
+        )
+    },
+    {
+        key: "checkIn",
+        label: "Check In",
+        minWidth: "120px",
+        render: (value) => (
+            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                }`}>
+                {value ? "Yes" : "No"}
+            </span>
+        )
+    },
+];
+
+const SORT_OPTIONS = [
+    { label: "A - Z", value: "asc" },
+    { label: "Z - A", value: "desc" },
+    { label: "Newest First", value: "newest" },
+    { label: "Oldest First", value: "oldest" },
+];
+
+const ROWS_PER_PAGE_OPTIONS = [10, 15, 20];
+
+// ============================================================================
+// HELPER COMPONENTS
+// ============================================================================
+
 interface ExpandableCellProps {
-    value: string | number;
+    value: any;
     hasMultipleEntries: boolean;
     isExpanded: boolean;
     onToggle: () => void;
     showExpandIcon: boolean;
-    formatValue?: (value: string | number) => string;
+    formatValue?: (value: any) => string;
 }
 
-const ExpandableCell = ({
-    value,
-    hasMultipleEntries,
-    isExpanded,
-    onToggle,
-    showExpandIcon,
-    formatValue
-}: ExpandableCellProps) => {
+const ExpandableCell = ({ value, hasMultipleEntries, isExpanded, onToggle, showExpandIcon, formatValue }: ExpandableCellProps) => {
     const displayValue = formatValue ? formatValue(value) : String(value);
 
     return (
         <div className="flex items-center gap-2">
-            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                {displayValue}
-            </p>
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap">{displayValue}</p>
             {hasMultipleEntries && showExpandIcon && (
-                <button
-                    onClick={onToggle}
-                    className="text-dark dark:text-white hover:text-primary flex-shrink-0"
-                >
-                    {isExpanded ? (
-                        <ChevronDownIcon className="h-5 w-5 rotate-180" />
-                    ) : (
-                        <ChevronDownIcon className="h-5 w-5" />
-                    )}
+                <button onClick={onToggle} className="text-dark dark:text-white hover:text-primary flex-shrink-0">
+                    <ChevronDownIcon className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </button>
             )}
         </div>
     );
 };
 
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+const getCellValue = (customer: Customer, column: ColumnConfig) => {
+    return column.accessor ? column.accessor(customer) : (customer as any)[column.key];
+};
+
+const formatCellValue = (value: any, column: ColumnConfig) => {
+    if (column.formatValue) return column.formatValue(value);
+    return value;
+};
+
+const exportToCSV = (data: Customer[], columns: ColumnConfig[], filename: string) => {
+    const headers = columns.map(col => col.label);
+
+    const rows = data.flatMap(customer => {
+        if (customer.vehicles && customer.vehicles.length > 0) {
+            return customer.vehicles.map(vehicle =>
+                columns.map(col => {
+                    if (col.isExpandable && col.key in vehicle) {
+                        return (vehicle as any)[col.key] || "N/A";
+                    }
+                    const value = getCellValue(customer, col);
+                    if (typeof value === 'boolean') return value ? "Yes" : "No";
+                    return value || "N/A";
+                })
+            );
+        }
+        return [columns.map(col => {
+            const value = getCellValue(customer, col);
+            if (typeof value === 'boolean') return value ? "Yes" : "No";
+            return value || "N/A";
+        })];
+    });
+
+    const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
 interface CustomersTableProps {
-    customers: Customer[];
+    initialData: Customer[];
+    initialPagination: {
+        total: number;
+        page: number;
+        limit: number;
+    };
 }
 
-export function CustomersTable({ customers: initialData }: CustomersTableProps) {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+export function CustomersTable({ initialData, initialPagination }: CustomersTableProps) {
+    // State
+    const [customers, setCustomers] = useState<Customer[]>(initialData);
+    const [totalRecords, setTotalRecords] = useState(initialPagination.total);
+    const [currentPage, setCurrentPage] = useState(initialPagination.page);
+    const [rowsPerPage, setRowsPerPage] = useState(initialPagination.limit);
+    const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [sortOption, setSortOption] = useState("Newest First");
+    const [sortOption, setSortOption] = useState("newest");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
-
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [mounted, setMounted] = useState(false);
-    // Use the passed prop as the initial data
-    const data = initialData;
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    useEffect(() => setMounted(true), []);
 
     const showCheckboxes = searchTerm.length > 0 || startDate.length > 0 || endDate.length > 0;
 
     useEffect(() => {
-        if (!showCheckboxes) {
-            setSelectedRows(new Set());
-        }
+        if (!showCheckboxes) setSelectedRows(new Set());
     }, [showCheckboxes]);
 
-    const filteredData = useMemo(() => {
-        return data.filter((customer) => {
-            const matchesSearch = Object.values(customer).some((value) =>
-                String(value).toLowerCase().includes(searchTerm.toLowerCase())
-            );
+    // Server-side pagination - use data directly from backend
+    const totalPages = Math.ceil(totalRecords / rowsPerPage);
+    const currentData = customers; // Backend already returns paginated data
 
-            const matchesDate =
-                (!startDate || new Date(customer.customerRegDate) >= new Date(startDate)) &&
-                (!endDate || new Date(customer.customerRegDate) <= new Date(endDate));
-
-            return matchesSearch && matchesDate;
-        });
-    }, [searchTerm, startDate, endDate]);
-
-    // Extract unique options for filters
-
-
-    const sortedData = useMemo(() => {
-        return [...filteredData].sort((a, b) => {
-            switch (sortOption) {
-                case "Ascending (Low High)":
-                case "A - Z":
-                    return a.firstName.localeCompare(b.firstName);
-                case "Descending (High Low)":
-                case "Z - A":
-                    return b.firstName.localeCompare(a.firstName);
-                case "Newest First":
-                    return new Date(b.customerRegDate).getTime() - new Date(a.customerRegDate).getTime();
-                case "Oldest First":
-                    return new Date(a.customerRegDate).getTime() - new Date(b.customerRegDate).getTime();
-                default:
-                    return 0;
+    // Handlers
+    const handleNextPage = async () => {
+        if (currentPage < totalPages && !loading) {
+            setLoading(true);
+            try {
+                const { getCustomersPaginated } = await import("@/lib/api");
+                const response = await getCustomersPaginated(currentPage + 1, rowsPerPage);
+                setCustomers(response.data);
+                setTotalRecords(response.pagination.total);
+                setCurrentPage(response.pagination.page);
+                setSelectedRows(new Set());
+                setExpandedRows(new Set());
+            } catch (error) {
+                console.error("Error fetching next page:", error);
+            } finally {
+                setLoading(false);
             }
-        });
-    }, [filteredData, sortOption]);
-
-    const totalPages = Math.ceil(sortedData.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const currentData = sortedData.slice(startIndex, endIndex);
-
-    const handleNextPage = () => {
-        if (currentPage < totalPages) {
-            setCurrentPage((prev) => prev + 1);
         }
     };
 
-    const handlePrevPage = () => {
-        if (currentPage > 1) {
-            setCurrentPage((prev) => prev - 1);
+    const handlePrevPage = async () => {
+        if (currentPage > 1 && !loading) {
+            setLoading(true);
+            try {
+                const { getCustomersPaginated } = await import("@/lib/api");
+                const response = await getCustomersPaginated(currentPage - 1, rowsPerPage);
+                setCustomers(response.data);
+                setTotalRecords(response.pagination.total);
+                setCurrentPage(response.pagination.page);
+                setSelectedRows(new Set());
+                setExpandedRows(new Set());
+            } catch (error) {
+                console.error("Error fetching previous page:", error);
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
-    const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setRowsPerPage(Number(e.target.value));
-        setCurrentPage(1);
+    const handleRowsPerPageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const newLimit = Number(e.target.value);
+        setLoading(true);
+        try {
+            const { getCustomersPaginated } = await import("@/lib/api");
+            const response = await getCustomersPaginated(1, newLimit);
+            setCustomers(response.data);
+            setTotalRecords(response.pagination.total);
+            setCurrentPage(1);
+            setRowsPerPage(newLimit);
+            setSelectedRows(new Set());
+            setExpandedRows(new Set());
+        } catch (error) {
+            console.error("Error changing page size:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const toggleRow = (email: string) => {
+    const toggleRow = (identifier: string) => {
         const newSelected = new Set(selectedRows);
-        if (newSelected.has(email)) {
-            newSelected.delete(email);
-        } else {
-            newSelected.add(email);
-        }
+        newSelected.has(identifier) ? newSelected.delete(identifier) : newSelected.add(identifier);
         setSelectedRows(newSelected);
     };
 
-    const toggleExpand = (email: string) => {
+    const toggleExpand = (identifier: string) => {
         const newExpanded = new Set(expandedRows);
-        if (newExpanded.has(email)) {
-            newExpanded.delete(email);
-        } else {
-            newExpanded.add(email);
-        }
+        newExpanded.has(identifier) ? newExpanded.delete(identifier) : newExpanded.add(identifier);
         setExpandedRows(newExpanded);
     };
 
     const toggleAll = () => {
-        if (selectedRows.size === currentData.length) {
-            setSelectedRows(new Set());
-        } else {
-            setSelectedRows(new Set(currentData.map((c) => c.email)));
-        }
+        setSelectedRows(selectedRows.size === currentData.length ? new Set() : new Set(currentData.map(c => c.phone)));
     };
 
     const handleDownload = (format: "csv" | "excel") => {
-        if (data.length === 0) return;
-
-        const headers = [
-            "First Name",
-            "Last Name",
-            "Email",
-            "Phone",
-            "Customer Reg Date",
-            "Vehicle Reg Date",
-            "Registration Number",
-            "Subscription",
-            "Vehicle Type",
-            "Manufacturer",
-            "Vehicle Model",
-            "Vehicle Variant",
-            "Device Brand",
-            "Device Model",
-            "Device Platform",
-            "Version",
-            "Navigation",
-            "Trip",
-            "Check In"
-        ];
-
-        // Determine which data to download: selected rows or all filtered data
+        // Export current page data (or selected rows from current page)
         const dataToDownload = selectedRows.size > 0
-            ? sortedData.filter(row => selectedRows.has(row.email))
-            : sortedData;
+            ? customers.filter(row => selectedRows.has(row.phone))
+            : customers;
 
-        const rows = dataToDownload.flatMap(customer => {
-            if (customer.vehicles && customer.vehicles.length > 0) {
-                return customer.vehicles.map(vehicle => [
-                    customer.firstName,
-                    customer.lastName,
-                    customer.email,
-                    customer.phone,
-                    customer.customerRegDate,
-                    vehicle.vehicleRegDate,
-                    vehicle.registration_number || "N/A",
-                    customer.subscription,
-                    vehicle.vehicleType,
-                    vehicle.manufacturer,
-                    vehicle.vehicleModel,
-                    vehicle.vehicleVariant,
-                    customer.deviceBrand,
-                    customer.deviceModel,
-                    customer.devicePlatform,
-                    customer.version,
-                    customer.navigation,
-                    customer.trip,
-                    customer.checkIn
-                ]);
-            } else {
-                return [[
-                    customer.firstName,
-                    customer.lastName,
-                    customer.email,
-                    customer.phone,
-                    customer.customerRegDate,
-                    customer.vehicleRegDate,
-                    customer.registration_number || "N/A",
-                    customer.subscription,
-                    customer.vehicleType,
-                    customer.manufacturer,
-                    customer.vehicleModel,
-                    customer.vehicleVariant,
-                    customer.deviceBrand,
-                    customer.deviceModel,
-                    customer.devicePlatform,
-                    customer.version,
-                    customer.navigation,
-                    customer.trip,
-                    customer.checkIn
-                ]];
-            }
-        });
-
-        const csvContent = [
-            headers.join(","),
-            ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
-        ].join("\n");
-
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `customers_list${selectedRows.size > 0 ? '_selected' : ''}.${format === "excel" ? "xls" : "csv"}`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
+        const filename = `customers_list_page${currentPage}${selectedRows.size > 0 ? '_selected' : ''}.${format === "excel" ? "xls" : "csv"}`;
+        exportToCSV(dataToDownload, COLUMNS, filename);
         setIsDownloadOpen(false);
     };
 
+    // Render
     return (
         <div className="max-w-full rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
+            {/* Header */}
             <div className="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6 xl:px-7.5">
-                <h4 className="text-lg font-bold text-dark dark:text-white">
-                    Customers List
-                </h4>
+                <h4 className="text-lg font-bold text-dark dark:text-white">Customers List</h4>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
+                    {/* Search */}
                     <div className="relative w-full sm:w-auto">
                         <button className="absolute left-4 top-1/2 -translate-y-1/2 text-dark dark:text-white">
                             <SearchIcon className="h-4 w-4" />
@@ -323,6 +390,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                     </div>
 
                     <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+                        {/* Filter */}
                         <button
                             onClick={() => setIsFilterOpen(true)}
                             className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
@@ -331,6 +399,7 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                             Filters
                         </button>
 
+                        {/* Sort */}
                         <Dropdown isOpen={isSortOpen} setIsOpen={setIsSortOpen}>
                             <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
                                 <SortIcon className="h-4 w-4" />
@@ -338,31 +407,23 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                 <ChevronDownIcon className="h-4 w-4" />
                             </DropdownTrigger>
                             <DropdownContent className="w-48 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
-                                {[
-                                    "Ascending (Low High)",
-                                    "Descending (High Low)",
-                                    "A - Z",
-                                    "Z - A",
-                                    "Newest First",
-                                    "Oldest First",
-                                ].map((option) => (
+                                {SORT_OPTIONS.map((option) => (
                                     <button
-                                        key={option}
+                                        key={option.value}
                                         onClick={() => {
-                                            setSortOption(option);
+                                            setSortOption(option.value);
                                             setIsSortOpen(false);
                                         }}
-                                        className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 ${sortOption === option
-                                            ? "bg-gray-2 dark:bg-dark-2"
-                                            : ""
+                                        className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 ${sortOption === option.value ? "bg-gray-2 dark:bg-dark-2" : ""
                                             }`}
                                     >
-                                        {option}
+                                        {option.label}
                                     </button>
                                 ))}
                             </DropdownContent>
                         </Dropdown>
 
+                        {/* Download */}
                         <Dropdown isOpen={isDownloadOpen} setIsOpen={setIsDownloadOpen}>
                             <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
                                 <DownloadIcon className="h-4 w-4" />
@@ -382,35 +443,34 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                 >
                                     Excel
                                 </button>
-
                             </DropdownContent>
                         </Dropdown>
                     </div>
                 </div>
             </div>
 
-            {
-                isFilterOpen && mounted && createPortal(
-                    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-                        <DateRangeFilter
-                            startDate={startDate}
-                            endDate={endDate}
-                            onApply={(start, end) => {
-                                setStartDate(start);
-                                setEndDate(end);
-                                setIsFilterOpen(false);
-                            }}
-                            onCancel={() => setIsFilterOpen(false)}
-                            onClear={() => {
-                                setStartDate("");
-                                setEndDate("");
-                            }}
-                        />
-                    </div>,
-                    document.body
-                )
-            }
+            {/* Date Filter Modal */}
+            {isFilterOpen && mounted && createPortal(
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+                    <DateRangeFilter
+                        startDate={startDate}
+                        endDate={endDate}
+                        onApply={(start, end) => {
+                            setStartDate(start);
+                            setEndDate(end);
+                            setIsFilterOpen(false);
+                        }}
+                        onCancel={() => setIsFilterOpen(false)}
+                        onClear={() => {
+                            setStartDate("");
+                            setEndDate("");
+                        }}
+                    />
+                </div>,
+                document.body
+            )}
 
+            {/* Table */}
             <Table>
                 <TableHeader>
                     <TableRow className="border-t border-stroke bg-green-light-7 hover:bg-green-light-7 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-dark-2">
@@ -424,286 +484,100 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                                 />
                             </TableHead>
                         )}
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            First Name
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Last Name
-                        </TableHead>
-                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Email ID
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Phone No
-                        </TableHead>
-                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Customer Reg Date
-                        </TableHead>
-                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Vehicle Reg Date
-                        </TableHead>
-                        <TableHead className="min-w-[150px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Registration Number
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Subscription
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Vehicle Type
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Manufacturer
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Vehicle Model
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Vehicle Variant
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Device Brand
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Device Model
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Device Platform
-                        </TableHead>
-                        <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Version
-                        </TableHead>
-                        <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Navigation
-                        </TableHead>
-                        <TableHead className="min-w-[100px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Trip
-                        </TableHead>
-                        <TableHead className="min-w-[120px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                            Check In
-                        </TableHead>
+                        {COLUMNS.map((column) => (
+                            <TableHead
+                                key={column.key}
+                                className="px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap"
+                                style={{ minWidth: column.minWidth }}
+                            >
+                                {column.label}
+                            </TableHead>
+                        ))}
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {currentData.length > 0 ? (
-                        currentData.map((customer, key) => {
-                            const isExpanded = expandedRows.has(customer.email);
+                        currentData.map((customer) => {
+                            const isExpanded = expandedRows.has(customer.phone);
                             const hasMultipleVehicles = !!(customer.vehicles && customer.vehicles.length > 1);
 
                             return (
-                                <Fragment key={customer.email}>
-                                    <TableRow
-                                        className="border-t border-stroke dark:border-dark-3"
-                                    >
-
+                                <Fragment key={customer.phone}>
+                                    <TableRow className="border-t border-stroke dark:border-dark-3">
                                         {showCheckboxes && (
                                             <TableCell className="px-4 py-4">
                                                 <input
                                                     type="checkbox"
                                                     className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
-                                                    checked={selectedRows.has(customer.email)}
-                                                    onChange={() => toggleRow(customer.email)}
+                                                    checked={selectedRows.has(customer.phone)}
+                                                    onChange={() => toggleRow(customer.phone)}
                                                 />
                                             </TableCell>
                                         )}
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.firstName}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.lastName}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.email}</p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.phone}</p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {new Date(customer.customerRegDate).toLocaleDateString('en-GB')}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <ExpandableCell
-                                                value={customer.vehicleRegDate}
-                                                hasMultipleEntries={hasMultipleVehicles}
-                                                isExpanded={isExpanded}
-                                                onToggle={() => toggleExpand(customer.email)}
-                                                showExpandIcon={isExpandableColumn('vehicleRegDate')}
-                                                formatValue={(val) => new Date(String(val)).toLocaleDateString('en-GB')}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <ExpandableCell
-                                                value={customer.registration_number || "N/A"}
-                                                hasMultipleEntries={hasMultipleVehicles}
-                                                isExpanded={isExpanded}
-                                                onToggle={() => toggleExpand(customer.email)}
-                                                showExpandIcon={isExpandableColumn('registration_number')}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.subscription}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <ExpandableCell
-                                                value={customer.vehicleType}
-                                                hasMultipleEntries={hasMultipleVehicles}
-                                                isExpanded={isExpanded}
-                                                onToggle={() => toggleExpand(customer.email)}
-                                                showExpandIcon={isExpandableColumn('vehicleType')}
-                                            />
-                                        </TableCell>
+                                        {COLUMNS.map((column) => {
+                                            const value = getCellValue(customer, column);
+                                            const formattedValue = formatCellValue(value, column);
 
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <ExpandableCell
-                                                value={customer.manufacturer}
-                                                hasMultipleEntries={hasMultipleVehicles}
-                                                isExpanded={isExpanded}
-                                                onToggle={() => toggleExpand(customer.email)}
-                                                showExpandIcon={isExpandableColumn('manufacturer')}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <ExpandableCell
-                                                value={customer.vehicleModel}
-                                                hasMultipleEntries={hasMultipleVehicles}
-                                                isExpanded={isExpanded}
-                                                onToggle={() => toggleExpand(customer.email)}
-                                                showExpandIcon={isExpandableColumn('vehicleModel')}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <ExpandableCell
-                                                value={customer.vehicleVariant}
-                                                hasMultipleEntries={hasMultipleVehicles}
-                                                isExpanded={isExpanded}
-                                                onToggle={() => toggleExpand(customer.email)}
-                                                showExpandIcon={isExpandableColumn('vehicleVariant')}
-                                            />
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.deviceBrand}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.deviceModel}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                {customer.devicePlatform}
-                                            </p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">{customer.version}</p>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <span
-                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.navigation === "Yes"
-                                                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                                    }`}
-                                            >
-                                                {customer.navigation}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <span
-                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.trip === "Yes"
-                                                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                                    }`}
-                                            >
-                                                {customer.trip}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="px-4 py-4 dark:border-dark-3">
-                                            <span
-                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${customer.checkIn === "Yes"
-                                                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                                    }`}
-                                            >
-                                                {customer.checkIn}
-                                            </span>
-                                        </TableCell>
+                                            return (
+                                                <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3">
+                                                    {column.isExpandable ? (
+                                                        <ExpandableCell
+                                                            value={value}
+                                                            hasMultipleEntries={hasMultipleVehicles}
+                                                            isExpanded={isExpanded}
+                                                            onToggle={() => toggleExpand(customer.phone)}
+                                                            showExpandIcon={true}
+                                                            formatValue={column.formatValue}
+                                                        />
+                                                    ) : column.render ? (
+                                                        column.render(value, customer)
+                                                    ) : (
+                                                        <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                            {formattedValue}
+                                                        </p>
+                                                    )}
+                                                </TableCell>
+                                            );
+                                        })}
                                     </TableRow>
 
-                                    {
-                                        isExpanded && customer.vehicles && customer.vehicles.slice(1).map((vehicle, vIdx) => (
-                                            <TableRow
-                                                key={`${customer.email}-v-${vIdx}`}
-                                                className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-white/5"
-                                            >
-                                                {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                        {new Date(vehicle.vehicleRegDate).toLocaleDateString('en-GB')}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                        {vehicle.registration_number || "N/A"}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                        {vehicle.vehicleType}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                        {vehicle.manufacturer}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                        {vehicle.vehicleModel}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell className="px-4 py-4 dark:border-dark-3">
-                                                    <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                        {vehicle.vehicleVariant}
-                                                    </p>
-                                                </TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                                <TableCell className="px-4 py-4"></TableCell>
-                                            </TableRow>
-                                        ))}
+                                    {/* Expanded Rows for Additional Vehicles */}
+                                    {isExpanded && customer.vehicles && customer.vehicles.slice(1).map((vehicle, vIdx) => (
+                                        <TableRow
+                                            key={`${customer.phone}-v-${vIdx}`}
+                                            className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-white/5"
+                                        >
+                                            {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
+                                            {COLUMNS.map((column) => {
+                                                if (column.isExpandable && column.key in vehicle) {
+                                                    const value = (vehicle as any)[column.key];
+                                                    const formattedValue = column.formatValue ? column.formatValue(value) : value;
+                                                    return (
+                                                        <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3">
+                                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
+                                                                {formattedValue || "N/A"}
+                                                            </p>
+                                                        </TableCell>
+                                                    );
+                                                }
+                                                return <TableCell key={column.key} className="px-4 py-4"></TableCell>;
+                                            })}
+                                        </TableRow>
+                                    ))}
                                 </Fragment>
                             );
                         })
                     ) : (
                         <TableRow>
-                            <TableCell colSpan={20} className="h-24 text-center">
-                                <p className="text-sm text-dark dark:text-white">
-                                    No customers found.
-                                </p>
+                            <TableCell colSpan={COLUMNS.length + (showCheckboxes ? 1 : 0)} className="h-24 text-center">
+                                <p className="text-sm text-dark dark:text-white">No customers found.</p>
                             </TableCell>
                         </TableRow>
                     )}
                 </TableBody>
-            </Table >
+            </Table>
 
+            {/* Pagination */}
             <div className="flex items-center justify-end gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
                 <div className="flex items-center gap-2">
                     <select
@@ -711,16 +585,18 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                         onChange={handleRowsPerPageChange}
                         className="bg-transparent text-sm font-medium text-dark outline-none dark:text-white"
                     >
-                        <option value={10}>10</option>
-                        <option value={15}>15</option>
-                        <option value={20}>20</option>
+                        {ROWS_PER_PAGE_OPTIONS.map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                        ))}
                     </select>
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {loading && (
+                        <p className="text-sm font-medium text-dark dark:text-white">Loading...</p>
+                    )}
                     <p className="text-sm font-medium text-dark dark:text-white">
-                        {startIndex + 1}-{Math.min(endIndex, sortedData.length)} of{" "}
-                        {sortedData.length}
+                        {((currentPage - 1) * rowsPerPage) + 1}-{Math.min(currentPage * rowsPerPage, totalRecords)} of {totalRecords}
                     </p>
                     <div className="flex items-center gap-2">
                         <button
@@ -740,6 +616,6 @@ export function CustomersTable({ customers: initialData }: CustomersTableProps) 
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }

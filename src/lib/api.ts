@@ -1,78 +1,91 @@
+// ============================================================================
+// IMPORTS
+// ============================================================================
+
 import customersData from "@/data/customers.json";
 import stationSubmissionsData from "@/data/station-submissions.json";
+import tripsData from "@/data/trips.json";
+
+// ============================================================================
+// CONFIGURATION
+// ============================================================================
+
+const API_BASE_URL = "http://localhost:4000/api";
+const CACHE_POLICY = "no-store" as const;
+
+// ============================================================================
+// TYPE DEFINITIONS - SHARED
+// ============================================================================
+
+interface PaginationInfo {
+    total: number;
+    page: number;
+    limit: number;
+}
+
+interface ApiResponse<T> {
+    data: T;
+    pagination?: PaginationInfo;
+}
+
+// ============================================================================
+// TYPE DEFINITIONS - CUSTOMERS
+// ============================================================================
 
 export interface Customer {
     firstName: string;
     lastName: string;
-    email: string;
+    email: string | null;
     phone: string;
     vehicleRegDate: string;
     customerRegDate: string;
-    registration_number?: string; // Added field
+    registrationNumber: string | null;
     vehicleType: string;
     manufacturer: string;
     vehicleModel: string;
     vehicleVariant: string;
-    deviceBrand: string;
-    version: string;
-    navigation: string;
-    trip: string;
-    checkIn: string;
+    deviceBrand: string | null;
+    deviceModel: string | null;
+    devicePlatform: string | null;
+    appVersion: string | null;
+    navigation: boolean;
+    trip: boolean;
+    checkIn: boolean;
     subscription: string;
-    deviceModel: string;
-    devicePlatform: string;
-    vehicles?: {
-        registration_number?: string; // Added field
-        vehicleRegDate: string;
-        vehicleType: string;
-        manufacturer: string;
-        vehicleModel: string;
-        vehicleVariant: string;
-    }[];
+    vehicles?: Vehicle[];
 }
 
-export async function getCustomers(): Promise<Customer[]> {
-    // --- REAL BACKEND INTEGRATION ---
-    // When the backend is ready, uncomment this block and remove 'return customersData;'
-
-    /*
-    try {
-        // Replace with your actual backend URL
-        const response = await fetch('http://localhost:3001/api/customers', {
-            cache: 'no-store' // Ensure fresh data on every request
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to fetch customers');
-        }
-        
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching customers:', error);
-        return []; // Return empty array on error to prevent app crash
-    }
-    */
-
-    return customersData;
+interface Vehicle {
+    registrationNumber?: string;
+    vehicleRegDate: string;
+    vehicleType: string;
+    manufacturer: string;
+    vehicleModel: string;
+    vehicleVariant: string;
 }
 
-// Trip data is now handled by TripCheckin interface and getTripCheckins() function below
-// The old Trip interface had incorrect types (source/destination as strings instead of LocationCoordinates)
-import tripsData from "@/data/trips.json";
+export interface CustomersResponse {
+    data: Customer[];
+    pagination: PaginationInfo;
+}
+
+// ============================================================================
+// TYPE DEFINITIONS - STATION SUBMISSIONS
+// ============================================================================
 
 export interface Connector {
     name: string;
     count: number;
     type: "AC" | "DC";
-    powerRating?: string; // e.g., "7.4 kW", "50 kW"
-    tariff?: string; // e.g., "₹15/kWh"
+    powerRating?: string;
+    tariff?: string;
 }
 
 export interface StationSubmission {
     id: number;
     submissionDate: string;
     stationName: string;
-    stationNumber?: string; // Station identification number
+    stationNumber?: string;
     userName: string;
     userId: string;
     networkName: string;
@@ -86,17 +99,14 @@ export interface StationSubmission {
     longitude: number;
     stationType: string;
     eVolts: number;
-    operationalHours?: string; // e.g., "24/7" or "9 AM - 6 PM"
-    approvalDate?: string; // Date when station was approved
-    addedByType?: "EV Owner" | "Station Owner" | "CPO"; // Who added this station
+    operationalHours?: string;
+    approvalDate?: string;
+    addedByType?: "EV Owner" | "Station Owner" | "CPO";
 }
 
-export async function getStationSubmissions(): Promise<StationSubmission[]> {
-    return stationSubmissionsData as StationSubmission[];
-}
-
-
-// --- Trip Check-ins API ---
+// ============================================================================
+// TYPE DEFINITIONS - TRIP CHECK-INS
+// ============================================================================
 
 export interface LocationCoordinates {
     latitude: number;
@@ -106,55 +116,36 @@ export interface LocationCoordinates {
 
 export interface TripCheckin {
     id: string;
-    dateTime: string; // When user planned the trip
+    dateTime: string;
     firstName: string;
     lastName: string;
     email: string;
     mobileNumber: string;
-
-    // Route details with coordinates
     source: LocationCoordinates;
     stop1?: LocationCoordinates | null;
     stop2?: LocationCoordinates | null;
     stop3?: LocationCoordinates | null;
     destination: LocationCoordinates;
-
-    // Trip metrics
     totalKm: number;
-    stationConnectorCount: string; // e.g., "5 stations, 12 connectors"
-    chargingStopsCount: number; // Number suggested by system
-
-    // EV Details
+    stationConnectorCount: string;
+    chargingStopsCount: number;
     evModel: string;
     evVariant: string;
-    evBatteryCapacity: string; // e.g., "40 kWh"
-
-    // Engagement
+    evBatteryCapacity: string;
     evolts: number;
     feedback?: string | null;
     navigation: "Yes" | "No";
     checkIn: "Yes" | "No";
-
-    // Status
     tripStatus: "Planned" | "Ongoing" | "Completed" | "Cancelled";
     tripCompletionStatus?: "Successful" | "Failed" | null;
-
-    // Trip Story
     hasTripStory: "Yes" | "No";
     storyStatus?: "Pending" | "Approved" | "Rejected" | null;
     blogLink?: string | null;
-
-    // Approval tracking
     approvalDate?: string | null;
     approvedBy?: string | null;
-
     // Legacy fields for backward compatibility
     user_phone?: string | null;
-    ev?: {
-        brand: string;
-        model: string;
-        variant: string;
-    } | null;
+    ev?: { brand: string; model: string; variant: string } | null;
     rating?: number | null;
     feedback_provided?: boolean | null;
     charging_time?: string | null;
@@ -164,45 +155,114 @@ export interface TripCheckin {
     amount?: number | null;
     evolts_earned?: number | null;
     photos?: { url: string; filename: string }[];
-    audit_log?: {
-        action: string;
-        admin?: string | null;
-        timestamp: string;
-        notes: string;
-    }[];
-    flags?: {
-        duplicate?: boolean;
-        amount_mismatch?: boolean;
-    };
+    audit_log?: { action: string; admin?: string | null; timestamp: string; notes: string }[];
+    flags?: { duplicate?: boolean; amount_mismatch?: boolean };
     story_opt_in?: boolean | null;
 }
 
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+async function fetchApi<T>(endpoint: string): Promise<T> {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        cache: CACHE_POLICY,
+    });
+
+    if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
+function simulatePagination<T>(data: T[], page: number, limit: number): ApiResponse<T[]> & { pagination: PaginationInfo } {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = data.slice(startIndex, endIndex);
+
+    return {
+        data: paginatedData,
+        pagination: {
+            total: data.length,
+            page,
+            limit,
+        },
+    };
+}
+
+// ============================================================================
+// API FUNCTIONS - CUSTOMERS
+// ============================================================================
+
+export async function getCustomersPaginated(
+    page: number = 1,
+    limit: number = 10
+): Promise<CustomersResponse> {
+    try {
+        const result = await fetchApi<CustomersResponse>(`/customers?page=${page}&limit=${limit}`);
+        console.log(`✅ Fetched page ${page} from backend`);
+        return result;
+    } catch (error) {
+        console.warn("⚠️ Backend unavailable, using fallback data");
+        return simulatePagination(customersData as Customer[], page, limit);
+    }
+}
+
+// ============================================================================
+// API FUNCTIONS - STATION SUBMISSIONS
+// ============================================================================
+
+export async function getStationSubmissions(): Promise<StationSubmission[]> {
+    return stationSubmissionsData as StationSubmission[];
+}
+
+// ============================================================================
+// API FUNCTIONS - TRIP CHECK-INS
+// ============================================================================
+
 export async function getTripCheckins(): Promise<TripCheckin[]> {
-    // Return the comprehensive trip data with all new fields
     return tripsData as TripCheckin[];
 }
 
 export async function getCheckinById(id: string): Promise<TripCheckin | undefined> {
-    const list = await getTripCheckins();
-    return list.find(t => t.id === id);
+    const checkins = await getTripCheckins();
+    return checkins.find((checkin) => checkin.id === id);
 }
 
-export async function editCheckin(id: string, editedFields: Partial<TripCheckin>, editReason: string, admin: string) {
-    console.log(`[Mock API] Editing checkin ${id}:`, editedFields, "Reason:", editReason, "Admin:", admin);
-    // In a real app, updated backend here
+export async function editCheckin(
+    id: string,
+    editedFields: Partial<TripCheckin>,
+    editReason: string,
+    admin: string
+): Promise<boolean> {
+    console.log(`[API] Editing checkin ${id}:`, { editedFields, editReason, admin });
+    // TODO: Implement backend API call
     return true;
 }
 
-export async function approveCheckin(id: string, creditedEvolts: number, notifyWhatsapp: boolean, admin: string) {
-    console.log(`[Mock API] Approving checkin ${id} with ${creditedEvolts} EVolts. Notify: ${notifyWhatsapp}, Admin: ${admin}`);
+export async function approveCheckin(
+    id: string,
+    creditedEvolts: number,
+    notifyWhatsapp: boolean,
+    admin: string
+): Promise<boolean> {
+    console.log(`[API] Approving checkin ${id}:`, { creditedEvolts, notifyWhatsapp, admin });
+    // TODO: Implement backend API call
     return true;
 }
 
-export async function rejectCheckin(id: string, reason: string, admin: string) {
-    console.log(`[Mock API] Rejecting checkin ${id}. Reason: ${reason}, Admin: ${admin}`);
+export async function rejectCheckin(
+    id: string,
+    reason: string,
+    admin: string
+): Promise<boolean> {
+    console.log(`[API] Rejecting checkin ${id}:`, { reason, admin });
+    // TODO: Implement backend API call
     return true;
 }
 
-export async function postAudit(entry: any) {
-    console.log(`[Mock API] Audit Log:`, entry);
+export async function postAudit(entry: any): Promise<void> {
+    console.log("[API] Audit log:", entry);
+    // TODO: Implement backend API call
 }

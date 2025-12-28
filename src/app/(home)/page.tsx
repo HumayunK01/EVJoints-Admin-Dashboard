@@ -1,7 +1,7 @@
 
 import { CustomersTable } from "@/components/Tables/CustomersTable";
 import { Metadata } from "next";
-import { getCustomers } from "@/lib/api";
+import { getCustomersPaginated } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Customers",
@@ -9,14 +9,16 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
-  const customers = await getCustomers();
+  // Get first page with server-side pagination
+  const response = await getCustomersPaginated(1, 10);
 
   return (
     <>
-
-
       <div className="flex flex-col gap-10">
-        <CustomersTable customers={customers} />
+        <CustomersTable
+          initialData={response.data}
+          initialPagination={response.pagination}
+        />
       </div>
     </>
   );
