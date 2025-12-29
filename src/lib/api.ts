@@ -73,35 +73,58 @@ export interface CustomersResponse {
 // TYPE DEFINITIONS - STATION SUBMISSIONS
 // ============================================================================
 
+// ================================
+// Connector
+// ================================
 export interface Connector {
-    name: string;
-    count: number;
-    type: string; // Changed from "AC" | "DC" to handle "-" from backend
-    powerRating?: string;
-    tariff?: string;
+  name: string;
+  count: number;
+  type: string;               // AC | DC | "-" (backend-safe)
+  powerRating?: string;       // e.g. "50 kW"
+  tariff?: string;            // e.g. "₹18/kWh"
 }
 
+// ================================
+// Station Submission
+// ================================
 export interface StationSubmission {
-    id: number;
-    submissionDate: string;
-    stationName: string;
-    stationNumber?: string;
-    userName: string | null; // Can be null in backend
-    userId?: string; // Optional - not always present in backend
-    networkName: string;
-    usageType: "Public" | "Private";
-    connectors: Connector[];
-    photos: string[];
-    status: "Pending" | "Approved" | "Rejected";
-    statusReason?: string;
-    contactNumber: string | null; // Can be null or empty in backend
-    latitude: number;
-    longitude: number;
-    stationType?: string; // Optional - not always present in backend
-    eVolts: number;
-    operationalHours?: string;
-    approvalDate?: string | null; // Can be null
-    addedByType?: "EV Owner" | "Station Owner" | "CPO";
+  // Core identifiers
+  id: number;
+  stationName: string;
+  stationNumber: string;
+
+  // User / Owner
+  userName: string | null;     // backend can return null
+  userId?: string;             // optional (not always sent)
+  addedByType?: "EV Owner" | "Station Owner" | "CPO";
+
+  // Network / Usage
+  networkName: string;
+  usageType: "Public" | "Private";
+  stationType?: string;        // optional (Mall, Highway, etc.)
+
+  // Location
+  latitude: number;
+  longitude: number;
+
+  // Contact
+  contactNumber: string | null;
+
+  // Status / Dates
+  status: "Pending" | "Approved" | "Rejected";
+  submissionDate: string;      // ISO string from backend
+  approvalDate?: string | null;
+  operationalHours?: string;
+
+  // Assets
+  photos: string[];
+
+  // Charging
+  connectors: Connector[];     // empty array when none
+  eVolts: number;
+
+  // Optional backend additions
+  statusReason?: string;       // if rejection reason added later
 }
 
 // ============================================================================
