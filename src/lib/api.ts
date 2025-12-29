@@ -10,7 +10,7 @@ import tripsData from "@/data/trips.json";
 // CONFIGURATION
 // ============================================================================
 
-const API_BASE_URL = "http://localhost:4000/api";
+const API_BASE_URL = "https://ev-backend-six.vercel.app/api";
 const CACHE_POLICY = "no-store" as const;
 
 // ============================================================================
