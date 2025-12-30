@@ -464,20 +464,39 @@ export default function StationSubmissionsTable({
     }, []);
 
     // Fetch page data from backend using API utility
-    const fetchPage = async (page: number, limit: number) => {
-        setIsLoading(true);
+    const fetchPage = async (page: number, limit: number, showLoading = true) => {
+        if (showLoading) setIsLoading(true);
         try {
             const { getStationSubmissionsPaginated } = await import("@/lib/api");
             const response = await getStationSubmissionsPaginated(page, limit);
             setData(response.data);
             setTotalRecords(response.pagination.total);
-            setCurrentPage(response.pagination.page);
+            if (showLoading) setCurrentPage(response.pagination.page);
         } catch (error) {
             console.error("Error fetching stations:", error);
         } finally {
-            setIsLoading(false);
+            if (showLoading) setIsLoading(false);
         }
     };
+
+    // Server-side pagination (when no filters active)
+    const hasActiveFilters = useMemo(
+        () => search || startDate || endDate || Object.keys(activeFilters).length > 0,
+        [search, startDate, endDate, activeFilters]
+    );
+
+    // Auto-refresh data every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            // Only refresh if no filters are active (as filtering is client-side on current page data)
+            // and no modals are open to prevent UX disruption
+            if (!hasActiveFilters && !actionModalOpen && !photoViewerOpen && !isFilterOpen) {
+                fetchPage(currentPage, rowsPerPage, false);
+            }
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [currentPage, rowsPerPage, hasActiveFilters, actionModalOpen, photoViewerOpen, isFilterOpen]);
 
     // Derived unique values for each filter key
     const filterOptions = useMemo(() => {
@@ -525,12 +544,6 @@ export default function StationSubmissionsTable({
         setStartDate("");
         setEndDate("");
     };
-
-    // Server-side pagination (when no filters active)
-    const hasActiveFilters = useMemo(
-        () => search || startDate || endDate || Object.keys(activeFilters).length > 0,
-        [search, startDate, endDate, activeFilters]
-    );
 
     const totalPages = hasActiveFilters
         ? Math.ceil(filteredData.length / rowsPerPage)

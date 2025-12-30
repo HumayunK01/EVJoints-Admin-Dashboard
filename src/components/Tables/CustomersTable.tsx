@@ -282,62 +282,55 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
     const totalPages = Math.ceil(totalRecords / rowsPerPage);
     const currentData = customers; // Backend already returns paginated data
 
+    // Helper to fetch data
+    const fetchData = async (page: number, limit: number, showLoading = true) => {
+        if (showLoading) setLoading(true);
+        try {
+            const { getCustomersPaginated } = await import("@/lib/api");
+            const response = await getCustomersPaginated(page, limit);
+            setCustomers(response.data);
+            setTotalRecords(response.pagination.total);
+            setCurrentPage(response.pagination.page);
+        } catch (error) {
+            console.error("Error fetching customers:", error);
+        } finally {
+            if (showLoading) setLoading(false);
+        }
+    };
+
+    // Auto-refresh every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (!loading && !isSortOpen && !isDownloadOpen && !isFilterOpen) {
+                fetchData(currentPage, rowsPerPage, false);
+            }
+        }, 30000);
+        return () => clearInterval(interval);
+    }, [currentPage, rowsPerPage, loading, isSortOpen, isDownloadOpen, isFilterOpen]);
+
     // Handlers
     const handleNextPage = async () => {
         if (currentPage < totalPages && !loading) {
-            setLoading(true);
-            try {
-                const { getCustomersPaginated } = await import("@/lib/api");
-                const response = await getCustomersPaginated(currentPage + 1, rowsPerPage);
-                setCustomers(response.data);
-                setTotalRecords(response.pagination.total);
-                setCurrentPage(response.pagination.page);
-                setSelectedRows(new Set());
-                setExpandedRows(new Set());
-            } catch (error) {
-                console.error("Error fetching next page:", error);
-            } finally {
-                setLoading(false);
-            }
+            await fetchData(currentPage + 1, rowsPerPage);
+            setSelectedRows(new Set());
+            setExpandedRows(new Set());
         }
     };
 
     const handlePrevPage = async () => {
         if (currentPage > 1 && !loading) {
-            setLoading(true);
-            try {
-                const { getCustomersPaginated } = await import("@/lib/api");
-                const response = await getCustomersPaginated(currentPage - 1, rowsPerPage);
-                setCustomers(response.data);
-                setTotalRecords(response.pagination.total);
-                setCurrentPage(response.pagination.page);
-                setSelectedRows(new Set());
-                setExpandedRows(new Set());
-            } catch (error) {
-                console.error("Error fetching previous page:", error);
-            } finally {
-                setLoading(false);
-            }
+            await fetchData(currentPage - 1, rowsPerPage);
+            setSelectedRows(new Set());
+            setExpandedRows(new Set());
         }
     };
 
     const handleRowsPerPageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newLimit = Number(e.target.value);
-        setLoading(true);
-        try {
-            const { getCustomersPaginated } = await import("@/lib/api");
-            const response = await getCustomersPaginated(1, newLimit);
-            setCustomers(response.data);
-            setTotalRecords(response.pagination.total);
-            setCurrentPage(1);
-            setRowsPerPage(newLimit);
-            setSelectedRows(new Set());
-            setExpandedRows(new Set());
-        } catch (error) {
-            console.error("Error changing page size:", error);
-        } finally {
-            setLoading(false);
-        }
+        setRowsPerPage(newLimit); // Update state first
+        await fetchData(1, newLimit);
+        setSelectedRows(new Set());
+        setExpandedRows(new Set());
     };
 
     const toggleRow = (identifier: string) => {

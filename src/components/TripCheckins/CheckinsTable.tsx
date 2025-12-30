@@ -86,56 +86,55 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
     const totalPages = Math.ceil(totalRecords / rowsPerPage);
     const currentData = filteredData; // Display filtered data from current page
 
+    // Helper to fetch data
+    const fetchData = async (page: number, limit: number, showLoading = true) => {
+        if (showLoading) setLoading(true);
+        try {
+            const { getTripCheckinsPaginated } = await import("@/lib/api");
+            const response = await getTripCheckinsPaginated(page, limit);
+            setData(response.data);
+            setTotalRecords(response.pagination.total);
+            setCurrentPage(response.pagination.page);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            if (showLoading) setLoading(false);
+        }
+    };
+
+    // Auto-refresh data every 30 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            // Only refresh if no text search is active, filters are default ("All"),
+            // and no modals are open.
+            const isDefaultFilters = search === "" && statusFilter === "All" && storyFilter === "All";
+            const noModalsOpen = !locationViewerOpen && !feedbackViewerOpen && !storyActionOpen;
+
+            if (isDefaultFilters && noModalsOpen && !loading) {
+                fetchData(currentPage, rowsPerPage, false);
+            }
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, [currentPage, rowsPerPage, search, statusFilter, storyFilter, locationViewerOpen, feedbackViewerOpen, storyActionOpen, loading]);
+
     // Pagination Handlers
     const handleNextPage = async () => {
         if (currentPage < totalPages && !loading) {
-            setLoading(true);
-            try {
-                const { getTripCheckinsPaginated } = await import("@/lib/api");
-                const response = await getTripCheckinsPaginated(currentPage + 1, rowsPerPage);
-                setData(response.data);
-                setTotalRecords(response.pagination.total);
-                setCurrentPage(response.pagination.page);
-            } catch (error) {
-                console.error("Error fetching next page:", error);
-            } finally {
-                setLoading(false);
-            }
+            await fetchData(currentPage + 1, rowsPerPage);
         }
     };
 
     const handlePrevPage = async () => {
         if (currentPage > 1 && !loading) {
-            setLoading(true);
-            try {
-                const { getTripCheckinsPaginated } = await import("@/lib/api");
-                const response = await getTripCheckinsPaginated(currentPage - 1, rowsPerPage);
-                setData(response.data);
-                setTotalRecords(response.pagination.total);
-                setCurrentPage(response.pagination.page);
-            } catch (error) {
-                console.error("Error fetching previous page:", error);
-            } finally {
-                setLoading(false);
-            }
+            await fetchData(currentPage - 1, rowsPerPage);
         }
     };
 
     const handleRowsPerPageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newLimit = Number(e.target.value);
-        setLoading(true);
-        try {
-            const { getTripCheckinsPaginated } = await import("@/lib/api");
-            const response = await getTripCheckinsPaginated(1, newLimit);
-            setData(response.data);
-            setTotalRecords(response.pagination.total);
-            setCurrentPage(1);
-            setRowsPerPage(newLimit);
-        } catch (error) {
-            console.error("Error changing page size:", error);
-        } finally {
-            setLoading(false);
-        }
+        setRowsPerPage(newLimit); // Update state first
+        await fetchData(1, newLimit);
     };
 
     // Handlers
