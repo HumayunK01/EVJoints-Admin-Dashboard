@@ -622,14 +622,17 @@ export default function StationSubmissionsTable({
             const updatedFields = { ...updated, status: undefined, approvalDate: undefined, updated_at: undefined };
             const isContentChanged = JSON.stringify(originalFields) !== JSON.stringify(updatedFields);
 
-            // 1. If content changed, call full update
+            // 1. If content changed, call full update (Action: SAVE)
             if (isContentChanged) {
-                await updateStation(updated.id, updated);
+                // We cast "SAVE" because TS might not infer it if imported from new API definition
+                await updateStation(updated.id, updated, "SAVE");
             }
 
-            // 2. If status changed, call status update (endpoint: /:id/status)
-            if (isStatusChanged) {
-                await updateStationStatus(updated.id, updated.status);
+            // 2. If status changed, call status update (This wrapper now sends APPROVE/REJECT action)
+            if (isStatusChanged && updated.status !== "Pending") {
+                // Note: We only call this if status is Approved or Rejected.
+                // "Pending" isn't an action in the new backend logic.
+                await updateStationStatus(updated.id, updated.status as "Approved" | "Rejected");
             }
 
             // Refresh data

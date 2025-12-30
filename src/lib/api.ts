@@ -257,55 +257,51 @@ export async function getStationSubmissionsPaginated(
     }
 }
 
-// Update strict fields for a station
+// Unified update function based on new backend logic
 export async function updateStation(
     id: number,
-    data: StationSubmission
+    data: Partial<StationSubmission>,
+    action: "SAVE" | "APPROVE" | "REJECT"
 ): Promise<{ message: string }> {
-    // 1. Parse operational hours
-    let open_time = "00:00:00";
-    let close_time = "23:59:00";
 
-    if (data.operationalHours && data.operationalHours !== "-" && data.operationalHours.includes("-")) {
-        const parts = data.operationalHours.split("-").map(s => s.trim());
-        if (parts.length === 2) {
-            // Helper to convert 12h (09:00 AM) to 24h (09:00:00) if needed,
-            // or just pass through if already 24h.
-            // Assuming current format is 24h "00:00:00 - 23:59:00" or similar.
-            open_time = parts[0];
-            close_time = parts[1];
+    let payload: any = { action };
+
+    // Only include detailed fields if action is SAVE
+    if (action === "SAVE") {
+        // 1. Parse operational hours
+        let open_time = "00:00:00";
+        let close_time = "23:59:00";
+        const opHrs = data.operationalHours || "";
+
+        if (opHrs && opHrs !== "-" && opHrs.includes("-")) {
+            const parts = opHrs.split("-").map(s => s.trim());
+            if (parts.length === 2) {
+                open_time = parts[0];
+                close_time = parts[1];
+            }
         }
+
+        // 2. Prepare payload
+        payload = {
+            ...payload,
+            stationName: data.stationName,
+            latitude: Number(data.latitude),
+            longitude: Number(data.longitude),
+            contactNumber: data.contactNumber,
+            open_time,
+            close_time,
+            connectors: (data.connectors || []).map(c => ({
+                chargerTypeId: c.chargerTypeId || 0,
+                count: Number(c.count),
+                // Strip non-numeric chars for power/tariff to be safe for parseFloat
+                powerRating: String(c.powerRating || "").replace(/[^\d.]/g, ""),
+                tariff: String(c.tariff || "").replace(/[^\d.]/g, "")
+            }))
+        };
     }
 
-    // 2. Prepare payload matching backend schema
-    const payload = {
-        stationName: data.stationName,
-        network_id: data.networkId || 0, // Fallback if missing, but should be present
-        usageType: data.usageType,
-        open_time,
-        close_time,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        contactNumber: data.contactNumber,
-        connectors: data.connectors.map(c => ({
-            charger_type_id: c.chargerTypeId || 0,
-            count: c.count,
-            power: c.powerRating || "-",
-            tariff: c.tariff || "-"
-        }))
-    };
-
-    console.log(`[API] Updating station ${id} with payload:`, payload);
-
-    // Parse powerRating and tariff to avoid backend issues
-    // Backend expects number/string, but we sanitize just in case
-    // The loop logic above is mostly handled by backend, we just send raw values 
-    // and let backend regex handle it?
-    // Actually the backend code does: parseFloat(c.powerRating) || null
-    // So "60 kW" => 60. Safe.
-
     const url = `${API_BASE_URL}/stations/${id}`;
-    console.log(`[API] Updating station via PUT ${url}`);
+    console.log(`[API] Station Action: ${action} to ${url}`, payload);
 
     const response = await fetch(url, {
         method: "PUT",
@@ -316,32 +312,19 @@ export async function updateStation(
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to update station: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to ${action} station: ${response.status} ${response.statusText}`);
     }
 
     return response.json();
 }
 
+// Helper alias for status updates if needed
 export async function updateStationStatus(
     id: number,
-    status: "Approved" | "Rejected" | "Pending"
+    status: "Approved" | "Rejected"
 ): Promise<{ message: string }> {
-    const url = `${API_BASE_URL}/stations/${id}/status`;
-    console.log(`[API] Updating status via PUT ${url}`);
-
-    const response = await fetch(url, {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status }),
-    });
-
-    if (!response.ok) {
-        throw new Error(`Failed to update station status: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
+    const action = status === "Approved" ? "APPROVE" : "REJECT";
+    return updateStation(id, {}, action);
 }
 
 // Legacy function for backward compatibility (deprecated)
