@@ -605,7 +605,7 @@ export default function StationSubmissionsTable({
             item.networkName,
             item.stationName,
             item.stationNumber || "-",
-            Array.from(new Set(item.connectors.map(c => c.type))).join('/'),
+            Array.from(new Set(item.connectors.map(c => c.type || "-"))).join('/'),
             item.connectors.map(c => `${c.count}x ${c.name}`).join(', '),
             item.connectors.map(c => c.powerRating || "-").join(', '),
             item.connectors.map(c => c.tariff || "-").join(', '),
@@ -672,13 +672,13 @@ export default function StationSubmissionsTable({
             header: "Connector Type",
             minWidth: "120px",
             isConnector: true,
-            renderConnector: (c: Connector) => c.type
+            renderConnector: (c: Connector) => c.type || "-"
         },
         {
             header: "Connectors",
             minWidth: "150px",
             isConnector: true,
-            renderConnector: (c: Connector) => `${c.count}x ${c.name}`
+            renderConnector: (c: Connector) => `${c.count}x ${c.name || "-"}`
         },
         {
             header: "Power Rating",
@@ -884,7 +884,12 @@ export default function StationSubmissionsTable({
                                                     {col.isConnector ? (
                                                         <div className="flex items-center gap-2">
                                                             <div className="text-sm text-dark dark:text-white">
-                                                                {hasMultipleConnectors ? "Multiple" : col.renderConnector?.(item.connectors[0])}
+                                                                {item.connectors.length === 0
+                                                                    ? "-"
+                                                                    : hasMultipleConnectors
+                                                                        ? "Multiple"
+                                                                        : col.renderConnector?.(item.connectors[0])
+                                                                }
                                                             </div>
                                                             {hasMultipleConnectors && (
                                                                 <button
