@@ -10,14 +10,34 @@ import { type Customer } from "@/lib/api";
 import { DateRangeFilter } from "./DateRangeFilter";
 
 const formatDate = (dateString: any): string => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "-";
     try {
         const date = new Date(dateString);
-        if (isNaN(date.getTime())) return "N/A";
+        if (isNaN(date.getTime())) return "-";
         return date.toLocaleDateString('en-GB');
     } catch {
-        return "N/A";
+        return "-";
     }
+};
+
+const formatRegistrationNumber = (regNumber: any): string => {
+    if (!regNumber) return "-";
+    const str = String(regNumber).toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+    // Standard Indian Format: MH 12 AB 1234
+    // RegEx: 2 chars (State), 1-2 digits (District), 1-3 chars (Series, optional), 4 digits (Unique)
+    const matchFull = str.match(/^([A-Z]{2})(\d{1,2})([A-Z]{1,3})(\d{4})$/);
+    if (matchFull) {
+        return `${matchFull[1]} ${matchFull[2]} ${matchFull[3]} ${matchFull[4]}`;
+    }
+
+    // Match without series: MH 12 1234
+    const matchNoSeries = str.match(/^([A-Z]{2})(\d{1,2})(\d{4})$/);
+    if (matchNoSeries) {
+        return `${matchNoSeries[1]} ${matchNoSeries[2]} ${matchNoSeries[3]}`;
+    }
+
+    return str;
 };
 
 type ColumnConfig = {
@@ -38,8 +58,8 @@ const COLUMNS: ColumnConfig[] = [
         label: "Email ID",
         minWidth: "150px",
         render: (value) => (
-            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                {value || "N/A"}
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center">
+                {value || "-"}
             </p>
         )
     },
@@ -62,11 +82,7 @@ const COLUMNS: ColumnConfig[] = [
         label: "Registration Number",
         minWidth: "150px",
         isExpandable: true,
-        render: (value) => (
-            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                {value || "N/A"}
-            </p>
-        )
+        formatValue: formatRegistrationNumber
     },
     { key: "subscription", label: "Subscription", minWidth: "120px" },
     { key: "vehicleType", label: "Vehicle Type", minWidth: "120px", isExpandable: true },
@@ -78,8 +94,8 @@ const COLUMNS: ColumnConfig[] = [
         label: "Device Brand",
         minWidth: "120px",
         render: (value) => (
-            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                {value || "N/A"}
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center capitalize">
+                {value || "-"}
             </p>
         )
     },
@@ -88,8 +104,8 @@ const COLUMNS: ColumnConfig[] = [
         label: "Device Model",
         minWidth: "120px",
         render: (value) => (
-            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                {value || "N/A"}
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center capitalize">
+                {value || "-"}
             </p>
         )
     },
@@ -98,8 +114,8 @@ const COLUMNS: ColumnConfig[] = [
         label: "Device Platform",
         minWidth: "120px",
         render: (value) => (
-            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                {value || "N/A"}
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center capitalize">
+                {value || "-"}
             </p>
         )
     },
@@ -108,8 +124,8 @@ const COLUMNS: ColumnConfig[] = [
         label: "App Version",
         minWidth: "100px",
         render: (value) => (
-            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                {value || "N/A"}
+            <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center">
+                {value || "-"}
             </p>
         )
     },
@@ -118,11 +134,13 @@ const COLUMNS: ColumnConfig[] = [
         label: "Navigation",
         minWidth: "100px",
         render: (value) => (
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                }`}>
-                {value || "No"}
-            </span>
+            <div className="flex justify-center">
+                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                    }`}>
+                    {value || "No"}
+                </span>
+            </div>
         )
     },
     {
@@ -130,11 +148,13 @@ const COLUMNS: ColumnConfig[] = [
         label: "Trip",
         minWidth: "100px",
         render: (value) => (
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                }`}>
-                {value || "No"}
-            </span>
+            <div className="flex justify-center">
+                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                    }`}>
+                    {value || "No"}
+                </span>
+            </div>
         )
     },
     {
@@ -142,11 +162,13 @@ const COLUMNS: ColumnConfig[] = [
         label: "Check In",
         minWidth: "120px",
         render: (value) => (
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                }`}>
-                {value || "No"}
-            </span>
+            <div className="flex justify-center">
+                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                    : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                    }`}>
+                    {value || "No"}
+                </span>
+            </div>
         )
     },
 ];
@@ -174,10 +196,10 @@ interface ExpandableCellProps {
 }
 
 const ExpandableCell = ({ value, hasMultipleEntries, isExpanded, onToggle, showExpandIcon, formatValue }: ExpandableCellProps) => {
-    const displayValue = formatValue ? formatValue(value) : String(value);
+    const displayValue = formatValue ? formatValue(value) : (value !== null && value !== undefined ? String(value) : "-");
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
             <p className="text-sm text-dark dark:text-white whitespace-nowrap">{displayValue}</p>
             {hasMultipleEntries && showExpandIcon && (
                 <button onClick={onToggle} className="text-dark dark:text-white hover:text-primary flex-shrink-0">
@@ -209,18 +231,18 @@ const exportToCSV = (data: Customer[], columns: ColumnConfig[], filename: string
             return customer.vehicles.map(vehicle =>
                 columns.map(col => {
                     if (col.isExpandable && col.key in vehicle) {
-                        return (vehicle as any)[col.key] || "N/A";
+                        return (vehicle as any)[col.key] || "-";
                     }
                     const value = getCellValue(customer, col);
                     if (typeof value === 'boolean') return value ? "Yes" : "No";
-                    return value || "N/A";
+                    return value || "-";
                 })
             );
         }
         return [columns.map(col => {
             const value = getCellValue(customer, col);
             if (typeof value === 'boolean') return value ? "Yes" : "No";
-            return value || "N/A";
+            return value || "-";
         })];
     });
 
@@ -264,7 +286,8 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [isSortOpen, setIsSortOpen] = useState(false);
-    const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+
+    // const [isDownloadOpen, setIsDownloadOpen] = useState(false); // Removed
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -341,12 +364,12 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
     // Auto-refresh every 30 seconds
     useEffect(() => {
         const interval = setInterval(() => {
-            if (!loading && !isSortOpen && !isDownloadOpen && !isFilterOpen) {
+            if (!loading && !isSortOpen && !isFilterOpen) {
                 fetchData(currentPage, rowsPerPage, false);
             }
         }, 30000);
         return () => clearInterval(interval);
-    }, [currentPage, rowsPerPage, loading, isSortOpen, isDownloadOpen, isFilterOpen, sortOption]);
+    }, [currentPage, rowsPerPage, loading, isSortOpen, isFilterOpen, sortOption]);
 
     // Re-fetch when sort option changes
     // Removed: No need to re-fetch from server since we sort client-side now
@@ -392,15 +415,14 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
         setSelectedRows(selectedRows.size === currentData.length ? new Set() : new Set(currentData.map(c => c.phone)));
     };
 
-    const handleDownload = (format: "csv" | "excel") => {
+    const handleExport = () => {
         // Export current page data (or selected rows from current page)
         const dataToDownload = selectedRows.size > 0
             ? customers.filter(row => selectedRows.has(row.phone))
             : customers;
 
-        const filename = `customers_list_page${currentPage}${selectedRows.size > 0 ? '_selected' : ''}.${format === "excel" ? "xls" : "csv"}`;
+        const filename = `customers_list_page${currentPage}${selectedRows.size > 0 ? '_selected' : ''}.csv`;
         exportToCSV(dataToDownload, COLUMNS, filename);
-        setIsDownloadOpen(false);
     };
 
     // Render
@@ -459,28 +481,14 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                             </DropdownContent>
                         </Dropdown>
 
-                        {/* Download */}
-                        <Dropdown isOpen={isDownloadOpen} setIsOpen={setIsDownloadOpen}>
-                            <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
-                                <DownloadIcon className="h-4 w-4" />
-                                Download
-                                <ChevronDownIcon className="h-4 w-4" />
-                            </DropdownTrigger>
-                            <DropdownContent className="w-40 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
-                                <button
-                                    onClick={() => handleDownload("csv")}
-                                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2"
-                                >
-                                    CSV
-                                </button>
-                                <button
-                                    onClick={() => handleDownload("excel")}
-                                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2"
-                                >
-                                    Excel
-                                </button>
-                            </DropdownContent>
-                        </Dropdown>
+                        {/* Export Button */}
+                        <button
+                            onClick={handleExport}
+                            className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
+                        >
+                            <DownloadIcon className="h-4 w-4" />
+                            Export
+                        </button>
                     </div>
                 </div>
             </div>
@@ -523,7 +531,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                         {COLUMNS.map((column) => (
                             <TableHead
                                 key={column.key}
-                                className="px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap"
+                                className="px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap text-center"
                                 style={{ minWidth: column.minWidth }}
                             >
                                 {column.label}
@@ -555,7 +563,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                                             const formattedValue = formatCellValue(value, column);
 
                                             return (
-                                                <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3">
+                                                <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3 text-center align-middle">
                                                     {column.isExpandable ? (
                                                         <ExpandableCell
                                                             value={value}
@@ -568,8 +576,8 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                                                     ) : column.render ? (
                                                         column.render(value, customer)
                                                     ) : (
-                                                        <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                            {formattedValue}
+                                                        <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center">
+                                                            {formattedValue || "-"}
                                                         </p>
                                                     )}
                                                 </TableCell>
@@ -589,9 +597,9 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                                                     const value = (vehicle as any)[column.key];
                                                     const formattedValue = column.formatValue ? column.formatValue(value) : value;
                                                     return (
-                                                        <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3">
-                                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap">
-                                                                {formattedValue || "N/A"}
+                                                        <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3 text-center align-middle">
+                                                            <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center">
+                                                                {formattedValue || "-"}
                                                             </p>
                                                         </TableCell>
                                                     );
