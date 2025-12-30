@@ -21,6 +21,8 @@ import { Fuel, PlugZap } from "lucide-react";
 import LocationViewer from "@/components/TripCheckins/LocationViewer";
 import FeedbackViewer from "@/components/TripCheckins/FeedbackViewer";
 import StoryActionModal from "@/components/TripCheckins/StoryActionModal";
+import { Dropdown, DropdownContent, DropdownTrigger } from "@/components/ui/dropdown";
+import { DownloadIcon } from "@/components/Tables/icons";
 
 interface CheckinsTableProps {
     initialData: TripCheckin[];
@@ -40,6 +42,50 @@ interface ColumnConfig {
     className?: string;
 }
 
+const exportToCSV = (data: TripCheckin[], filename: string) => {
+    const headers = [
+        "Date", "Time", "Name", "Email", "Mobile", "Source", "Destination", "Total Km",
+        "Stations & Connectors", "Charging Stops", "EV Model", "EV Variant", "Battery",
+        "EVolts", "Status", "Trip Story", "Story Status", "Approved By", "Approval Date"
+    ];
+
+    const rows = data.map(item => [
+        item.dateTime ? new Date(item.dateTime).toLocaleDateString() : "-",
+        item.dateTime ? new Date(item.dateTime).toLocaleTimeString() : "-",
+        `${item.firstName || ""} ${item.lastName || ""}`.trim() || "-",
+        item.email || "-",
+        item.mobileNumber || "-",
+        item.source || "-",
+        item.destination || "-",
+        item.totalKm || "-",
+        item.stationConnectorCount || "-",
+        item.chargingStopsCount || "-",
+        item.evModel || "-",
+        item.evVariant || "-",
+        item.evBatteryCapacity || "-",
+        item.evolts || "-",
+        item.tripStatus || "-",
+        item.hasTripStory || "-",
+        item.storyStatus || "-",
+        item.approvedBy || "-",
+        item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-"
+    ]);
+
+    const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
 export default function CheckinsTable({ initialData, initialPagination }: CheckinsTableProps) {
     const [data, setData] = useState<TripCheckin[]>(initialData);
     const [totalRecords, setTotalRecords] = useState(initialPagination.total);
@@ -49,6 +95,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [storyFilter, setStoryFilter] = useState("All");
+    const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     // Modal states
@@ -170,6 +217,12 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         setData(prev => prev.map(item => item.id === updated.id ? updated : item));
     };
 
+    const handleDownload = (format: "csv" | "excel") => {
+        const filename = `trip_checkins_page${currentPage}.${format === "excel" ? "xls" : "csv"}`;
+        exportToCSV(data, filename);
+        setIsDownloadOpen(false);
+    };
+
     const truncateText = (text: string, maxLength: number = 80) => {
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + "...";
@@ -200,8 +253,8 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "Date",
             minWidth: "120px",
             render: (item) => (
-                <span className="text-sm font-medium text-dark dark:text-white">
-                    {formatDate(item.dateTime)}
+                <span className="text-sm text-dark dark:text-white">
+                    {item.dateTime ? formatDate(item.dateTime) : "-"}
                 </span>
             )
         },
@@ -209,8 +262,8 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "Time",
             minWidth: "100px",
             render: (item) => (
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {formatTime(item.dateTime)}
+                <span className="text-sm text-dark dark:text-white">
+                    {item.dateTime ? formatTime(item.dateTime) : "-"}
                 </span>
             )
         },
@@ -218,16 +271,20 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "Name",
             minWidth: "150px",
             render: (item) => (
-                <span className="text-sm font-medium text-dark dark:text-white">
-                    {item.firstName} {item.lastName}
+                <span className="text-sm text-dark dark:text-white whitespace-nowrap truncate max-w-[150px] block" title={`${item.firstName} ${item.lastName}`}>
+                    {item.firstName ? `${item.firstName} ${item.lastName || ""}` : "-"}
                 </span>
             )
         },
-        { header: "Email ID", accessor: "email", minWidth: "200px" },
+        {
+            header: "Email ID",
+            minWidth: "200px",
+            render: (item) => <span className="text-sm text-dark dark:text-white truncate max-w-[200px] block" title={item.email || ""}>{item.email || "-"}</span>
+        },
         {
             header: "Mobile Number",
             minWidth: "130px",
-            render: (item) => <span className="text-sm text-dark dark:text-white whitespace-nowrap">{item.mobileNumber}</span>
+            render: (item) => <span className="text-sm text-dark dark:text-white whitespace-nowrap">{item.mobileNumber || "-"}</span>
         },
         {
             header: "Source",
@@ -245,7 +302,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                 return (
                     <div className="flex items-center gap-2">
                         <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
-                            {item.source.split(',')[0]}
+                            {item.source ? item.source.split(',')[0] : "-"}
                         </span>
                         {hasStops && (
                             <button
@@ -253,10 +310,10 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                                     e.stopPropagation();
                                     toggleRow(item.id);
                                 }}
-                                className={`p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isExpanded ? "bg-gray-100 dark:bg-gray-700 text-primary" : "text-gray-500"}`}
+                                className={`h-5 w-5 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isExpanded ? "bg-gray-100 dark:bg-gray-700 text-primary" : "text-gray-500"}`}
                                 title={`${stops.length} stops`}
                             >
-                                <ChevronDownIcon className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                <ChevronDownIcon className={`h-3 w-3 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                             </button>
                         )}
                     </div>
@@ -267,15 +324,15 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "Destination",
             minWidth: "250px",
             render: (item) => (
-                <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
-                    {item.destination.split(',')[0]}
+                <span className="text-sm text-dark dark:text-white block min-w-[200px]" title={item.destination || ""}>
+                    {item.destination || "-"}
                 </span>
             )
         },
         {
             header: "Total km",
-            minWidth: "100px",
-            render: (item) => <span className="text-sm font-medium text-dark dark:text-white">{item.totalKm} km</span>
+            minWidth: "120px",
+            render: (item) => <span className="text-sm text-dark dark:text-white">{item.totalKm ? `${item.totalKm} km` : "-"}</span>
         },
         {
             header: "Station & Connector",
@@ -289,13 +346,13 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                 return (
                     <div className="flex items-center justify-center gap-4">
                         <div className="flex items-center gap-1.5" title={`${stationCount} Stations`}>
-                            <span className="text-sm font-medium text-dark dark:text-white">
+                            <span className="text-sm text-dark dark:text-white">
                                 {stationCount}
                             </span>
                             <Fuel className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex items-center gap-1.5" title={`${connectorCount} Connectors`}>
-                            <span className="text-sm font-medium text-dark dark:text-white">
+                            <span className="text-sm text-dark dark:text-white">
                                 {connectorCount}
                             </span>
                             <PlugZap className="h-4 w-4 text-orange-500" />
@@ -308,28 +365,35 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "No of Charging Stops",
             minWidth: "180px",
             align: "center",
-            render: (item) => <span className="text-sm font-medium text-dark dark:text-white block">{item.chargingStopsCount}</span>
+            render: (item) => <span className="text-sm text-dark dark:text-white block">{item.chargingStopsCount}</span>
         },
-        { header: "EV Model", accessor: "evModel", minWidth: "150px" },
-        { header: "EV Variant", accessor: "evVariant", minWidth: "130px" },
+        {
+            header: "EV Model",
+            minWidth: "150px",
+            render: (item) => <span className="text-sm text-dark dark:text-white whitespace-nowrap truncate max-w-[150px] block" title={item.evModel}>{item.evModel || "-"}</span>
+        },
+        {
+            header: "EV Variant",
+            minWidth: "130px",
+            render: (item) => <span className="text-sm text-dark dark:text-white whitespace-nowrap truncate max-w-[130px] block" title={item.evVariant}>{item.evVariant || "-"}</span>
+        },
         {
             header: "EV Battery Capacity",
-            accessor: "evBatteryCapacity",
             minWidth: "150px",
-            render: (item) => <span className="font-medium">{item.evBatteryCapacity}</span>
+            render: (item) => <span className="text-sm text-dark dark:text-white whitespace-nowrap">{item.evBatteryCapacity || "-"}</span>
         },
         {
             header: "EVolts",
             minWidth: "80px",
             align: "center",
-            render: (item) => <span className="text-sm font-bold text-dark dark:text-white">{item.evolts}</span>
+            render: (item) => <span className="text-sm text-dark dark:text-white">{item.evolts || "-"}</span>
         },
         {
             header: "Feedback",
             minWidth: "300px",
             render: (item) => item.feedback ? (
-                <div className="flex items-start gap-2">
-                    <p className="text-sm text-dark dark:text-white line-clamp-2">
+                <div className="flex items-center gap-2">
+                    <p className="text-sm text-dark dark:text-white truncate max-w-[200px]">
                         {truncateText(item.feedback)}
                     </p>
                     <button
@@ -382,13 +446,13 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "Trip Story",
             minWidth: "100px",
             render: (item) => (
-                <div className="flex flex-col gap-1">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium w-fit
+                <div className="flex items-center gap-2">
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap
                             ${item.hasTripStory === 'Yes' ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400" : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`}>
                         {item.hasTripStory}
                     </span>
                     {item.hasTripStory === "Yes" && item.storyStatus && (
-                        <span className={`text-xs font-medium
+                        <span className={`text-xs font-medium whitespace-nowrap
                                 ${item.storyStatus === 'Approved' ? "text-green-600" :
                                 item.storyStatus === 'Rejected' ? "text-red-600" :
                                     "text-yellow-600"}`}>
@@ -404,7 +468,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             render: (item) => item.hasTripStory === "Yes" ? (
                 <button
                     onClick={() => handleStoryAction(item)}
-                    className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 transition-colors"
+                    className="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-white hover:bg-primary/90 transition-colors whitespace-nowrap"
                 >
                     Manage Story
                 </button>
@@ -423,7 +487,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "Approved by",
             minWidth: "150px",
             render: (item) => item.approvedBy ? (
-                <span className="text-sm font-medium text-dark dark:text-white">
+                <span className="text-sm text-dark dark:text-white whitespace-nowrap truncate max-w-[150px] block" title={item.approvedBy}>
                     {item.approvedBy}
                 </span>
             ) : <span className="text-sm text-gray-400">-</span>
@@ -483,6 +547,29 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                         </select>
                         <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
                     </div>
+
+                    {/* Download */}
+                    <Dropdown isOpen={isDownloadOpen} setIsOpen={setIsDownloadOpen}>
+                        <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
+                            <DownloadIcon className="h-4 w-4" />
+                            Export
+                            <ChevronDownIcon className="h-4 w-4" />
+                        </DropdownTrigger>
+                        <DropdownContent className="w-40 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
+                            <button
+                                onClick={() => handleDownload("csv")}
+                                className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 text-dark dark:text-white"
+                            >
+                                CSV
+                            </button>
+                            <button
+                                onClick={() => handleDownload("excel")}
+                                className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 text-dark dark:text-white"
+                            >
+                                Excel
+                            </button>
+                        </DropdownContent>
+                    </Dropdown>
                 </div>
             </div>
 
@@ -494,8 +581,8 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                             {columns.map((col, idx) => (
                                 <TableHead
                                     key={idx}
-                                    className={`px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap ${col.align === 'center' ? 'text-center' : ''}`}
-                                    style={{ minWidth: col.minWidth, textAlign: col.align }}
+                                    className="px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap text-center"
+                                    style={{ minWidth: col.minWidth }}
                                 >
                                     {col.header}
                                 </TableHead>
@@ -508,8 +595,8 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                                 <React.Fragment key={item.id}>
                                     <TableRow className={`border-t border-stroke dark:border-dark-3 ${expandedRows.has(item.id) ? "bg-gray-50 dark:bg-dark-2" : ""}`}>
                                         {columns.map((col, idx) => (
-                                            <TableCell key={idx} className="px-4 py-4 dark:border-dark-3" align={col.align}>
-                                                <div className={`text-sm text-dark dark:text-white ${col.className || ''}`}>
+                                            <TableCell key={idx} className="px-4 py-4 dark:border-dark-3 align-middle" align="center">
+                                                <div className={`text-sm text-dark dark:text-white flex items-center justify-center ${col.className || ''}`}>
                                                     {col.render ? col.render(item) : (item[col.accessor as keyof TripCheckin] as React.ReactNode)}
                                                 </div>
                                             </TableCell>
@@ -567,6 +654,8 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                         <option value={10}>10</option>
                         <option value={15}>15</option>
                         <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
                     </select>
                 </div>
 

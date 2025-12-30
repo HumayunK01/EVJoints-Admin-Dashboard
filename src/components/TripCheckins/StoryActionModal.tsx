@@ -13,7 +13,6 @@ interface StoryActionModalProps {
 
 export default function StoryActionModal({ isOpen, onClose, trip, onSave }: StoryActionModalProps) {
     const [blogLink, setBlogLink] = useState("");
-    const [adminName, setAdminName] = useState("Admin User"); // In real app, get from auth
 
     useEffect(() => {
         if (trip) {
@@ -29,7 +28,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
             storyStatus: "Approved",
             blogLink: blogLink || null,
             approvalDate: new Date().toISOString(),
-            approvedBy: adminName,
+            approvedBy: "Admin",
         };
         onSave(updated);
         onClose();
@@ -41,7 +40,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
             storyStatus: "Rejected",
             blogLink: null,
             approvalDate: new Date().toISOString(),
-            approvedBy: adminName,
+            approvedBy: "Admin",
         };
         onSave(updated);
         onClose();
@@ -81,10 +80,16 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                                 </span>
                             </div>
                             <div className="flex justify-between">
+                                <span className="text-sm font-medium text-dark dark:text-white">Date:</span>
+                                <span className="text-sm text-dark dark:text-white">
+                                    {trip.dateTime ? new Date(trip.dateTime).toLocaleDateString() : "-"}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
                                 <span className="text-sm font-medium text-dark dark:text-white">Current Status:</span>
-                                <span className={`text-sm font-medium ${trip.storyStatus === "Approved" ? "text-green-600" :
-                                    trip.storyStatus === "Rejected" ? "text-red-600" :
-                                        "text-yellow-600"
+                                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium border ${trip.storyStatus === "Approved" ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" :
+                                    trip.storyStatus === "Rejected" ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800" :
+                                        "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800"
                                     }`}>
                                     {trip.storyStatus || "Pending"}
                                 </span>
@@ -109,19 +114,6 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                         </p>
                     </div>
 
-                    {/* Admin Name */}
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                            Admin Name
-                        </label>
-                        <input
-                            type="text"
-                            value={adminName}
-                            onChange={(e) => setAdminName(e.target.value)}
-                            className="w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-sm text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white"
-                        />
-                    </div>
-
                     {/* Action Buttons */}
                     <div className="flex gap-3 pt-4 border-t border-stroke dark:border-dark-3">
                         <button
@@ -139,13 +131,6 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                             Reject Story
                         </button>
                     </div>
-
-                    <button
-                        onClick={onClose}
-                        className="w-full rounded-lg border border-stroke px-6 py-2.5 font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 transition-colors"
-                    >
-                        Cancel
-                    </button>
                 </div>
             </div>
         </div>
