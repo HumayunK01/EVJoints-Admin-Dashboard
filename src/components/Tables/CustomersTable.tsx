@@ -152,10 +152,10 @@ const COLUMNS: ColumnConfig[] = [
 ];
 
 const SORT_OPTIONS = [
-    { label: "A - Z", value: "asc" },
-    { label: "Z - A", value: "desc" },
-    { label: "Newest First", value: "newest" },
-    { label: "Oldest First", value: "oldest" },
+    { label: "A - Z", value: "firstName-asc" },
+    { label: "Z - A", value: "firstName-desc" },
+    { label: "Newest First", value: "customerRegDate-desc" },
+    { label: "Oldest First", value: "customerRegDate-asc" },
 ];
 
 const ROWS_PER_PAGE_OPTIONS = [10, 15, 20];
@@ -260,7 +260,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
     const [rowsPerPage, setRowsPerPage] = useState(initialPagination.limit);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const [sortOption, setSortOption] = useState("newest");
+    const [sortOption, setSortOption] = useState("customerRegDate-desc"); // Default: Newest First
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [isSortOpen, setIsSortOpen] = useState(false);
@@ -280,13 +280,53 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
 
     // Server-side pagination - use data directly from backend
     const totalPages = Math.ceil(totalRecords / rowsPerPage);
-    const currentData = customers; // Backend already returns paginated data
+
+    // Client-side sorting & filtering logic
+    const sortedData = useMemo(() => {
+        let processedData = [...customers];
+
+        // 1. Search Filtering
+        if (searchTerm) {
+            const lowerTerm = searchTerm.toLowerCase();
+            processedData = processedData.filter(customer =>
+                (customer.firstName?.toLowerCase() || "").includes(lowerTerm) ||
+                (customer.lastName?.toLowerCase() || "").includes(lowerTerm) ||
+                (customer.email?.toLowerCase() || "").includes(lowerTerm) ||
+                (customer.phone || "").includes(lowerTerm)
+            );
+        }
+
+        // 2. Sorting
+        const [key, order] = sortOption.split("-");
+
+        return processedData.sort((a, b) => {
+            let valA: any = a[key as keyof Customer];
+            let valB: any = b[key as keyof Customer];
+
+            // Handle dates specifically
+            if (key.includes("Date")) {
+                valA = new Date(valA || 0).getTime();
+                valB = new Date(valB || 0).getTime();
+            } else {
+                // Handle strings (case-insensitive)
+                valA = String(valA || "").toLowerCase();
+                valB = String(valB || "").toLowerCase();
+            }
+
+            if (valA < valB) return order === "asc" ? -1 : 1;
+            if (valA > valB) return order === "asc" ? 1 : -1;
+            return 0;
+        });
+    }, [customers, sortOption, searchTerm]);
+
+    const currentData = sortedData; // Display sorted data from current page
 
     // Helper to fetch data
     const fetchData = async (page: number, limit: number, showLoading = true) => {
         if (showLoading) setLoading(true);
         try {
             const { getCustomersPaginated } = await import("@/lib/api");
+            // Note: We are ignoring server-side sort params for now as backend doesn't support them
             const response = await getCustomersPaginated(page, limit);
             setCustomers(response.data);
             setTotalRecords(response.pagination.total);
@@ -306,7 +346,10 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
             }
         }, 30000);
         return () => clearInterval(interval);
-    }, [currentPage, rowsPerPage, loading, isSortOpen, isDownloadOpen, isFilterOpen]);
+    }, [currentPage, rowsPerPage, loading, isSortOpen, isDownloadOpen, isFilterOpen, sortOption]);
+
+    // Re-fetch when sort option changes
+    // Removed: No need to re-fetch from server since we sort client-side now
 
     // Handlers
     const handleNextPage = async () => {

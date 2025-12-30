@@ -77,54 +77,54 @@ export interface CustomersResponse {
 // Connector
 // ================================
 export interface Connector {
-  name: string;
-  count: number;
-  type: string;               // AC | DC | "-" (backend-safe)
-  powerRating?: string;       // e.g. "50 kW"
-  tariff?: string;            // e.g. "₹18/kWh"
+    name: string;
+    count: number;
+    type: string;               // AC | DC | "-" (backend-safe)
+    powerRating?: string;       // e.g. "50 kW"
+    tariff?: string;            // e.g. "₹18/kWh"
 }
 
 // ================================
 // Station Submission
 // ================================
 export interface StationSubmission {
-  // Core identifiers
-  id: number;
-  stationName: string;
-  stationNumber: string;
+    // Core identifiers
+    id: number;
+    stationName: string;
+    stationNumber: string;
 
-  // User / Owner
-  userName: string | null;     // backend can return null
-  userId?: string;             // optional (not always sent)
-  addedByType?: "EV Owner" | "Station Owner" | "CPO";
+    // User / Owner
+    userName: string | null;     // backend can return null
+    userId?: string;             // optional (not always sent)
+    addedByType?: "EV Owner" | "Station Owner" | "CPO";
 
-  // Network / Usage
-  networkName: string;
-  usageType: "Public" | "Private";
-  stationType?: string;        // optional (Mall, Highway, etc.)
+    // Network / Usage
+    networkName: string;
+    usageType: "Public" | "Private";
+    stationType?: string;        // optional (Mall, Highway, etc.)
 
-  // Location
-  latitude: number;
-  longitude: number;
+    // Location
+    latitude: number;
+    longitude: number;
 
-  // Contact
-  contactNumber: string | null;
+    // Contact
+    contactNumber: string | null;
 
-  // Status / Dates
-  status: "Pending" | "Approved" | "Rejected";
-  submissionDate: string;      // ISO string from backend
-  approvalDate?: string | null;
-  operationalHours?: string;
+    // Status / Dates
+    status: "Pending" | "Approved" | "Rejected";
+    submissionDate: string;      // ISO string from backend
+    approvalDate?: string | null;
+    operationalHours?: string;
 
-  // Assets
-  photos: string[];
+    // Assets
+    photos: string[];
 
-  // Charging
-  connectors: Connector[];     // empty array when none
-  eVolts: number;
+    // Charging
+    connectors: Connector[];     // empty array when none
+    eVolts: number;
 
-  // Optional backend additions
-  statusReason?: string;       // if rejection reason added later
+    // Optional backend additions
+    statusReason?: string;       // if rejection reason added later
 }
 
 // ============================================================================
@@ -218,11 +218,13 @@ function simulatePagination<T>(data: T[], page: number, limit: number): ApiRespo
 
 export async function getCustomersPaginated(
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    sortBy: string = "customerRegDate",
+    order: "asc" | "desc" = "desc"
 ): Promise<CustomersResponse> {
     try {
-        const result = await fetchApi<CustomersResponse>(`/customers?page=${page}&limit=${limit}`);
-        console.log(`✅ Fetched page ${page} from backend`);
+        const result = await fetchApi<CustomersResponse>(`/customers?page=${page}&limit=${limit}&sortBy=${sortBy}&order=${order}`);
+        console.log(`✅ Fetched page ${page} from backend (sorted by ${sortBy} ${order})`);
         return result;
     } catch (error) {
         console.warn("⚠️ Backend unavailable, using fallback data");
