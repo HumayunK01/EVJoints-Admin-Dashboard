@@ -36,6 +36,14 @@ export function SidebarProvider({
   const [isMinimized, setIsMinimized] = useState(false);
   const isMobile = useIsMobile();
 
+  // Initialize from localStorage
+  useEffect(() => {
+    const savedMinimized = localStorage.getItem("sidebar-minimized");
+    if (savedMinimized) {
+      setIsMinimized(JSON.parse(savedMinimized));
+    }
+  }, []);
+
   useEffect(() => {
     if (isMobile) {
       setIsOpen(false);
@@ -50,7 +58,11 @@ export function SidebarProvider({
   }
 
   function toggleMinimize() {
-    setIsMinimized((prev) => !prev);
+    setIsMinimized((prev) => {
+      const newState = !prev;
+      localStorage.setItem("sidebar-minimized", JSON.stringify(newState));
+      return newState;
+    });
   }
 
   return (
