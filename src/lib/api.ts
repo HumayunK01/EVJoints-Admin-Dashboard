@@ -127,6 +127,7 @@ export interface StationSubmission {
 
     // Optional backend additions
     statusReason?: string;       // if rejection reason added later
+    reason?: string;             // Reason from backend response
 }
 
 // ============================================================================

@@ -780,18 +780,28 @@ export default function StationSubmissionsTable({
         },
         {
             header: "Status",
-            minWidth: "100px",
+            minWidth: "160px",
             render: (item: StationSubmission) => (
-                <span
-                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.status === "Approved"
-                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                        : item.status === "Rejected"
-                            ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                        }`}
-                >
-                    {item.status}
-                </span>
+                <div className="flex flex-col items-start gap-1.5">
+                    <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.status === "Approved"
+                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                            : item.status === "Rejected"
+                                ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
+                            }`}
+                    >
+                        {item.status}
+                    </span>
+                    {item.status === "Rejected" && (item.reason || item.statusReason) && (
+                        <div className="flex items-start gap-1.5 pl-1">
+                            <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+                            <span className="text-xs font-medium text-red-600 dark:text-red-400 leading-tight">
+                                {item.reason || item.statusReason}
+                            </span>
+                        </div>
+                    )}
+                </div>
             )
         },
         { header: "EVolts", accessor: "eVolts", minWidth: "80px", align: "center", render: (item: StationSubmission) => <span className="font-bold">{item.status === "Approved" ? item.eVolts : 0}</span> },
