@@ -266,6 +266,12 @@ export async function updateStation(
 
     let payload: any = { action };
 
+    // Handle specific actions
+    if (action === "REJECT") {
+        // Backend expects "reason" field for REJECT action
+        payload.reason = data.statusReason;
+    }
+
     // Only include detailed fields if action is SAVE
     if (action === "SAVE") {
         // 1. Parse operational hours
@@ -321,10 +327,11 @@ export async function updateStation(
 // Helper alias for status updates if needed
 export async function updateStationStatus(
     id: number,
-    status: "Approved" | "Rejected"
+    status: "Approved" | "Rejected",
+    reason?: string
 ): Promise<{ message: string }> {
     const action = status === "Approved" ? "APPROVE" : "REJECT";
-    return updateStation(id, {}, action);
+    return updateStation(id, { statusReason: reason }, action);
 }
 
 // Legacy function for backward compatibility (deprecated)

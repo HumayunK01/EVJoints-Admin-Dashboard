@@ -359,10 +359,11 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
                                                     </label>
                                                     {field.type === 'select' ? (
                                                         <select
-                                                            value={connector[field.key] as string}
+                                                            value={(connector[field.key] as string) || ""}
                                                             onChange={(e) => handleConnectorChange(idx, field.key, e.target.value)}
                                                             className="w-full rounded border-[1.5px] border-stroke bg-white px-2 py-1.5 text-sm text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
                                                         >
+                                                            <option value="">Select</option>
                                                             {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                                         </select>
                                                     ) : (
@@ -632,7 +633,11 @@ export default function StationSubmissionsTable({
             if (isStatusChanged && updated.status !== "Pending") {
                 // Note: We only call this if status is Approved or Rejected.
                 // "Pending" isn't an action in the new backend logic.
-                await updateStationStatus(updated.id, updated.status as "Approved" | "Rejected");
+                await updateStationStatus(
+                    updated.id,
+                    updated.status as "Approved" | "Rejected",
+                    updated.status === "Rejected" ? updated.statusReason : undefined
+                );
             }
 
             // Refresh data
