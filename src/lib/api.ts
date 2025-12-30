@@ -79,8 +79,8 @@ export interface CustomersResponse {
 export interface Connector {
     name: string;
     count: number;
-    type: string;               // AC | DC | "-"
-    chargerTypeId?: number;     // Added for backend update
+    type: string;
+    chargerTypeId?: number;
     powerRating?: string;
     tariff?: string;
 }
@@ -95,15 +95,15 @@ export interface StationSubmission {
     stationNumber: string;
 
     // User / Owner
-    userName: string | null;     // backend can return null
-    userId?: string;             // optional (not always sent)
+    userName: string | null;
+    userId?: string;
     addedByType?: "EV Owner" | "Station Owner" | "CPO";
 
     // Network / Usage
     networkName: string;
-    networkId?: number;          // Added for backend update
+    networkId?: number;
     usageType: "Public" | "Private";
-    stationType?: string;        // optional (Mall, Highway, etc.)
+    stationType?: string;
 
     // Location
     latitude: number;
@@ -114,7 +114,7 @@ export interface StationSubmission {
 
     // Status / Dates
     status: "Pending" | "Approved" | "Rejected";
-    submissionDate: string;      // ISO string from backend
+    submissionDate: string;
     approvalDate?: string | null;
     operationalHours?: string;
 
@@ -122,12 +122,12 @@ export interface StationSubmission {
     photos: string[];
 
     // Charging
-    connectors: Connector[];     // empty array when none
+    connectors: Connector[];
     eVolts: number;
 
     // Optional backend additions
-    statusReason?: string;       // if rejection reason added later
-    reason?: string;             // Reason from backend response
+    statusReason?: string;
+    reason?: string;
 }
 
 // ============================================================================
@@ -149,17 +149,17 @@ export interface LocationCoordinates {
 }
 
 export interface TripCheckin {
-    id: number;                          // Changed from string to match backend
+    id: number;
     dateTime: string;
     firstName: string;
     lastName: string;
-    email: string | null;                // Made nullable to match backend
+    email: string | null;
     mobileNumber: string;
-    source: string;                      // Changed from LocationCoordinates to string
-    stop1?: Stop | null;                 // Changed to Stop interface with lat/lng
+    source: string;
+    stop1?: Stop | null;
     stop2?: Stop | null;
     stop3?: Stop | null;
-    destination: string;                 // Changed from LocationCoordinates to string
+    destination: string;
     totalKm: number;
     stationConnectorCount: string;
     chargingStopsCount: number;
@@ -170,11 +170,11 @@ export interface TripCheckin {
     feedback?: string | null;
     navigation: "Yes" | "No";
     checkIn: "Yes" | "No";
-    tripStatus: "ENQUIRED" | "COMPLETED" | "SAVED" | "ONGOING" | "ONGOING_TEST"; 
-    tripCompletionStatus?: string | null; 
+    tripStatus: "ENQUIRED" | "COMPLETED" | "SAVED" | "ONGOING" | "ONGOING_TEST";
+    tripCompletionStatus?: string | null;
     hasTripStory: "Yes" | "No";
-    storyStatus?: string | null;          
-    blogLink?: string | null;             
+    storyStatus?: string | null;
+    blogLink?: string | null;
     approvalDate?: string | null;
     approvedBy?: string | null;
     // Legacy fields used by edit drawer
