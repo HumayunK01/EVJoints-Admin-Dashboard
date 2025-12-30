@@ -400,20 +400,12 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
                     {/* Action Buttons */}
                     <div className="flex gap-3 pt-4 border-t border-stroke dark:border-dark-3">
                         {station.status === 'Pending' && (
-                            <>
-                                <button
-                                    onClick={() => handleSave('Approved')}
-                                    className="flex-1 rounded-lg bg-green-500 px-6 py-3 font-medium text-white hover:bg-green-600 transition-colors"
-                                >
-                                    Approve
-                                </button>
-                                <button
-                                    onClick={handleReject}
-                                    className="flex-1 rounded-lg bg-red-500 px-6 py-3 font-medium text-white hover:bg-red-600 transition-colors"
-                                >
-                                    Reject
-                                </button>
-                            </>
+                            <button
+                                onClick={handleReject}
+                                className="flex-1 rounded-lg bg-red-500 px-6 py-3 font-medium text-white hover:bg-red-600 transition-colors"
+                            >
+                                Reject
+                            </button>
                         )}
                         <button
                             onClick={() => handleSave()}
@@ -421,12 +413,14 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
                         >
                             Save Changes
                         </button>
-                        <button
-                            onClick={onClose}
-                            className="flex-1 rounded-lg border border-stroke px-6 py-3 font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 transition-colors"
-                        >
-                            Cancel
-                        </button>
+                        {station.status === 'Pending' && (
+                            <button
+                                onClick={() => handleSave('Approved')}
+                                className="flex-1 rounded-lg bg-green-500 px-6 py-3 font-medium text-white hover:bg-green-600 transition-colors"
+                            >
+                                Approve
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -699,7 +693,7 @@ export default function StationSubmissionsTable({
             header: "Date",
             minWidth: "120px",
             render: (item: StationSubmission) => (
-                <span className="text-sm font-medium text-dark dark:text-white">
+                <span className="text-sm text-dark dark:text-white">
                     {formatDate(item.submissionDate)}
                 </span>
             )
@@ -708,7 +702,7 @@ export default function StationSubmissionsTable({
             header: "Time",
             minWidth: "100px",
             render: (item: StationSubmission) => (
-                <span className="text-sm text-gray-500 dark:text-gray-400">
+                <span className="text-sm text-dark dark:text-white">
                     {formatTime(item.submissionDate)}
                 </span>
             )
@@ -725,11 +719,11 @@ export default function StationSubmissionsTable({
                 </span>
             )
         },
-        { header: "Customer Name", accessor: "userName", minWidth: "150px", render: (item: StationSubmission) => <span className="text-primary font-medium">{item.userName || "-"}</span> },
+        { header: "Customer Name", accessor: "userName", minWidth: "150px", render: (item: StationSubmission) => item.userName || "-" },
         { header: "Customer Phone", accessor: "contactNumber", minWidth: "130px", render: (item: StationSubmission) => item.contactNumber || "-" },
         { header: "Latitude", accessor: "latitude", minWidth: "100px" },
         { header: "Longitude", accessor: "longitude", minWidth: "100px" },
-        { header: "Network Name", accessor: "networkName", minWidth: "150px", render: (item: StationSubmission) => <span className="font-medium">{item.networkName}</span> },
+        { header: "Network Name", accessor: "networkName", minWidth: "150px", render: (item: StationSubmission) => item.networkName },
         { header: "Station Name", accessor: "stationName", minWidth: "180px" },
         { header: "Stations ID", accessor: "stationNumber", minWidth: "130px", render: (item: StationSubmission) => item.stationNumber || "-" },
         {
@@ -782,7 +776,7 @@ export default function StationSubmissionsTable({
             header: "Status",
             minWidth: "160px",
             render: (item: StationSubmission) => (
-                <div className="flex flex-col items-start gap-1.5">
+                <div className="flex flex-col items-center gap-1.5">
                     <span
                         className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.status === "Approved"
                             ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
@@ -793,9 +787,9 @@ export default function StationSubmissionsTable({
                     >
                         {item.status}
                     </span>
-                    {item.status === "Rejected" && (item.reason || item.statusReason) && (
-                        <div className="flex items-start gap-1.5 pl-1">
-                            <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+                    {item.status === "Rejected" && (item.reason || item.statusReason) && (item.reason !== '-' && item.statusReason !== '-') && (
+                        <div className="flex items-center justify-center gap-1.5">
+                            <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
                             <span className="text-xs font-medium text-red-600 dark:text-red-400 leading-tight">
                                 {item.reason || item.statusReason}
                             </span>
@@ -937,8 +931,8 @@ export default function StationSubmissionsTable({
                             {columns.map((col, idx) => (
                                 <TableHead
                                     key={idx}
-                                    className={`px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap ${col.minWidth ? `min-w-[${col.minWidth}]` : ''}`}
-                                    style={{ minWidth: col.minWidth, textAlign: col.align }}
+                                    className={`px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap text-center ${col.minWidth ? `min-w-[${col.minWidth}]` : ''}`}
+                                    style={{ minWidth: col.minWidth }}
                                 >
                                     {col.header}
                                 </TableHead>
@@ -953,11 +947,11 @@ export default function StationSubmissionsTable({
 
                                 return (
                                     <React.Fragment key={item.id}>
-                                        <TableRow className="border-t border-stroke dark:border-dark-3">
+                                        <TableRow className={`border-t border-stroke dark:border-dark-3 ${expandedRows.has(item.id) ? "bg-gray-50 dark:bg-dark-2" : "odd:bg-white even:bg-gray-50/50 dark:odd:bg-transparent dark:even:bg-white/5"} hover:bg-gray-50 dark:hover:bg-white/5 transition-colors`}>
                                             {columns.map((col, idx) => (
-                                                <TableCell key={idx} className="px-4 py-4 dark:border-dark-3" align={col.align}>
+                                                <TableCell key={idx} className="px-4 py-4 dark:border-dark-3 align-middle" align="center">
                                                     {col.isConnector ? (
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center justify-center">
                                                             <div className="text-sm text-dark dark:text-white">
                                                                 {item.connectors.length === 0
                                                                     ? "-"
@@ -990,7 +984,7 @@ export default function StationSubmissionsTable({
                                                 {columns.map((col, idx) => (
                                                     <TableCell key={idx} className="px-4 py-2 dark:border-dark-3">
                                                         {col.isConnector ? (
-                                                            <div className="text-sm text-dark dark:text-white pl-0">
+                                                            <div className="text-sm text-dark dark:text-white text-center">
                                                                 {col.renderConnector?.(connector)}
                                                             </div>
                                                         ) : (
@@ -1036,6 +1030,8 @@ export default function StationSubmissionsTable({
                         <option value={10}>10</option>
                         <option value={15}>15</option>
                         <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
                     </select>
                 </div>
 
