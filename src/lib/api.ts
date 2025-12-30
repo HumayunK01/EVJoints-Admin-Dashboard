@@ -297,7 +297,17 @@ export async function updateStation(
 
     console.log(`[API] Updating station ${id} with payload:`, payload);
 
-    const response = await fetch(`${API_BASE_URL}/stations/${id}`, {
+    // Parse powerRating and tariff to avoid backend issues
+    // Backend expects number/string, but we sanitize just in case
+    // The loop logic above is mostly handled by backend, we just send raw values 
+    // and let backend regex handle it?
+    // Actually the backend code does: parseFloat(c.powerRating) || null
+    // So "60 kW" => 60. Safe.
+
+    const url = `${API_BASE_URL}/stations/${id}`;
+    console.log(`[API] Updating station via PUT ${url}`);
+
+    const response = await fetch(url, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
@@ -306,7 +316,29 @@ export async function updateStation(
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to update station: ${response.statusText}`);
+        throw new Error(`Failed to update station: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
+export async function updateStationStatus(
+    id: number,
+    status: "Approved" | "Rejected" | "Pending"
+): Promise<{ message: string }> {
+    const url = `${API_BASE_URL}/stations/${id}/status`;
+    console.log(`[API] Updating status via PUT ${url}`);
+
+    const response = await fetch(url, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to update station status: ${response.status} ${response.statusText}`);
     }
 
     return response.json();

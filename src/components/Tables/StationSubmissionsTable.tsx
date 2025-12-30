@@ -609,15 +609,36 @@ export default function StationSubmissionsTable({
 
     const handleSaveStation = async (updated: StationSubmission) => {
         try {
-            const { updateStation } = await import("@/lib/api");
-            await updateStation(updated.id, updated);
-            // Refresh data to reflect backend changes
+            const { updateStation, updateStationStatus } = await import("@/lib/api");
+
+            // Find original to see what changed
+            const original = data.find(item => item.id === updated.id);
+            if (!original) return;
+
+            const isStatusChanged = original.status !== updated.status;
+            // Check if other fields changed (roughly)
+            // JSON stringify is a quick way to check deep equality for this data structure
+            const originalFields = { ...original, status: undefined, approvalDate: undefined, updated_at: undefined };
+            const updatedFields = { ...updated, status: undefined, approvalDate: undefined, updated_at: undefined };
+            const isContentChanged = JSON.stringify(originalFields) !== JSON.stringify(updatedFields);
+
+            // 1. If content changed, call full update
+            if (isContentChanged) {
+                await updateStation(updated.id, updated);
+            }
+
+            // 2. If status changed, call status update (endpoint: /:id/status)
+            if (isStatusChanged) {
+                await updateStationStatus(updated.id, updated.status);
+            }
+
+            // Refresh data
             await fetchPage(currentPage, rowsPerPage);
-            // Close modal implicitly handled by child, or we can force close if needed
-            // setActionModalOpen(false); // ActionModal calls onClose which triggers this, so strictly not needed if modal handles it well
+            console.log("Station saved/updated successfully");
+
         } catch (error) {
             console.error("Failed to update station:", error);
-            alert("Failed to save changes. Please try again or check console.");
+            alert("Failed to save changes. Endpoint might be 404 or server error.");
         }
     };
 
