@@ -48,9 +48,9 @@ export interface Customer {
     deviceModel: string | null;
     devicePlatform: string | null;
     appVersion: string | null;
-    navigation: boolean;
-    trip: boolean;
-    checkIn: boolean;
+    navigation: "Yes" | "No" | null;
+    trip: "Yes" | "No" | null;
+    checkIn: "Yes" | "No" | null;
     subscription: string;
     vehicles?: Vehicle[];
 }
@@ -230,7 +230,7 @@ export async function getCustomersPaginated(
         return result;
     } catch (error) {
         console.warn("⚠️ Backend unavailable, using fallback data");
-        return simulatePagination(customersData as Customer[], page, limit);
+        return simulatePagination(customersData as any as Customer[], page, limit);
     }
 }
 

@@ -118,10 +118,10 @@ const COLUMNS: ColumnConfig[] = [
         label: "Navigation",
         minWidth: "100px",
         render: (value) => (
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                 : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                 }`}>
-                {value ? "Yes" : "No"}
+                {value || "No"}
             </span>
         )
     },
@@ -130,10 +130,10 @@ const COLUMNS: ColumnConfig[] = [
         label: "Trip",
         minWidth: "100px",
         render: (value) => (
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                 : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                 }`}>
-                {value ? "Yes" : "No"}
+                {value || "No"}
             </span>
         )
     },
@@ -142,10 +142,10 @@ const COLUMNS: ColumnConfig[] = [
         label: "Check In",
         minWidth: "120px",
         render: (value) => (
-            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${value === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                 : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                 }`}>
-                {value ? "Yes" : "No"}
+                {value || "No"}
             </span>
         )
     },
