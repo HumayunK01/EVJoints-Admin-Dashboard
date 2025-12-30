@@ -60,8 +60,8 @@ src/
 
 1.  **Clone the Repository**
     ```bash
-    git clone https://github.com/your-org/evjoints-admin-dashboard.git
-    cd evjoints-admin-dashboard
+    git clone https://github.com/HumayunK01/EVJoints-Admin-Dashboard.git
+    cd EVJoints-Admin-Dashboard
     ```
 
 2.  **Install Dependencies**
