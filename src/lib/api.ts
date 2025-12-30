@@ -170,11 +170,11 @@ export interface TripCheckin {
     feedback?: string | null;
     navigation: "Yes" | "No";
     checkIn: "Yes" | "No";
-    tripStatus: "ENQUIRED" | "COMPLETED"; // Changed to match backend enum values
-    tripCompletionStatus?: string | null; // Made more flexible
+    tripStatus: "ENQUIRED" | "COMPLETED" | "SAVED" | "ONGOING" | "ONGOING_TEST"; 
+    tripCompletionStatus?: string | null; 
     hasTripStory: "Yes" | "No";
-    storyStatus?: string | null;          // Made more flexible
-    blogLink?: string | null;             // Frontend-only field for story management
+    storyStatus?: string | null;          
+    blogLink?: string | null;             
     approvalDate?: string | null;
     approvedBy?: string | null;
     // Legacy fields used by edit drawer

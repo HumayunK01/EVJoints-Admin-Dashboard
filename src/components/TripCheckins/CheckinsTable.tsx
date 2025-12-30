@@ -384,13 +384,29 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         {
             header: "Status",
             minWidth: "120px",
-            render: (item) => (
-                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap
-                        ${item.tripStatus === 'COMPLETED' ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
-                        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"}`}>
-                    {item.tripStatus === 'ENQUIRED' ? 'Enquired' : 'Completed'}
-                </span>
-            )
+            render: (item) => {
+                const statusStyles: Record<string, string> = {
+                    ENQUIRED: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+                    COMPLETED: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+                    SAVED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+                    ONGOING: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+                    ONGOING_TEST: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+                };
+
+                const statusLabels: Record<string, string> = {
+                    ENQUIRED: "Enquired",
+                    COMPLETED: "Completed",
+                    SAVED: "Saved",
+                    ONGOING: "Ongoing",
+                    ONGOING_TEST: "Ongoing Test",
+                };
+
+                return (
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${statusStyles[item.tripStatus] || "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`}>
+                        {statusLabels[item.tripStatus] || item.tripStatus}
+                    </span>
+                );
+            }
         },
         {
             header: "Trip Completion Status",
@@ -486,6 +502,9 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                         >
                             <option value="All">All Status</option>
                             <option value="ENQUIRED">Enquired</option>
+                            <option value="SAVED">Saved</option>
+                            <option value="ONGOING">Ongoing</option>
+                            <option value="ONGOING_TEST">Ongoing Test</option>
                             <option value="COMPLETED">Completed</option>
                         </select>
                         <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
