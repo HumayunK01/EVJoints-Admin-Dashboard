@@ -63,6 +63,19 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         setMounted(true);
     }, []);
 
+    // Expand Logic
+    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+    const toggleRow = (id: number) => {
+        const newExpanded = new Set(expandedRows);
+        if (newExpanded.has(id)) {
+            newExpanded.delete(id);
+        } else {
+            newExpanded.add(id);
+        }
+        setExpandedRows(newExpanded);
+    };
+
     // Filter Logic (client-side filtering on current page data)
     const filteredData = useMemo(() => {
         return data.filter(item => {
@@ -219,71 +232,36 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         {
             header: "Source",
             minWidth: "250px",
-            render: (item) => (
-                <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
-                    {item.source.split(',')[0]}
-                </span>
-            )
-        },
-        {
-            header: "Stop 1",
-            minWidth: "250px",
-            render: (item) => item.stop1 ? (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
-                        {item.stop1.address.split(',')[0]}
-                    </span>
-                    <button
-                        onClick={() => handleViewLocation(
-                            { latitude: item.stop1!.lat, longitude: item.stop1!.lng, address: item.stop1!.address },
-                            "Stop 1"
+            render: (item) => {
+                const stops = [
+                    item.stop1 && { ...item.stop1, name: "Stop 1" },
+                    item.stop2 && { ...item.stop2, name: "Stop 2" },
+                    item.stop3 && { ...item.stop3, name: "Stop 3" }
+                ].filter(Boolean);
+
+                const hasStops = stops.length > 0;
+                const isExpanded = expandedRows.has(item.id);
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
+                            {item.source.split(',')[0]}
+                        </span>
+                        {hasStops && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleRow(item.id);
+                                }}
+                                className={`p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isExpanded ? "bg-gray-100 dark:bg-gray-700 text-primary" : "text-gray-500"}`}
+                                title={`${stops.length} stops`}
+                            >
+                                <ChevronDownIcon className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                            </button>
                         )}
-                        className="text-primary hover:text-primary/80 whitespace-nowrap text-xs font-medium"
-                    >
-                        View
-                    </button>
-                </div>
-            ) : <span className="text-sm text-gray-400">-</span>
-        },
-        {
-            header: "Stop 2",
-            minWidth: "250px",
-            render: (item) => item.stop2 ? (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
-                        {item.stop2.address.split(',')[0]}
-                    </span>
-                    <button
-                        onClick={() => handleViewLocation(
-                            { latitude: item.stop2!.lat, longitude: item.stop2!.lng, address: item.stop2!.address },
-                            "Stop 2"
-                        )}
-                        className="text-primary hover:text-primary/80 whitespace-nowrap text-xs font-medium"
-                    >
-                        View
-                    </button>
-                </div>
-            ) : <span className="text-sm text-gray-400">-</span>
-        },
-        {
-            header: "Stop 3",
-            minWidth: "250px",
-            render: (item) => item.stop3 ? (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
-                        {item.stop3.address.split(',')[0]}
-                    </span>
-                    <button
-                        onClick={() => handleViewLocation(
-                            { latitude: item.stop3!.lat, longitude: item.stop3!.lng, address: item.stop3!.address },
-                            "Stop 3"
-                        )}
-                        className="text-primary hover:text-primary/80 whitespace-nowrap text-xs font-medium"
-                    >
-                        View
-                    </button>
-                </div>
-            ) : <span className="text-sm text-gray-400">-</span>
+                    </div>
+                );
+            }
         },
         {
             header: "Destination",
@@ -362,24 +340,6 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                     </button>
                 </div>
             ) : <span className="text-sm text-gray-400">No feedback</span>
-        },
-        {
-            header: "Navigation",
-            minWidth: "100px",
-            render: (item) => (
-                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.navigation === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`}>
-                    {item.navigation}
-                </span>
-            )
-        },
-        {
-            header: "Check-in",
-            minWidth: "100px",
-            render: (item) => (
-                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.checkIn === "Yes" ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`}>
-                    {item.checkIn}
-                </span>
-            )
         },
         {
             header: "Status",
@@ -545,15 +505,43 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                     <TableBody>
                         {currentData.length > 0 ? (
                             currentData.map((item) => (
-                                <TableRow key={item.id} className="border-t border-stroke dark:border-dark-3">
-                                    {columns.map((col, idx) => (
-                                        <TableCell key={idx} className="px-4 py-4 dark:border-dark-3" align={col.align}>
-                                            <div className={`text-sm text-dark dark:text-white ${col.className || ''}`}>
-                                                {col.render ? col.render(item) : (item[col.accessor as keyof TripCheckin] as React.ReactNode)}
-                                            </div>
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
+                                <React.Fragment key={item.id}>
+                                    <TableRow className={`border-t border-stroke dark:border-dark-3 ${expandedRows.has(item.id) ? "bg-gray-50 dark:bg-dark-2" : ""}`}>
+                                        {columns.map((col, idx) => (
+                                            <TableCell key={idx} className="px-4 py-4 dark:border-dark-3" align={col.align}>
+                                                <div className={`text-sm text-dark dark:text-white ${col.className || ''}`}>
+                                                    {col.render ? col.render(item) : (item[col.accessor as keyof TripCheckin] as React.ReactNode)}
+                                                </div>
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                    {expandedRows.has(item.id) && (
+                                        <TableRow>
+                                            {/* Spacer Cell to align content with Source column */}
+                                            <TableCell colSpan={5} className="bg-gray-50 dark:bg-dark-2 p-0 border-b border-stroke dark:border-dark-3" />
+
+                                            {/* Content Cell */}
+                                            <TableCell colSpan={columns.length - 5} className="bg-gray-50 dark:bg-dark-2 p-0 border-b border-stroke dark:border-dark-3">
+                                                <div className="p-4 dark:border-dark-3">
+                                                    <div className="flex flex-col gap-3">
+                                                        <div className="flex flex-col gap-2">
+                                                            {[
+                                                                item.stop1 && { ...item.stop1, name: "Stop 1" },
+                                                                item.stop2 && { ...item.stop2, name: "Stop 2" },
+                                                                item.stop3 && { ...item.stop3, name: "Stop 3" }
+                                                            ].filter(Boolean).map((stop: any, idx) => (
+                                                                <div key={idx} className="flex items-center gap-1 text-sm">
+                                                                    <span className="font-semibold text-primary w-14">{stop.name}</span>
+                                                                    <span className="text-dark dark:text-white text-gray-600">{stop.address}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </React.Fragment>
                             ))
                         ) : (
                             <TableRow>
