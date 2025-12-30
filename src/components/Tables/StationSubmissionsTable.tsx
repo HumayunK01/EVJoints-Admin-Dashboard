@@ -121,7 +121,7 @@ const FILTER_CONFIG: FilterConfigItem[] = [
 // HELPER FUNCTIONS
 // ============================================================================
 
-const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(undefined, { timeZone: 'UTC' });
+const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('en-GB', { timeZone: 'UTC' });
 const formatTime = (dateString: string) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
 const formatOptionalDate = (dateString: string | null | undefined) => dateString ? formatDate(dateString) : "-";
 const formatOptionalTime = (dateString: string | null | undefined) => dateString ? formatTime(dateString) : "-";
@@ -814,8 +814,9 @@ export default function StationSubmissionsTable({
             render: (item: StationSubmission) => (
                 <button
                     onClick={() => handleActionClick(item)}
-                    className="text-dark hover:text-primary dark:text-white"
-                    title="Edit"
+                    disabled={item.status === 'Rejected'}
+                    className={`text-dark hover:text-primary dark:text-white ${item.status === 'Rejected' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={item.status === 'Rejected' ? "Cannot edit rejected station" : "Edit"}
                 >
                     <PencilSquareIcon className="h-5 w-5" />
                 </button>

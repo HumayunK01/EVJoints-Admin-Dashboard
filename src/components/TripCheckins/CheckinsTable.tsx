@@ -167,7 +167,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         if (!dateString) return "-";
         const date = new Date(dateString);
         // Use UTC methods to ensure we show the server date exactly as is
-        return date.toLocaleDateString('en-US', { timeZone: 'UTC' });
+        return date.toLocaleDateString('en-GB', { timeZone: 'UTC' });
     };
 
     const formatTime = (dateString: string) => {
