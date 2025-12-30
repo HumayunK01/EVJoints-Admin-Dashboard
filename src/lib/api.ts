@@ -79,9 +79,10 @@ export interface CustomersResponse {
 export interface Connector {
     name: string;
     count: number;
-    type: string;               // AC | DC | "-" (backend-safe)
-    powerRating?: string;       // e.g. "50 kW"
-    tariff?: string;            // e.g. "₹18/kWh"
+    type: string;               // AC | DC | "-"
+    chargerTypeId?: number;     // Added for backend update
+    powerRating?: string;
+    tariff?: string;
 }
 
 // ================================
@@ -100,6 +101,7 @@ export interface StationSubmission {
 
     // Network / Usage
     networkName: string;
+    networkId?: number;          // Added for backend update
     usageType: "Public" | "Private";
     stationType?: string;        // optional (Mall, Highway, etc.)
 
@@ -253,6 +255,61 @@ export async function getStationSubmissionsPaginated(
         console.warn("⚠️ Backend unavailable for stations, using fallback data");
         return simulatePagination(stationSubmissionsData as StationSubmission[], page, limit);
     }
+}
+
+// Update strict fields for a station
+export async function updateStation(
+    id: number,
+    data: StationSubmission
+): Promise<{ message: string }> {
+    // 1. Parse operational hours
+    let open_time = "00:00:00";
+    let close_time = "23:59:00";
+
+    if (data.operationalHours && data.operationalHours !== "-" && data.operationalHours.includes("-")) {
+        const parts = data.operationalHours.split("-").map(s => s.trim());
+        if (parts.length === 2) {
+            // Helper to convert 12h (09:00 AM) to 24h (09:00:00) if needed,
+            // or just pass through if already 24h.
+            // Assuming current format is 24h "00:00:00 - 23:59:00" or similar.
+            open_time = parts[0];
+            close_time = parts[1];
+        }
+    }
+
+    // 2. Prepare payload matching backend schema
+    const payload = {
+        stationName: data.stationName,
+        network_id: data.networkId || 0, // Fallback if missing, but should be present
+        usageType: data.usageType,
+        open_time,
+        close_time,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        contactNumber: data.contactNumber,
+        connectors: data.connectors.map(c => ({
+            charger_type_id: c.chargerTypeId || 0,
+            count: c.count,
+            power: c.powerRating || "-",
+            tariff: c.tariff || "-"
+        }))
+    };
+
+    console.log(`[API] Updating station ${id} with payload:`, payload);
+
+    const response = await fetch(`${API_BASE_URL}/stations/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to update station: ${response.statusText}`);
+    }
+
+    return response.json();
 }
 
 // Legacy function for backward compatibility (deprecated)

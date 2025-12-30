@@ -607,10 +607,18 @@ export default function StationSubmissionsTable({
         setActionModalOpen(true);
     };
 
-    const handleSaveStation = (updated: StationSubmission) => {
-        setData((prev) =>
-            prev.map((item) => (item.id === updated.id ? updated : item))
-        );
+    const handleSaveStation = async (updated: StationSubmission) => {
+        try {
+            const { updateStation } = await import("@/lib/api");
+            await updateStation(updated.id, updated);
+            // Refresh data to reflect backend changes
+            await fetchPage(currentPage, rowsPerPage);
+            // Close modal implicitly handled by child, or we can force close if needed
+            // setActionModalOpen(false); // ActionModal calls onClose which triggers this, so strictly not needed if modal handles it well
+        } catch (error) {
+            console.error("Failed to update station:", error);
+            alert("Failed to save changes. Please try again or check console.");
+        }
     };
 
     const handleExport = () => {
