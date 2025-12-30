@@ -593,7 +593,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                         {currentData.length > 0 ? (
                             currentData.map((item) => (
                                 <React.Fragment key={item.id}>
-                                    <TableRow className={`border-t border-stroke dark:border-dark-3 ${expandedRows.has(item.id) ? "bg-gray-50 dark:bg-dark-2" : ""}`}>
+                                    <TableRow className={`border-t border-stroke dark:border-dark-3 ${expandedRows.has(item.id) ? "bg-gray-50 dark:bg-dark-2" : "odd:bg-white even:bg-gray-50/50 dark:odd:bg-transparent dark:even:bg-white/5"} hover:bg-gray-50 dark:hover:bg-white/5 transition-colors`}>
                                         {columns.map((col, idx) => (
                                             <TableCell key={idx} className="px-4 py-4 dark:border-dark-3 align-middle" align="center">
                                                 <div className={`text-sm text-dark dark:text-white flex items-center justify-center ${col.className || ''}`}>
