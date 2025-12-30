@@ -121,10 +121,24 @@ const FILTER_CONFIG: FilterConfigItem[] = [
 // HELPER FUNCTIONS
 // ============================================================================
 
-const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
-const formatTime = (dateString: string) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString(undefined, { timeZone: 'UTC' });
+const formatTime = (dateString: string) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
 const formatOptionalDate = (dateString: string | null | undefined) => dateString ? formatDate(dateString) : "-";
 const formatOptionalTime = (dateString: string | null | undefined) => dateString ? formatTime(dateString) : "-";
+
+const formatTo12Hour = (timeStr: string) => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return timeStr;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12;
+    return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
+
+const formatOperationalHours = (range: string | null | undefined) => {
+    if (!range || range === "-" || !range.includes(" - ")) return range || "-";
+    const [start, end] = range.split(" - ");
+    return `${formatTo12Hour(start)} - ${formatTo12Hour(end)}`;
+};
 
 // ============================================================================
 // PHOTO VIEWER COMPONENT
@@ -701,7 +715,7 @@ export default function StationSubmissionsTable({
                 </span>
             )
         },
-        { header: "Operational Hr", accessor: "operationalHours", minWidth: "140px", render: (item: StationSubmission) => item.operationalHours || "-" },
+        { header: "Operational Hr", accessor: "operationalHours", minWidth: "140px", render: (item: StationSubmission) => formatOperationalHours(item.operationalHours) },
         {
             header: "Photo",
             minWidth: "80px",
