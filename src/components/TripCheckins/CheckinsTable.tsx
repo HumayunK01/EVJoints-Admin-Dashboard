@@ -162,6 +162,25 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         return text.substring(0, maxLength) + "...";
     };
 
+    // Helper functions for safe date formatting (avoid timezone shifts)
+    const formatDate = (dateString: string) => {
+        if (!dateString) return "-";
+        const date = new Date(dateString);
+        // Use UTC methods to ensure we show the server date exactly as is
+        return date.toLocaleDateString('en-US', { timeZone: 'UTC' });
+    };
+
+    const formatTime = (dateString: string) => {
+        if (!dateString) return "-";
+        const date = new Date(dateString);
+        // Use UTC methods
+        return date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'UTC'
+        });
+    };
+
     // Columns Configuration
     const columns: ColumnConfig[] = useMemo(() => [
         {
@@ -169,7 +188,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             minWidth: "120px",
             render: (item) => (
                 <span className="text-sm font-medium text-dark dark:text-white">
-                    {new Date(item.dateTime).toLocaleDateString()}
+                    {formatDate(item.dateTime)}
                 </span>
             )
         },
@@ -178,7 +197,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             minWidth: "100px",
             render: (item) => (
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(item.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {formatTime(item.dateTime)}
                 </span>
             )
         },
