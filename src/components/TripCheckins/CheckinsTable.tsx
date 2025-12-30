@@ -21,7 +21,6 @@ import { Fuel, PlugZap } from "lucide-react";
 import LocationViewer from "@/components/TripCheckins/LocationViewer";
 import FeedbackViewer from "@/components/TripCheckins/FeedbackViewer";
 import StoryActionModal from "@/components/TripCheckins/StoryActionModal";
-import { Dropdown, DropdownContent, DropdownTrigger } from "@/components/ui/dropdown";
 import { DownloadIcon } from "@/components/Tables/icons";
 
 interface CheckinsTableProps {
@@ -95,7 +94,6 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [storyFilter, setStoryFilter] = useState("All");
-    const [isDownloadOpen, setIsDownloadOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     // Modal states
@@ -217,10 +215,9 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         setData(prev => prev.map(item => item.id === updated.id ? updated : item));
     };
 
-    const handleDownload = (format: "csv" | "excel") => {
-        const filename = `trip_checkins_page${currentPage}.${format === "excel" ? "xls" : "csv"}`;
+    const handleExport = () => {
+        const filename = `trip_checkins_page${currentPage}.csv`;
         exportToCSV(data, filename);
-        setIsDownloadOpen(false);
     };
 
     const truncateText = (text: string, maxLength: number = 80) => {
@@ -548,28 +545,14 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                         <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
                     </div>
 
-                    {/* Download */}
-                    <Dropdown isOpen={isDownloadOpen} setIsOpen={setIsDownloadOpen}>
-                        <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
-                            <DownloadIcon className="h-4 w-4" />
-                            Export
-                            <ChevronDownIcon className="h-4 w-4" />
-                        </DropdownTrigger>
-                        <DropdownContent className="w-40 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
-                            <button
-                                onClick={() => handleDownload("csv")}
-                                className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 text-dark dark:text-white"
-                            >
-                                CSV
-                            </button>
-                            <button
-                                onClick={() => handleDownload("excel")}
-                                className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 text-dark dark:text-white"
-                            >
-                                Excel
-                            </button>
-                        </DropdownContent>
-                    </Dropdown>
+                    {/* Export Button */}
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
+                    >
+                        <DownloadIcon className="h-4 w-4" />
+                        Export
+                    </button>
                 </div>
             </div>
 
