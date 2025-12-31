@@ -197,7 +197,7 @@ export default function StationSubmissionsTable({
             if (!hasActiveFilters && !actionModalOpen && !photoViewerOpen && !isFilterOpen) {
                 fetchPage(currentPage, rowsPerPage, false);
             }
-        }, 5000);
+        }, 3000);
 
         return () => clearInterval(interval);
     }, [currentPage, rowsPerPage, hasActiveFilters, actionModalOpen, photoViewerOpen, isFilterOpen]);

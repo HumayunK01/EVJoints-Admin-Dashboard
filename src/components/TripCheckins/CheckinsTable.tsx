@@ -174,7 +174,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             if (isDefaultFilters && noModalsOpen && !loading) {
                 fetchData(currentPage, rowsPerPage, false);
             }
-        }, 5000);
+        }, 3000);
 
         return () => clearInterval(interval);
     }, [currentPage, rowsPerPage, search, statusFilter, storyFilter, locationViewerOpen, feedbackViewerOpen, storyActionOpen, loading]);
