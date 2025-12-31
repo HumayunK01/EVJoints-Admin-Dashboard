@@ -181,10 +181,11 @@ interface ActionModalProps {
     isOpen: boolean;
     onClose: () => void;
     station: StationSubmission | null;
-    onSave: (updated: StationSubmission) => void;
+    onSave: (updated: StationSubmission, action?: 'SAVE' | 'APPROVE' | 'REJECT') => void;
+    isSaved: boolean;
 }
 
-function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
+function ActionModal({ isOpen, onClose, station, onSave, isSaved }: ActionModalProps) {
     // Single state object for all station fields
     const [formData, setFormData] = useState<Partial<StationSubmission>>({});
     const [connectors, setConnectors] = useState<Connector[]>([]);
@@ -243,6 +244,10 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
             connectors,
         };
 
+        let action: 'SAVE' | 'APPROVE' | 'REJECT' = 'SAVE';
+        if (newStatus === 'Approved') action = 'APPROVE';
+        if (newStatus === 'Rejected') action = 'REJECT';
+
         if (newStatus) {
             updated.status = newStatus;
             if (newStatus === 'Approved') {
@@ -254,8 +259,10 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
             }
         }
 
-        onSave(updated);
-        onClose();
+        onSave(updated, action);
+        if (newStatus) {
+            onClose();
+        }
     };
 
     const handleReject = () => {
@@ -416,7 +423,14 @@ function ActionModal({ isOpen, onClose, station, onSave }: ActionModalProps) {
                         {station.status === 'Pending' && (
                             <button
                                 onClick={() => handleSave('Approved')}
-                                className="flex-1 rounded-lg bg-green-500 px-6 py-3 font-medium text-white hover:bg-green-600 transition-colors"
+                                disabled={!isSaved}
+                                className={cn(
+                                    "flex-1 rounded-lg px-6 py-3 font-medium text-white transition-all",
+                                    isSaved
+                                        ? "bg-green-500 hover:bg-green-600"
+                                        : "bg-gray-400 cursor-not-allowed opacity-70"
+                                )}
+                                title={!isSaved ? "Please 'Save Changes' first before approving" : "Approve Station"}
                             >
                                 Approve
                             </button>
@@ -438,6 +452,7 @@ export default function StationSubmissionsTable({
     const [totalRecords, setTotalRecords] = useState(initialPagination.total);
     const [isLoading, setIsLoading] = useState(false);
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+    const [savedStationIds, setSavedStationIds] = useState<Set<number>>(new Set());
 
     // Dynamic Filters State
     const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
@@ -602,45 +617,28 @@ export default function StationSubmissionsTable({
         setActionModalOpen(true);
     };
 
-    const handleSaveStation = async (updated: StationSubmission) => {
+    const handleSaveStation = async (updated: StationSubmission, action: 'SAVE' | 'APPROVE' | 'REJECT' = 'SAVE') => {
         try {
-            const { updateStation, updateStationStatus } = await import("@/lib/api");
+            const { updateStation } = await import("@/lib/api");
 
             // Find original to see what changed
             const original = data.find(item => item.id === updated.id);
             if (!original) return;
 
-            const isStatusChanged = original.status !== updated.status;
-            // Check if other fields changed (roughly)
-            // JSON stringify is a quick way to check deep equality for this data structure
-            const originalFields = { ...original, status: undefined, approvalDate: undefined, updated_at: undefined };
-            const updatedFields = { ...updated, status: undefined, approvalDate: undefined, updated_at: undefined };
-            const isContentChanged = JSON.stringify(originalFields) !== JSON.stringify(updatedFields);
+            // Call unified update API
+            await updateStation(updated.id, updated, action);
 
-            // 1. If content changed, call full update (Action: SAVE)
-            if (isContentChanged) {
-                // We cast "SAVE" because TS might not infer it if imported from new API definition
-                await updateStation(updated.id, updated, "SAVE");
-            }
-
-            // 2. If status changed, call status update (This wrapper now sends APPROVE/REJECT action)
-            if (isStatusChanged && updated.status !== "Pending") {
-                // Note: We only call this if status is Approved or Rejected.
-                // "Pending" isn't an action in the new backend logic.
-                await updateStationStatus(
-                    updated.id,
-                    updated.status as "Approved" | "Rejected",
-                    updated.status === "Rejected" ? updated.statusReason : undefined
-                );
+            if (action === "SAVE") {
+                setSavedStationIds(prev => new Set(prev).add(updated.id));
             }
 
             // Refresh data
             await fetchPage(currentPage, rowsPerPage);
-            console.log("Station saved/updated successfully");
+            console.log(`Station ${action.toLowerCase()}ed successfully`);
 
         } catch (error) {
-            console.error("Failed to update station:", error);
-            alert("Failed to save changes. Endpoint might be 404 or server error.");
+            console.error(`Failed to ${action} station:`, error);
+            alert(`Failed to ${action.toLowerCase()} station. Please try again.`);
         }
     };
 
@@ -1070,12 +1068,13 @@ export default function StationSubmissionsTable({
             )}
 
             {/* Action Modal */}
-            {actionModalOpen && mounted && createPortal(
+            {mounted && selectedStation && createPortal(
                 <ActionModal
                     isOpen={actionModalOpen}
                     onClose={() => setActionModalOpen(false)}
                     station={selectedStation}
                     onSave={handleSaveStation}
+                    isSaved={savedStationIds.has(selectedStation.id)}
                 />,
                 document.body
             )}

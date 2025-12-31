@@ -2,8 +2,9 @@
 
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
+import { LogOut } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NAV_DATA } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
@@ -12,6 +13,7 @@ import { useSidebarContext } from "./sidebar-context";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { setIsOpen, isOpen, isMobile, toggleSidebar, isMinimized, toggleMinimize } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -22,7 +24,6 @@ export function Sidebar() {
   };
 
   useEffect(() => {
-    // Keep collapsible open, when it's subpage is active
     NAV_DATA.some((section) => {
       return section.items.some((item) => {
         return item.items?.some((subItem) => {
@@ -30,8 +31,6 @@ export function Sidebar() {
             if (!expandedItems.includes(item.title)) {
               toggleExpanded(item.title);
             }
-
-            // Break the loop
             return true;
           }
         });
@@ -39,9 +38,13 @@ export function Sidebar() {
     });
   }, [pathname]);
 
+  const handleLogout = () => {
+    document.cookie = "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    router.push("/login");
+  };
+
   return (
     <>
-      {/* Mobile Overlay */}
       {isMobile && isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 transition-opacity duration-300"
@@ -78,7 +81,7 @@ export function Sidebar() {
                   className="size-11 transition-opacity duration-300 group-hover:opacity-0 rounded-lg overflow-hidden"
                 />
               ) : (
-                <Logo />
+                <Logo src="/images/logo/logo-white.svg" />
               )}
             </Link>
 
@@ -108,7 +111,6 @@ export function Sidebar() {
             )}
           </div>
 
-          {/* Navigation */}
           <div className={cn("custom-scrollbar mt-4 flex-1 overflow-y-auto min-[850px]:mt-6", isMinimized && !isMobile ? "w-full flex flex-col items-center" : "pr-3")}>
             {NAV_DATA.map((section) => (
               <div key={section.label} className="mb-6">
@@ -216,6 +218,24 @@ export function Sidebar() {
                 </nav>
               </div>
             ))}
+          </div>
+
+          <div className={cn("mt-auto flex flex-col items-center", isMinimized && !isMobile ? "w-full" : "pr-3")}>
+            <button
+              onClick={handleLogout}
+              className={cn(
+                "group flex w-full items-center rounded-lg py-3 text-red-500 transition-all hover:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/10",
+                isMinimized && !isMobile ? "justify-center px-3" : "gap-3 px-4"
+              )}
+            >
+              <LogOut className="size-6 shrink-0" />
+              <span className={cn(
+                "font-medium overflow-hidden transition-all duration-300 ease-in-out whitespace-nowrap",
+                isMinimized && !isMobile ? "w-0 opacity-0" : "w-auto opacity-100"
+              )}>
+                Logout
+              </span>
+            </button>
           </div>
         </div>
       </aside>

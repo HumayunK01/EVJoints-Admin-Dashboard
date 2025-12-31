@@ -196,6 +196,7 @@ const config: Config = {
         171.5: "42.875rem",
         180: "45rem",
         187.5: "46.875rem",
+        199: "49.75rem",
         203: "50.75rem",
         230: "57.5rem",
         242.5: "60.625rem",
@@ -317,6 +318,14 @@ const config: Config = {
         5: "0px 1px 5px rgba(0, 0, 0, 0.2)",
       },
       keyframes: {
+        scan: {
+          "0%": { top: "0%" },
+          "100%": { top: "100%" },
+        },
+        dash: {
+          "0%": { "stroke-dashoffset": "1000" },
+          "100%": { "stroke-dashoffset": "0" },
+        },
         linspin: {
           "100%": { transform: "rotate(360deg)" },
         },
@@ -378,6 +387,8 @@ const config: Config = {
         line1: "line 10s infinite linear",
         line2: "line-revert 8s infinite linear",
         line3: "line 7s infinite linear",
+        scan: "scan 8s linear infinite",
+        dash: "dash 10s linear infinite",
       },
     },
   },

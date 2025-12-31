@@ -45,7 +45,7 @@ const exportToCSV = (data: TripCheckin[], filename: string) => {
     const headers = [
         "Date", "Time", "Name", "Email", "Mobile", "Source", "Destination", "Total Km",
         "Stations & Connectors", "Charging Stops", "EV Model", "EV Variant", "Battery",
-        "EVolts", "Status", "Trip Story", "Story Status", "Approved By", "Approval Date"
+        "EVolts", "Status", "Trip Story", "Story Status", "Approval Date", "Approval Time", "Approved By"
     ];
 
     const rows = data.map(item => [
@@ -66,8 +66,9 @@ const exportToCSV = (data: TripCheckin[], filename: string) => {
         item.tripStatus || "-",
         item.hasTripStory || "-",
         item.storyStatus || "-",
-        item.approvedBy || "-",
-        item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-"
+        item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-",
+        item.approvalDate ? new Date(item.approvalDate).toLocaleTimeString() : "-",
+        item.approvedBy || "-"
     ]);
 
     const csvContent = [
@@ -473,10 +474,19 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         },
         {
             header: "Approval Date",
-            minWidth: "150px",
+            minWidth: "120px",
             render: (item) => item.approvalDate ? (
                 <span className="text-sm text-dark dark:text-white whitespace-nowrap">
-                    {new Date(item.approvalDate).toLocaleDateString()}
+                    {formatDate(item.approvalDate)}
+                </span>
+            ) : <span className="text-sm text-gray-400">-</span>
+        },
+        {
+            header: "Approval Time",
+            minWidth: "100px",
+            render: (item) => item.approvalDate ? (
+                <span className="text-sm text-dark dark:text-white whitespace-nowrap">
+                    {formatTime(item.approvalDate)}
                 </span>
             ) : <span className="text-sm text-gray-400">-</span>
         },
