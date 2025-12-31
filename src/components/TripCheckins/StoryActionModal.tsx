@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { TripCheckin, getVendorDetails } from "@/lib/api";
+import { TripCheckin, getVendorDetails, updateTripStory } from "@/lib/api";
 import { XIcon, CheckIcon } from "@/assets/icons";
 
 interface StoryActionModalProps {
@@ -14,6 +14,7 @@ interface StoryActionModalProps {
 export default function StoryActionModal({ isOpen, onClose, trip, onSave }: StoryActionModalProps) {
     const [blogLink, setBlogLink] = useState("");
     const [currentUserName, setCurrentUserName] = useState("Admin");
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (trip) {
@@ -56,28 +57,49 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
 
     if (!isOpen || !trip) return null;
 
-    const handleApprove = () => {
-        const updated: TripCheckin = {
-            ...trip,
-            storyStatus: "Approved",
-            blogLink: blogLink || null,
-            approvalDate: new Date().toISOString(),
-            approvedBy: currentUserName,
-        };
-        onSave(updated);
-        onClose();
+    const handleApprove = async () => {
+        setIsLoading(true);
+        try {
+            await updateTripStory(trip.id, "Approved", currentUserName);
+
+            // Update local state to reflect change immediately
+            const updated: TripCheckin = {
+                ...trip,
+                storyStatus: "Approved",
+                blogLink: blogLink || null,
+                approvalDate: new Date().toISOString(),
+                approvedBy: `[APPROVED_BY:${currentUserName}]`,
+            };
+            onSave(updated);
+            onClose();
+        } catch (error) {
+            console.error("Failed to approve story:", error);
+            alert("Failed to approve story. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleReject = () => {
-        const updated: TripCheckin = {
-            ...trip,
-            storyStatus: "Rejected",
-            blogLink: null,
-            approvalDate: new Date().toISOString(),
-            approvedBy: currentUserName,
-        };
-        onSave(updated);
-        onClose();
+    const handleReject = async () => {
+        setIsLoading(true);
+        try {
+            await updateTripStory(trip.id, "Rejected", currentUserName);
+
+            const updated: TripCheckin = {
+                ...trip,
+                storyStatus: "Rejected",
+                blogLink: null,
+                approvalDate: new Date().toISOString(),
+                approvedBy: `[REJECTED_BY:${currentUserName}]`,
+            };
+            onSave(updated);
+            onClose();
+        } catch (error) {
+            console.error("Failed to reject story:", error);
+            alert("Failed to reject story. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -121,10 +143,10 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-sm font-medium text-dark dark:text-white">Current Status:</span>
-                                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium border ${trip.storyStatus === "Approved" ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" :
+                                <span className={`inline - flex rounded - full px - 2 py - 0.5 text - xs font - medium border ${trip.storyStatus === "Approved" ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" :
                                     trip.storyStatus === "Rejected" ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800" :
                                         "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800"
-                                    }`}>
+                                    } `}>
                                     {trip.storyStatus || "Pending"}
                                 </span>
                             </div>
@@ -152,17 +174,19 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                     <div className="flex gap-3 pt-4 border-t border-stroke dark:border-dark-3">
                         <button
                             onClick={handleApprove}
-                            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 font-medium text-white hover:bg-green-700 transition-colors"
+                            disabled={isLoading}
+                            className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-colors ${isLoading ? "bg-green-600/50 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
                         >
                             <CheckIcon className="h-5 w-5" />
-                            Approve Story
+                            {isLoading ? "Processing..." : "Approve Story"}
                         </button>
                         <button
                             onClick={handleReject}
-                            className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-red-600 px-6 py-3 font-medium text-white hover:bg-red-700 transition-colors"
+                            disabled={isLoading}
+                            className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-colors ${isLoading ? "bg-red-600/50 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"}`}
                         >
                             <XIcon className="h-5 w-5" />
-                            Reject Story
+                            {isLoading ? "Processing..." : "Reject Story"}
                         </button>
                     </div>
                 </div>

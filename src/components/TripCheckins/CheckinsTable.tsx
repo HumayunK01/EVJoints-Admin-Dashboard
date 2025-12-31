@@ -493,11 +493,23 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         {
             header: "Approved by",
             minWidth: "150px",
-            render: (item) => item.approvedBy ? (
-                <span className="text-sm text-dark dark:text-white whitespace-nowrap truncate max-w-[150px] block" title={item.approvedBy}>
-                    {item.approvedBy}
-                </span>
-            ) : <span className="text-sm text-gray-400">-</span>
+            render: (item) => {
+                let text = item.approvedBy || "";
+                // Format [APPROVED_BY:Name] -> Approved by Name
+                if (text.startsWith("[APPROVED_BY:") && text.endsWith("]")) {
+                    const name = text.replace("[APPROVED_BY:", "").replace("]", "").trim();
+                    text = `Approved by ${name}`;
+                } else if (text.startsWith("[REJECTED_BY:") && text.endsWith("]")) {
+                    const name = text.replace("[REJECTED_BY:", "").replace("]", "").trim();
+                    text = `Rejected by ${name}`;
+                }
+
+                return text ? (
+                    <span className="text-sm text-dark dark:text-white whitespace-nowrap block" title={text}>
+                        {text}
+                    </span>
+                ) : <span className="text-sm text-gray-400">-</span>;
+            }
         }
     ], [handleViewLocation, handleViewFeedback, handleStoryAction]);
 

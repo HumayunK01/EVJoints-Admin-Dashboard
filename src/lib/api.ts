@@ -508,6 +508,34 @@ export async function getTripCheckinsPaginated(
     }
 }
 
+export async function updateTripStory(id: number, action: "Approved" | "Rejected", name: string): Promise<{ message: string }> {
+    const endpoint = `/trips/story/${id}/`; // Trailing slash per backend snippet
+    const baseUrl = getApiUrl(endpoint);
+
+    // Get token
+    let token = "";
+    if (typeof document !== "undefined") {
+        const match = document.cookie.match(new RegExp('(^| )auth_token=([^;]+)'));
+        if (match) token = match[2];
+    }
+
+    const response = await fetch(`${baseUrl}${endpoint}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ action, name }),
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update story: ${errorText}`);
+    }
+
+    return response.json();
+}
+
 export async function getTripCheckins(): Promise<TripCheckin[]> {
     console.warn("⚠️ getTripCheckins is deprecated, use getTripCheckinsPaginated instead");
     return tripsData as TripCheckin[];
