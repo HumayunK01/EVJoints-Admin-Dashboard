@@ -141,15 +141,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                                     {trip.dateTime ? new Date(trip.dateTime).toLocaleDateString() : "-"}
                                 </span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm font-medium text-dark dark:text-white">Current Status:</span>
-                                <span className={`inline - flex rounded - full px - 2 py - 0.5 text - xs font - medium border ${trip.storyStatus === "Approved" ? "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800" :
-                                    trip.storyStatus === "Rejected" ? "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800" :
-                                        "bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800"
-                                    } `}>
-                                    {trip.storyStatus || "Pending"}
-                                </span>
-                            </div>
+
                         </div>
                     </div>
 

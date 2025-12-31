@@ -277,7 +277,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         {
             header: "Email ID",
             minWidth: "200px",
-            render: (item) => <span className="text-sm text-dark dark:text-white truncate max-w-[200px] block" title={item.email || ""}>{item.email || "-"}</span>
+            render: (item) => <span className="text-sm text-dark dark:text-white" title={item.email || ""}>{item.email || "-"}</span>
         },
         {
             header: "Mobile Number",
