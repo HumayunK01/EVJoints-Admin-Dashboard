@@ -49,6 +49,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     const [showSuccess, setShowSuccess] = useState(false);
     const [networkOptions, setNetworkOptions] = useState<string[]>([]);
     const [inactiveNetworks, setInactiveNetworks] = useState<Network[]>([]);
+    const [allNetworks, setAllNetworks] = useState<Network[]>([]);
 
     const fetchNetworks = useCallback(async () => {
         try {
@@ -65,6 +66,9 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
 
             // Store inactive networks objects for the secondary dropdown / delete
             setInactiveNetworks(res.inactive);
+
+            // Store ALL networks for ID lookup on save
+            setAllNetworks([...res.active, ...res.inactive]);
         } catch (error) {
             console.error("Failed to fetch networks:", error);
             // Fallback to static list if API fails
@@ -120,10 +124,35 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     };
 
     const handleInputChange = (key: keyof StationSubmission, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [key]: key === 'latitude' || key === 'longitude' ? parseFloat(value) : value
-        }));
+        setFormData(prev => {
+            const updates: Partial<StationSubmission> = { [key]: key === 'latitude' || key === 'longitude' ? parseFloat(value) : value };
+
+            if (key === 'networkName') {
+                if (value === "Others") {
+                    // If switching to "Others" category, clear the specific ID to avoiding accidental renaming of previous active network
+                    updates.networkId = undefined;
+                    updates.networkStatus = 0;
+                } else {
+                    const found = allNetworks.find(n => n.name === value);
+                    if (found) {
+                        // If name matches a known network, link to its ID and Status
+                        updates.networkId = found.id;
+                        updates.networkStatus = found.status;
+                    } else {
+                        // New/Renamed Custom Network -> Always Inactive (0)
+                        updates.networkStatus = 0;
+                    }
+                    // If name is new/custom (not found), we preserve the existing networkId.
+                    // This allows renaming an existing Inactive network (e.g. fixing typo) without losing the ID.
+                    // Note: If we previously cleared ID (via "Others"), it stays cleared (New Network).
+                }
+            }
+
+            return {
+                ...prev,
+                ...updates
+            };
+        });
     };
 
 

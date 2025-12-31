@@ -176,6 +176,7 @@ export interface StationSubmission {
     // Network / Usage
     networkName: string;
     networkId?: number;
+    networkStatus?: number;
     usageType: "Public" | "Private";
     stationType?: string;
 
@@ -481,11 +482,14 @@ export async function updateStation(
 
         payload = {
             ...payload,
+            status: data.status,
             stationName: data.stationName,
             stationNumber: data.stationNumber,
             userId: data.userId,
             userName: data.userName,
             networkName: data.networkName,
+            networkId: data.networkId,
+            networkStatus: data.networkStatus,
             stationType: data.stationType,
             latitude: Number(data.latitude),
             longitude: Number(data.longitude),

@@ -4,6 +4,45 @@ A state-of-the-art, responsive admin dashboard tailored for managing the EVJoint
 
 ![Dashboard Preview](public/images/dashboard.png)
 
+# EVJoints Admin System Architecture
+
+## 1. Project Structure
+The solution consists of two isolated applications acting as a monorepo structure locally:
+*   **Backend**: `d:\Internship\EVJoints-Admin-Backend` (Node.js/Express)
+*   **Frontend**: `d:\Internship\EVJoints-Admin-Dashboard` (Next.js App Router)
+
+## 2. Backend (Node.js + Express)
+*   **Tech Stack**: Node.js, Express, MySQL (`mysql2`).
+*   **Entry Point**: `server.js` initializes the Express app, configures CORS/Middlewares, and mounts routes.
+*   **Database**: Uses a raw SQL approach with a connection pool defined in `src/db.js`. No ORM is present.
+*   **Routes**: Located in `src/routes/admin/` (e.g., `customers.js`, `stations.js`, `trips.js`).
+*   **API Design**: RESTful JSON APIs.
+    *   **Authentication**: `/api/auth/vendor`
+    *   **Data**: `/api/customers`, `/api/stations`, `/api/trips`, `/api/networks` with pagination support via query params (`page`, `limit`).
+
+## 3. Frontend (Next.js Admin Dashboard)
+*   **Tech Stack**: Next.js 16 (App Router), React 19, Tailwind CSS, TypeScript.
+*   **Key Libraries**: `lucide-react` (Icons), `apexcharts` (Charts), `react-hook-form` (implied by complex forms), `axios` (or fetch wrapper).
+*   **Project Layout**:
+    *   `src/app`: Follows Next.js 13+ App Router conventions.
+        *   `(auth)`: Route group for authentication pages (Login).
+        *   `(dashboard)`: Route group for protected dashboard pages (Customers, Stations, Trips).
+    *   `src/components`: Reusable UI components (Sidebar, Header, Forms).
+    *   `src/lib/api.ts`: Centralized API client. It abstracts `fetch` calls, handles tokens, and provides typed interfaces for all API responses.
+    *   `src/data`: Fallback JSON data for offline development or error handling.
+
+## 4. Key Workflows
+*   **Authentication**: Login is handled via `src/components/Auth/LoginForm.tsx`. It sends OTPs to the backend and stores the returned JWT token in cookies.
+*   **Data Fetching**: Pages (e.g., Customers) hook into `api.ts`.
+    *   `getCustomersPaginated` fetches from `/customers` endpoint.
+    *   If the backend is down, it gracefully falls back to mock data (`src/data/customers.json`). This is a key resilience feature.
+*   **Navigation**: `Sidebar` component (`src/components/Layouts/sidebar`) drives navigation based on `NAV_DATA`.
+
+## 5. Development Conventions
+*   **Styling**: Tailwind CSS with a consistent design system (colors, spacing).
+*   **Type Safety**: TypeScript is used extensively in the frontend. Backend uses JS but follows a consistent pattern.
+*   **Env Variables**: Critical for API URLs and DB connections. `dotenv` is used in backend. Next.js uses standard `.env.local` support.
+
 ## 🚀 Key Features
 
 ### 🔌 Station Submissions Management
