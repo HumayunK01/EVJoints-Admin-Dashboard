@@ -457,7 +457,9 @@ export async function updateStation(
                 count: Number(c.count),
                 powerRating: String(c.powerRating || "").replace(/[^\d.]/g, ""),
                 tariff: String(c.tariff || "").replace(/[^\d.]/g, "")
-            }))
+            })),
+            addedByType: data.addedByType,
+            usageType: data.usageType
         };
     }
 

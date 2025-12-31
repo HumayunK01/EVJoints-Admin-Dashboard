@@ -4,7 +4,7 @@ import { Search, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSidebarContext } from "../sidebar/sidebar-context";
-import { Notification } from "./notification";
+
 import { ThemeToggleSwitch } from "./theme-toggle";
 import { UserInfo } from "./user-info";
 
@@ -44,7 +44,7 @@ export function Header() {
 
         <ThemeToggleSwitch />
 
-        <Notification />
+
 
         <div className="shrink-0">
           <UserInfo />

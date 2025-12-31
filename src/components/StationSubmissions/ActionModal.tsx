@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { StationSubmission, Connector } from "@/lib/api";
-import { X } from "lucide-react";
+import { X, CheckCircle } from "lucide-react";
 import { NETWORK_NAMES } from "@/data/networks";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
@@ -64,6 +64,14 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     // Single state object for all station fields
     const [formData, setFormData] = useState<Partial<StationSubmission>>({});
     const [connectors, setConnectors] = useState<Connector[]>([]);
+    const [showSuccess, setShowSuccess] = useState(false);
+
+    useEffect(() => {
+        if (showSuccess) {
+            const timer = setTimeout(() => setShowSuccess(false), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [showSuccess]);
 
     useEffect(() => {
         if (station) {
@@ -110,6 +118,8 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
         }));
     };
 
+
+
     const handleSave = (newStatus?: 'Approved' | 'Rejected', reason?: string) => {
         if (!station || !formData) return;
 
@@ -135,8 +145,12 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
         }
 
         onSave(updated, action);
+
         if (newStatus) {
             onClose();
+        } else {
+            // Only show success notification for save action (not approve/reject which close modal)
+            setShowSuccess(true);
         }
     };
 
@@ -311,6 +325,16 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                     </div>
                 </div>
             </div>
+
+            {/* Success Notification */}
+            {showSuccess && (
+                <div className="absolute top-6 right-6 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-3 rounded-lg bg-green-500 px-4 py-3 text-white shadow-lg">
+                        <CheckCircle className="h-5 w-5" />
+                        <span className="font-medium">Saved Successfully</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
