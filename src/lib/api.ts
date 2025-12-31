@@ -10,8 +10,28 @@ import tripsData from "@/data/trips.json";
 // CONFIGURATION
 // ============================================================================
 
-const API_BASE_URL = "https://ev-backend-six.vercel.app/api";
+// Primary API - handles all authentication operations (login, register, OTP)
+const PRIMARY_API_URL = process.env.NEXT_PUBLIC_PRIMARY_API_URL!;
+
+// Secondary API - handles all data operations (customers, stations, trips)
+const SECONDARY_API_URL = process.env.NEXT_PUBLIC_SECONDARY_API_URL!;
+
 const CACHE_POLICY = "no-store" as const;
+
+// App Configuration
+export const APP_CONFIG = {
+    primaryApiUrl: PRIMARY_API_URL,
+    secondaryApiUrl: SECONDARY_API_URL,
+    appName: process.env.NEXT_PUBLIC_APP_NAME!,
+    appVersion: process.env.NEXT_PUBLIC_APP_VERSION!,
+    enableFallback: process.env.NEXT_PUBLIC_ENABLE_FALLBACK !== "false", // Default true
+};
+
+console.log("🔧 API Configuration:", {
+    primaryApi: APP_CONFIG.primaryApiUrl,
+    secondaryApi: APP_CONFIG.secondaryApiUrl,
+    fallbackEnabled: APP_CONFIG.enableFallback
+});
 
 // ============================================================================
 // TYPE DEFINITIONS - SHARED
@@ -29,9 +49,72 @@ interface ApiResponse<T> {
 }
 
 // ============================================================================
-// TYPE DEFINITIONS - CUSTOMERS
+// TYPE DEFINITIONS - PRIMARY API (AUTHENTICATION)
 // ============================================================================
 
+export interface AuthResponse {
+    success?: boolean;
+    status?: number;
+    message: string;
+    token?: string;
+    vendor_id?: number;
+    user?: UserProfile;
+    result?: {
+        customer_id?: number;
+        otp_id?: number;
+        token?: string;
+        user?: UserProfile;
+    };
+}
+
+export interface UserProfile {
+    id?: number;
+    name: string;
+    avatar?: string;
+    email?: string;
+    phone?: string;
+    pan?: string;
+    gst?: string;
+    role?: string;
+}
+
+export interface VendorRegistrationData {
+    name: string;
+    date_of_birth: string;
+    email: string;
+    mobile: string;
+    pan: string;
+    gst_no: string;
+    area: number;
+    business_type: string;
+    business_url: string;
+    business_mobile: string;
+    business_email: string;
+}
+
+export interface VendorDetails {
+    id: number;
+    name: string;
+    email: string;
+    mobile: string;
+    date_of_birth?: string;
+    pan?: string;
+    gst_no?: string;
+    area?: number;
+    business_type?: string;
+    business_url?: string;
+    business_mobile?: string;
+    business_email?: string;
+    role?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ============================================================================
+// TYPE DEFINITIONS - SECONDARY API (DATA)
+// ============================================================================
+
+// Customers
 export interface Customer {
     firstName: string;
     lastName: string;
@@ -69,13 +152,7 @@ export interface CustomersResponse {
     pagination: PaginationInfo;
 }
 
-// ============================================================================
-// TYPE DEFINITIONS - STATION SUBMISSIONS
-// ============================================================================
-
-// ================================
-// Connector
-// ================================
+// Station Submissions
 export interface Connector {
     name: string;
     count: number;
@@ -85,9 +162,6 @@ export interface Connector {
     tariff?: string;
 }
 
-// ================================
-// Station Submission
-// ================================
 export interface StationSubmission {
     // Core identifiers
     id: number;
@@ -130,18 +204,18 @@ export interface StationSubmission {
     reason?: string;
 }
 
-// ============================================================================
-// TYPE DEFINITIONS - TRIP CHECK-INS
-// ============================================================================
+export interface StationSubmissionsResponse {
+    data: StationSubmission[];
+    pagination: PaginationInfo;
+}
 
-// Stop interface matching backend structure (lat/lng instead of latitude/longitude)
+// Trip Check-ins
 export interface Stop {
     address: string;
     lat: number;
     lng: number;
 }
 
-// Keep LocationCoordinates for components that need latitude/longitude
 export interface LocationCoordinates {
     latitude: number;
     longitude: number;
@@ -184,13 +258,45 @@ export interface TripCheckin {
     amount?: number | null;
 }
 
+export interface TripCheckinsResponse {
+    data: TripCheckin[];
+    pagination: PaginationInfo;
+}
+
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
+function getApiUrl(endpoint: string): string {
+    // Use primary API for authentication endpoints
+    if (endpoint.startsWith("/vendor") || endpoint.startsWith("/auth")) {
+        return PRIMARY_API_URL;
+    }
+    // Use secondary API for data operations (customers, stations, trips)
+    return SECONDARY_API_URL;
+}
+
 async function fetchApi<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const baseUrl = getApiUrl(endpoint);
+
+    // Get token from cookies (client-side)
+    let token = "";
+    if (typeof document !== "undefined") {
+        const match = document.cookie.match(new RegExp('(^| )auth_token=([^;]+)'));
+        if (match) token = match[2];
+    }
+
+    const headers: HeadersInit = {
+        "Content-Type": "application/json",
+    };
+
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${baseUrl}${endpoint}`, {
         cache: CACHE_POLICY,
+        headers: headers,
     });
 
     if (!response.ok) {
@@ -201,7 +307,10 @@ async function fetchApi<T>(endpoint: string): Promise<T> {
 }
 
 async function postApi<T>(endpoint: string, data: any): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const baseUrl = getApiUrl(endpoint);
+    const url = `${baseUrl}${endpoint}`;
+
+    const response = await fetch(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -210,8 +319,15 @@ async function postApi<T>(endpoint: string, data: any): Promise<T> {
     });
 
     if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new Error(error.message || `API Error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        let errorData;
+        try {
+            errorData = JSON.parse(errorText);
+        } catch {
+            errorData = { message: errorText };
+        }
+
+        throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`);
     }
 
     return response.json();
@@ -233,9 +349,45 @@ function simulatePagination<T>(data: T[], page: number, limit: number): ApiRespo
 }
 
 // ============================================================================
-// API FUNCTIONS - CUSTOMERS
+// PRIMARY API FUNCTIONS (AUTHENTICATION)
 // ============================================================================
 
+export async function login(email: string, password: string): Promise<AuthResponse> {
+    const response = await postApi<AuthResponse>("/vendor/login", { email, password });
+    return response;
+}
+
+export async function registerVendor(data: VendorRegistrationData): Promise<AuthResponse> {
+    const response = await postApi<AuthResponse>("/vendor/register", data);
+    return response;
+}
+
+export async function sendVendorOtp(mobile: string, email: string): Promise<AuthResponse> {
+    const response = await postApi<AuthResponse>("/vendor/send-otp", { mobile, email });
+    return response;
+}
+
+export async function verifyVendorOtp(mobile: string, vendor_id: number, otp: string): Promise<AuthResponse> {
+    const response = await postApi<AuthResponse>("/vendor/verify-otp", { mobile, vendor_id, otp });
+    return response;
+}
+
+export async function getVendorDetails(id: number): Promise<VendorDetails> {
+    const response = await fetchApi<{ status: number; message: string; result: VendorDetails }>(`/vendor/details?id=${id}`);
+
+    // Backend returns { status: 1, message: "...", result: { vendor details } }
+    if (response.status === 1 && response.result) {
+        return response.result;
+    }
+
+    throw new Error(response.message || "Failed to fetch vendor details");
+}
+
+// ============================================================================
+// SECONDARY API FUNCTIONS (DATA OPERATIONS)
+// ============================================================================
+
+// Customers
 export async function getCustomersPaginated(
     page: number = 1,
     limit: number = 10,
@@ -252,15 +404,7 @@ export async function getCustomersPaginated(
     }
 }
 
-// ============================================================================
-// API FUNCTIONS - STATION SUBMISSIONS
-// ============================================================================
-
-export interface StationSubmissionsResponse {
-    data: StationSubmission[];
-    pagination: PaginationInfo;
-}
-
+// Station Submissions
 export async function getStationSubmissionsPaginated(
     page: number = 1,
     limit: number = 10
@@ -275,7 +419,6 @@ export async function getStationSubmissionsPaginated(
     }
 }
 
-// Unified update function based on new backend logic
 export async function updateStation(
     id: number,
     data: Partial<StationSubmission>,
@@ -284,15 +427,11 @@ export async function updateStation(
 
     let payload: any = { action };
 
-    // Handle specific actions
     if (action === "REJECT") {
-        // Backend expects "reason" field for REJECT action
         payload.reason = data.statusReason;
     }
 
-    // Only include detailed fields if action is SAVE
     if (action === "SAVE") {
-        // 1. Parse operational hours
         let open_time = "00:00:00";
         let close_time = "23:59:00";
         const opHrs = data.operationalHours || "";
@@ -305,7 +444,6 @@ export async function updateStation(
             }
         }
 
-        // 2. Prepare payload
         payload = {
             ...payload,
             stationName: data.stationName,
@@ -317,14 +455,13 @@ export async function updateStation(
             connectors: (data.connectors || []).map(c => ({
                 chargerTypeId: c.chargerTypeId || 0,
                 count: Number(c.count),
-                // Strip non-numeric chars for power/tariff to be safe for parseFloat
                 powerRating: String(c.powerRating || "").replace(/[^\d.]/g, ""),
                 tariff: String(c.tariff || "").replace(/[^\d.]/g, "")
             }))
         };
     }
 
-    const url = `${API_BASE_URL}/stations/${id}`;
+    const url = `${SECONDARY_API_URL}/stations/${id}`;
     console.log(`[API] Station Action: ${action} to ${url}`, payload);
 
     const response = await fetch(url, {
@@ -342,7 +479,6 @@ export async function updateStation(
     return response.json();
 }
 
-// Helper alias for status updates if needed
 export async function updateStationStatus(
     id: number,
     status: "Approved" | "Rejected",
@@ -352,21 +488,12 @@ export async function updateStationStatus(
     return updateStation(id, { statusReason: reason }, action);
 }
 
-// Legacy function for backward compatibility (deprecated)
 export async function getStationSubmissions(): Promise<StationSubmission[]> {
     console.warn("⚠️ getStationSubmissions is deprecated, use getStationSubmissionsPaginated instead");
     return stationSubmissionsData as StationSubmission[];
 }
 
-// ============================================================================
-// API FUNCTIONS - TRIP CHECK-INS
-// ============================================================================
-
-export interface TripCheckinsResponse {
-    data: TripCheckin[];
-    pagination: PaginationInfo;
-}
-
+// Trip Check-ins
 export async function getTripCheckinsPaginated(
     page: number = 1,
     limit: number = 10
@@ -381,7 +508,6 @@ export async function getTripCheckinsPaginated(
     }
 }
 
-// Legacy function for backward compatibility (deprecated)
 export async function getTripCheckins(): Promise<TripCheckin[]> {
     console.warn("⚠️ getTripCheckins is deprecated, use getTripCheckinsPaginated instead");
     return tripsData as TripCheckin[];
@@ -427,66 +553,4 @@ export async function rejectCheckin(
 export async function postAudit(entry: any): Promise<void> {
     console.log("[API] Audit log:", entry);
     // TODO: Implement backend API call
-}
-// ============================================================================
-// API FUNCTIONS - AUTHENTICATION
-// ============================================================================
-
-export interface AuthResponse {
-    success: boolean;
-    message: string;
-    token?: string;
-    user?: UserProfile;
-}
-
-export interface UserProfile {
-    name: string;
-    avatar?: string;
-    email?: string;
-    phone?: string;
-    pan?: string;
-    gst?: string;
-    role?: string;
-}
-
-export async function getMe(): Promise<UserProfile | null> {
-    try {
-        // In a real app, this would use a token from cookies/header
-        const response = await fetchApi<{ user: UserProfile }>("/auth/me");
-        return response.user;
-    } catch (error) {
-        console.warn("⚠️ Profile API unavailable, using localStorage fallback");
-        const stored = localStorage.getItem("user");
-        if (stored) return JSON.parse(stored);
-        return null;
-    }
-}
-
-export async function sendOtp(mobile: string): Promise<AuthResponse> {
-    try {
-        return await postApi<AuthResponse>("/auth/send-otp", { mobile });
-    } catch (error) {
-        console.warn("⚠️ Auth API unavailable, using fallback (Any number is allowed)");
-        return { success: true, message: "OTP sent successfully (Fallback mode)" };
-    }
-}
-
-export async function verifyOtp(mobile: string, otp: string): Promise<AuthResponse> {
-    try {
-        return await postApi<AuthResponse>("/auth/verify-otp", { mobile, otp });
-    } catch (error) {
-        console.warn("⚠️ Auth API unavailable, using fallback (OTP: 1234)");
-        if (otp === "1234") {
-            return {
-                success: true,
-                message: "Verification successful",
-                token: "fallback-token",
-                user: {
-                    name: "Admin",
-                    avatar: "/images/user/user-01.png"
-                }
-            };
-        }
-        return { success: false, message: "Invalid OTP. Use 1234 for testing." };
-    }
 }

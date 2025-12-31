@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { TripCheckin } from "@/lib/api";
+import { TripCheckin, getVendorDetails } from "@/lib/api";
 import { XIcon, CheckIcon } from "@/assets/icons";
 
 interface StoryActionModalProps {
@@ -13,12 +13,46 @@ interface StoryActionModalProps {
 
 export default function StoryActionModal({ isOpen, onClose, trip, onSave }: StoryActionModalProps) {
     const [blogLink, setBlogLink] = useState("");
+    const [currentUserName, setCurrentUserName] = useState("Admin");
 
     useEffect(() => {
         if (trip) {
             setBlogLink(trip.blogLink || "");
         }
-    }, [trip]);
+
+        async function fetchUserName() {
+            try {
+                const storedUser = localStorage.getItem("user");
+                if (storedUser) {
+                    const user = JSON.parse(storedUser);
+
+                    // Try to get name from API first if ID exists
+                    if (user.id) {
+                        try {
+                            const details = await getVendorDetails(user.id);
+                            if (details.name) {
+                                setCurrentUserName(details.name);
+                                return;
+                            }
+                        } catch (err) {
+                            console.error("Failed to fetch fresh user details", err);
+                        }
+                    }
+
+                    // Fallback to stored name
+                    if (user.name) {
+                        setCurrentUserName(user.name);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to parse user from local storage");
+            }
+        }
+
+        if (isOpen) {
+            fetchUserName();
+        }
+    }, [trip, isOpen]);
 
     if (!isOpen || !trip) return null;
 
@@ -28,7 +62,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
             storyStatus: "Approved",
             blogLink: blogLink || null,
             approvalDate: new Date().toISOString(),
-            approvedBy: "Admin",
+            approvedBy: currentUserName,
         };
         onSave(updated);
         onClose();
@@ -40,7 +74,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
             storyStatus: "Rejected",
             blogLink: null,
             approvalDate: new Date().toISOString(),
-            approvedBy: "Admin",
+            approvedBy: currentUserName,
         };
         onSave(updated);
         onClose();

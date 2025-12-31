@@ -3,28 +3,35 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { User } from "lucide-react";
+import { getVendorDetails, VendorDetails } from "@/lib/api";
 
 export function UserInfo() {
-  const [user, setUser] = useState({
-    name: "Admin",
-    avatar: "/images/user/user-01.png",
-  });
+  const [vendor, setVendor] = useState<VendorDetails | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        if (parsedUser.name) {
-          setUser({
-            name: parsedUser.name,
-            avatar: parsedUser.avatar || "/images/user/user-01.png",
-          });
+    async function loadVendorDetails() {
+      try {
+        // Get vendor ID from localStorage (stored during login)
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          const vendorId = parsedUser.id;
+
+          if (vendorId) {
+            // Fetch vendor details from API using the ID
+            const details = await getVendorDetails(vendorId);
+            setVendor(details);
+          }
         }
+      } catch (error) {
+        console.error("Error loading vendor details:", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading user from storage", error);
     }
+
+    loadVendorDetails();
   }, []);
 
   return (
@@ -40,10 +47,7 @@ export function UserInfo() {
       </div>
       <div className="flex flex-col text-left">
         <span className="text-sm font-bold text-dark dark:text-white max-[1024px]:sr-only leading-tight">
-          {user.name}
-        </span>
-        <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 max-[1024px]:sr-only uppercase tracking-wider">
-          Owner
+          {loading ? "Loading..." : vendor?.name || "—"}
         </span>
       </div>
     </Link>
