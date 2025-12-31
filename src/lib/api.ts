@@ -171,7 +171,7 @@ export interface StationSubmission {
     // User / Owner
     userName: string | null;
     userId?: string;
-    addedByType?: "EV Owner" | "Station Owner" | "CPO";
+    addedByType?: string;
 
     // Network / Usage
     networkName: string;
