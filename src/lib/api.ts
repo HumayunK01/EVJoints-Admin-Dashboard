@@ -436,10 +436,30 @@ export interface AuthResponse {
     success: boolean;
     message: string;
     token?: string;
-    user?: {
-        name: string;
-        avatar?: string;
-    };
+    user?: UserProfile;
+}
+
+export interface UserProfile {
+    name: string;
+    avatar?: string;
+    email?: string;
+    phone?: string;
+    pan?: string;
+    gst?: string;
+    role?: string;
+}
+
+export async function getMe(): Promise<UserProfile | null> {
+    try {
+        // In a real app, this would use a token from cookies/header
+        const response = await fetchApi<{ user: UserProfile }>("/auth/me");
+        return response.user;
+    } catch (error) {
+        console.warn("⚠️ Profile API unavailable, using localStorage fallback");
+        const stored = localStorage.getItem("user");
+        if (stored) return JSON.parse(stored);
+        return null;
+    }
 }
 
 export async function sendOtp(mobile: string): Promise<AuthResponse> {
