@@ -1,4 +1,3 @@
-
 import { CustomersTable } from "@/components/Tables/CustomersTable";
 import { Metadata } from "next";
 import { getCustomersPaginated } from "@/lib/api";
@@ -9,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CustomersPage() {
-    // Get first page with server-side pagination
+    // Server-side data fetching for optimal performance
     const response = await getCustomersPaginated(1, 10);
 
     return (

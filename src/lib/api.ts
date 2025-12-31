@@ -14,7 +14,17 @@ import tripsData from "@/data/trips.json";
 const PRIMARY_API_URL = process.env.NEXT_PUBLIC_PRIMARY_API_URL!;
 
 // Secondary API - handles all data operations (customers, stations, trips)
-const SECONDARY_API_URL = process.env.NEXT_PUBLIC_SECONDARY_API_URL!;
+// Use different URLs for server-side (SSR) vs client-side rendering
+const getSecondaryApiUrl = () => {
+    // Server-side rendering (Node.js environment)
+    if (typeof window === "undefined") {
+        return process.env.SECONDARY_API_URL_SERVER || process.env.NEXT_PUBLIC_SECONDARY_API_URL!;
+    }
+    // Client-side rendering (Browser environment)
+    return process.env.NEXT_PUBLIC_SECONDARY_API_URL!;
+};
+
+const SECONDARY_API_URL = getSecondaryApiUrl();
 
 const CACHE_POLICY = "no-store" as const;
 
@@ -30,6 +40,7 @@ export const APP_CONFIG = {
 console.log("🔧 API Configuration:", {
     primaryApi: APP_CONFIG.primaryApiUrl,
     secondaryApi: APP_CONFIG.secondaryApiUrl,
+    isServer: typeof window === "undefined",
     fallbackEnabled: APP_CONFIG.enableFallback
 });
 
@@ -273,12 +284,21 @@ function getApiUrl(endpoint: string): string {
     if (endpoint.startsWith("/vendor") || endpoint.startsWith("/auth")) {
         return PRIMARY_API_URL;
     }
+
     // Use secondary API for data operations (customers, stations, trips)
-    return SECONDARY_API_URL;
+    // Detect server-side vs client-side for each call
+    if (typeof window === "undefined") {
+        // Server-side rendering (SSR)
+        return process.env.SECONDARY_API_URL_SERVER || process.env.NEXT_PUBLIC_SECONDARY_API_URL!;
+    }
+
+    // Client-side rendering
+    return process.env.NEXT_PUBLIC_SECONDARY_API_URL!;
 }
 
 async function fetchApi<T>(endpoint: string): Promise<T> {
     const baseUrl = getApiUrl(endpoint);
+    const fullUrl = `${baseUrl}${endpoint}`;
 
     // Get token from cookies (client-side)
     let token = "";
@@ -295,16 +315,25 @@ async function fetchApi<T>(endpoint: string): Promise<T> {
         headers["Authorization"] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-        cache: CACHE_POLICY,
-        headers: headers,
-    });
+    console.log(`[API] Fetching: ${fullUrl}`);
 
-    if (!response.ok) {
-        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    try {
+        const response = await fetch(fullUrl, {
+            cache: CACHE_POLICY,
+            headers: headers,
+        });
+
+        console.log(`[API] Response status: ${response.status} for ${fullUrl}`);
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status} ${response.statusText}`);
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error(`[API] Fetch failed for ${fullUrl}:`, error);
+        throw error;
     }
-
-    return response.json();
 }
 
 async function postApi<T>(endpoint: string, data: any): Promise<T> {
