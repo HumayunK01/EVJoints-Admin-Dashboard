@@ -8,8 +8,8 @@ A state-of-the-art, responsive admin dashboard tailored for managing the EVJoint
 
 ## 1. Project Structure
 The solution consists of two isolated applications acting as a monorepo structure locally:
-*   **Backend**: `d:\Internship\EVJoints-Admin-Backend` (Node.js/Express)
-*   **Frontend**: `d:\Internship\EVJoints-Admin-Dashboard` (Next.js App Router)
+*   **Backend**: [https://github.com/Asil786/ev-backend](https://github.com/Asil786/ev-backend) (Node.js/Express)
+*   **Frontend**: [https://github.com/HumayunK01/EVJoints-Admin-Dashboard](https://github.com/HumayunK01/EVJoints-Admin-Dashboard) (Next.js App Router)
 
 ## 2. Backend (Node.js + Express)
 *   **Tech Stack**: Node.js, Express, MySQL (`mysql2`).
