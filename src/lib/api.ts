@@ -447,6 +447,11 @@ export async function updateStation(
         payload = {
             ...payload,
             stationName: data.stationName,
+            stationNumber: data.stationNumber,
+            userId: data.userId,
+            userName: data.userName,
+            networkName: data.networkName,
+            stationType: data.stationType,
             latitude: Number(data.latitude),
             longitude: Number(data.longitude),
             contactNumber: data.contactNumber,
