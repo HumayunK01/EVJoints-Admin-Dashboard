@@ -1,5 +1,4 @@
 import React from "react";
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import CheckinsTable from "@/components/TripCheckins/CheckinsTable";
 import { getTripCheckinsPaginated } from "@/lib/api";
 
