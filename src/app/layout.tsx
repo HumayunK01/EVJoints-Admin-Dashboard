@@ -20,6 +20,9 @@ export const metadata: Metadata = {
     default: "Admin | EV Charging Station App | Electric Car Charging Stations Near Me",
   },
   description: "EVJoints Admin Dashboard",
+  icons: {
+    icon: "/images/favicon.ico",
+  },
 };
 
 export default function RootLayout({ children }: PropsWithChildren) {
