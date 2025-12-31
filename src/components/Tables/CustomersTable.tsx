@@ -366,7 +366,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
             if (!loading && !isSortOpen && !isFilterOpen) {
                 fetchData(currentPage, rowsPerPage, false);
             }
-        }, 30000);
+        }, 5000);
         return () => clearInterval(interval);
     }, [currentPage, rowsPerPage, loading, isSortOpen, isFilterOpen, sortOption]);
 
