@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { StationSubmission, Connector } from "@/lib/api";
-import { X, CheckCircle } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { StationSubmission, Connector, Network } from "@/lib/api";
+import { X, CheckCircle, Trash2 } from "lucide-react";
 import { NETWORK_NAMES } from "@/data/networks";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
@@ -16,25 +16,7 @@ interface ModalFieldConfig {
     section: "Station Information" | "Location & Contact";
 }
 
-const STATION_FIELDS: ModalFieldConfig[] = [
-    { label: "Station Name", key: "stationName", type: "text", required: true, placeholder: "Enter station name", section: "Station Information" },
-    { label: "Stations ID", key: "stationNumber", type: "text", readOnly: true, section: "Station Information" },
-    {
-        label: "Network Name",
-        key: "networkName",
-        type: "select",
-        required: true,
-        options: NETWORK_NAMES,
-        section: "Station Information"
-    },
-    { label: "Station Type", key: "stationType", type: "text", placeholder: "e.g., Mall, Highway, Residential", section: "Station Information" },
-    { label: "Added By", key: "addedByType", type: "select", options: ["EV Owner", "Station Owner", "CPO"], section: "Station Information" },
-    { label: "Usage Type", key: "usageType", type: "select", required: true, options: ["Public", "Private"], section: "Station Information" },
-    { label: "Operational Hours", key: "operationalHours", type: "text", placeholder: "e.g., 24/7 or 9 AM - 6 PM", section: "Station Information" },
-    { label: "Latitude", key: "latitude", type: "number", required: true, placeholder: "e.g., 28.556", section: "Location & Contact" },
-    { label: "Longitude", key: "longitude", type: "number", required: true, placeholder: "e.g., 77.09", section: "Location & Contact" },
-    { label: "Contact Number", key: "contactNumber", type: "tel", required: true, placeholder: "+91XXXXXXXXXX", section: "Location & Contact" },
-];
+
 
 interface ConnectorFieldConfig {
     label: string;
@@ -65,6 +47,34 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     const [formData, setFormData] = useState<Partial<StationSubmission>>({});
     const [connectors, setConnectors] = useState<Connector[]>([]);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [networkOptions, setNetworkOptions] = useState<string[]>([]);
+    const [inactiveNetworks, setInactiveNetworks] = useState<Network[]>([]);
+
+    const fetchNetworks = useCallback(async () => {
+        try {
+            const { getNetworks } = await import("@/lib/api");
+            const res = await getNetworks();
+
+            // Map active networks to names and sort
+            const activeNetworks = res.active.map(n => n.name).sort();
+
+            // create final options list: Active users + "Others"
+            const options = Array.from(new Set([...activeNetworks, "Others"]));
+
+            setNetworkOptions(options);
+
+            // Store inactive networks objects for the secondary dropdown / delete
+            setInactiveNetworks(res.inactive);
+        } catch (error) {
+            console.error("Failed to fetch networks:", error);
+            // Fallback to static list if API fails
+            setNetworkOptions(NETWORK_NAMES);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchNetworks();
+    }, [fetchNetworks]);
 
     useEffect(() => {
         if (showSuccess) {
@@ -83,8 +93,6 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
             setConnectors(JSON.parse(JSON.stringify(station.connectors))); // Deep copy
         }
     }, [station]);
-
-    if (!isOpen || !station) return null;
 
     const handleConnectorChange = (index: number, field: keyof Connector, value: string) => {
         const updated = [...connectors];
@@ -118,6 +126,100 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
         }));
     };
 
+
+
+    const handleDeleteNetwork = async (name: string) => {
+        if (!name) return;
+
+        // Find the network object to get ID
+        const network = inactiveNetworks.find(n => n.name === name);
+        if (!network) {
+            // If not found in inactive list, maybe it's just typed text not saved in DB?
+            // In that case, just clearing it or doing nothing is fine. 
+            // Only strictly allow deleting from DB if we have an ID.
+            return;
+        }
+
+        if (window.confirm(`Are you sure you want to delete the network "${name}" from the database?`)) {
+            try {
+                const { deleteNetwork } = await import("@/lib/api");
+                await deleteNetwork(network.id);
+                // Refresh networks list
+                await fetchNetworks();
+                // Clear the field if it was the selected one
+                if (formData.networkName === name) {
+                    handleInputChange("networkName", "");
+                }
+            } catch (error) {
+                console.error("Failed to delete network:", error);
+                alert("Failed to delete network. Please try again.");
+            }
+        }
+    };
+
+    const stationFields = React.useMemo(() => {
+        const isOthersSelected =
+            formData.networkName === "Others" ||
+            (!!formData.networkName &&
+                !networkOptions.includes(formData.networkName) &&
+                inactiveNetworks.some((n) => n.name === formData.networkName));
+
+        // If the actual network name is an inactive one, we want the first dropdown to show "Others"
+        // But SearchableSelect takes value from formData[key].
+        // We might need a virtual field for the first dropdown if we want this behavior.
+        // For simplicity, let's assume the user selects "Others" in the first dropdown.
+        // Then we show the second dropdown.
+        // When second dropdown is changed, we update formData.networkName to the specific inactive one?
+        // IF we do that, the first dropdown value (taking from networkName) will change to the inactive one, which is NOT in its options "Others".
+        // This causes UI inconsistency.
+
+        // SOLUTION: Use a separate temporary state for the "Primary Network Selection" if needed, 
+        // OR rely on the fact that if value is not in options, SearchableSelect might show it as custom text or we handle it.
+
+        // Let's refine based on user request: "add one more field... if selected other".
+
+        const fields: ModalFieldConfig[] = [
+            { label: "Station Name", key: "stationName", type: "text", required: true, placeholder: "Enter station name", section: "Station Information" },
+            { label: "Stations ID", key: "stationNumber", type: "text", readOnly: true, section: "Station Information" },
+            {
+                label: "Network Name",
+                key: "networkName",
+                type: "select",
+                required: true,
+                options: networkOptions,
+                section: "Station Information"
+            },
+        ];
+
+        // Conditional Field for "Others"
+        // We check if the current networkName is "Others" (explicitly selected) 
+        // OR if it is not in the standard network options (meaning it's a custom/inactive one)
+        // networkOptions includes active networks + "Others".
+        const isCustomOrInactive = formData.networkName && !networkOptions.includes(formData.networkName);
+        const showOtherField = formData.networkName === "Others" || isCustomOrInactive;
+
+        if (showOtherField) {
+            fields.push({
+                label: "Other Network Name",
+                key: "networkName", // This field will bind to the same networkName key
+                type: "text", // Changed to text to allow editing/correction
+                placeholder: "Enter or correct network name",
+                section: "Station Information"
+            } as any);
+        }
+
+        fields.push(
+            { label: "Station Type", key: "stationType", type: "text", placeholder: "e.g., Mall, Highway, Residential", section: "Station Information" },
+            { label: "Added By", key: "addedByType", type: "select", options: ["EV Owner", "Station Owner", "CPO"], section: "Station Information" },
+            { label: "Usage Type", key: "usageType", type: "select", required: true, options: ["Public", "Private"], section: "Station Information" },
+            { label: "Operational Hours", key: "operationalHours", type: "text", placeholder: "e.g., 24/7 or 9 AM - 6 PM", section: "Station Information" },
+            { label: "Latitude", key: "latitude", type: "number", required: true, placeholder: "e.g., 28.556", section: "Location & Contact" },
+            { label: "Longitude", key: "longitude", type: "number", required: true, placeholder: "e.g., 77.09", section: "Location & Contact" },
+            { label: "Contact Number", key: "contactNumber", type: "tel", required: true, placeholder: "+91XXXXXXXXXX", section: "Location & Contact" }
+        );
+
+        return fields;
+    }, [networkOptions, inactiveNetworks, formData.networkName]);
 
 
     const handleSave = (newStatus?: 'Approved' | 'Rejected', reason?: string) => {
@@ -161,6 +263,8 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
         }
     };
 
+    if (!isOpen || !station) return null;
+
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
             <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-white px-6 dark:bg-gray-dark">
@@ -189,35 +293,70 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                                 {section}
                             </h4>
                             <div className={`grid grid-cols-1 ${section === "Location & Contact" ? "md:grid-cols-3" : "md:grid-cols-2"} gap-4`}>
-                                {STATION_FIELDS.filter(f => f.section === section).map((field) => (
-                                    <div key={field.key}>
-                                        <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
-                                            {field.label} {field.required && <span className="text-red-500">*</span>}
-                                        </label>
-                                        {field.type === "select" ? (
-                                            <SearchableSelect
-                                                options={field.options || []}
-                                                value={(formData[field.key] as string) || ""}
-                                                onChange={(val) => handleInputChange(field.key, val)}
-                                                placeholder={`Select ${field.label}...`}
-                                                hideSearch={field.options && field.options.length <= 5}
-                                            />
-                                        ) : (
-                                            <input
-                                                type={field.type}
-                                                step={field.type === "number" ? "any" : undefined}
-                                                value={formData[field.key] !== undefined && formData[field.key] !== null ? String(formData[field.key]) : ""}
-                                                onChange={(e) => handleInputChange(field.key, e.target.value)}
-                                                placeholder={field.placeholder}
-                                                readOnly={field.readOnly}
-                                                className={cn(
-                                                    "w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white",
-                                                    field.readOnly && "cursor-not-allowed bg-gray-100 dark:bg-dark-2 text-gray-500"
-                                                )}
-                                            />
-                                        )}
-                                    </div>
-                                ))}
+                                {stationFields.filter(f => f.section === section).map((field, idx) => {
+                                    // Custom Logic for Network Dropdowns
+                                    let value = (formData[field.key] as string) || "";
+                                    let onChange = (val: string) => handleInputChange(field.key, val);
+
+                                    if (field.label === "Network Name") {
+                                        // If the actual network is an inactive one (or "Others"), show "Others" in this dropdown
+                                        const isOther = formData.networkName === "Others" || (formData.networkName && !networkOptions.includes(formData.networkName));
+                                        if (isOther) {
+                                            value = "Others";
+                                        }
+                                    } else if (field.label === "Other Network Name") {
+                                        // If actual value is literally "Others", show blank so user can type.
+                                        // Otherwise show the custom value.
+                                        if (formData.networkName === "Others") {
+                                            value = "";
+                                        } else {
+                                            value = formData.networkName || "";
+                                        }
+                                    }
+
+                                    return (
+                                        <div key={`${field.key}-${idx}`}>
+                                            <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
+                                                {field.label} {field.required && <span className="text-red-500">*</span>}
+                                            </label>
+                                            {field.type === "select" ? (
+                                                <SearchableSelect
+                                                    options={field.options || []}
+                                                    value={value}
+                                                    onChange={onChange}
+                                                    placeholder={`Select ${field.label}...`}
+                                                    hideSearch={field.options && field.options.length <= 5}
+                                                />
+                                            ) : (
+                                                <div className="relative">
+                                                    <input
+                                                        type={field.type}
+                                                        step={field.type === "number" ? "any" : undefined}
+                                                        value={formData[field.key] !== undefined && formData[field.key] !== null ? String(formData[field.key]) : ""}
+                                                        onChange={(e) => handleInputChange(field.key, e.target.value)}
+                                                        placeholder={field.placeholder}
+                                                        readOnly={field.readOnly}
+                                                        className={cn(
+                                                            "w-full rounded-lg border border-stroke bg-transparent px-4 py-2.5 text-dark outline-none focus:border-primary dark:border-dark-3 dark:text-white",
+                                                            field.readOnly && "cursor-not-allowed bg-gray-100 dark:bg-dark-2 text-gray-500",
+                                                            field.label === "Other Network Name" && "pr-10"
+                                                        )}
+                                                    />
+                                                    {field.label === "Other Network Name" &&
+                                                        inactiveNetworks.some(n => n.name === formData.networkName) && (
+                                                            <button
+                                                                onClick={() => handleDeleteNetwork(formData.networkName!)}
+                                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700 p-1"
+                                                                title="Delete from database"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </button>
+                                                        )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     ))}

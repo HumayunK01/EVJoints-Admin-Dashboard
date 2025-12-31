@@ -404,6 +404,41 @@ export async function getCustomersPaginated(
     }
 }
 
+// Networks
+export interface Network {
+    id: number;
+    name: string;
+    status: number;
+    liveStatus: number;
+    approvedStatus: string;
+}
+
+export interface NetworksResponse {
+    active: Network[];
+    inactive: Network[];
+}
+
+export async function getNetworks(): Promise<NetworksResponse> {
+    const result = await fetchApi<NetworksResponse>("/networks");
+    return result;
+}
+
+export async function deleteNetwork(id: number): Promise<{ message: string }> {
+    const url = `${SECONDARY_API_URL}/networks/${id}`;
+    const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to delete network: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
 // Station Submissions
 export async function getStationSubmissionsPaginated(
     page: number = 1,
