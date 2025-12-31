@@ -2,12 +2,11 @@
 
 import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
-import { LogOut } from "lucide-react";
+import { LogOut, ArrowLeft, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NAV_DATA } from "./data";
-import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
 
@@ -93,7 +92,7 @@ export function Sidebar() {
               >
                 <span className="sr-only">Close Menu</span>
 
-                <ArrowLeftIcon className="ml-auto size-7" />
+                <ArrowLeft className="ml-auto size-7" />
               </button>
             )}
 
@@ -107,7 +106,7 @@ export function Sidebar() {
                     : "static size-8"
                 )}
               >
-                <ArrowLeftIcon className="size-5" />
+                <ArrowLeft className="size-5" />
               </button>
             )}
           </div>

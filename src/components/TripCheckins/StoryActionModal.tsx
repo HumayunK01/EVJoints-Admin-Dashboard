@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { TripCheckin, getVendorDetails, updateTripStory } from "@/lib/api";
-import { XIcon, CheckIcon } from "@/assets/icons";
+import { X, Check } from "lucide-react";
 
 interface StoryActionModalProps {
     isOpen: boolean;
@@ -113,7 +113,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                         onClick={onClose}
                         className="text-dark hover:text-red-600 dark:text-white"
                     >
-                        <XIcon className="h-6 w-6" />
+                        <X className="h-6 w-6" />
                     </button>
                 </div>
 
@@ -169,7 +169,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                             disabled={isLoading}
                             className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-colors ${isLoading ? "bg-green-600/50 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
                         >
-                            <CheckIcon className="h-5 w-5" />
+                            <Check className="h-5 w-5" />
                             {isLoading ? "Processing..." : "Approve Story"}
                         </button>
                         <button
@@ -177,7 +177,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                             disabled={isLoading}
                             className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-colors ${isLoading ? "bg-red-600/50 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"}`}
                         >
-                            <XIcon className="h-5 w-5" />
+                            <X className="h-5 w-5" />
                             {isLoading ? "Processing..." : "Reject Story"}
                         </button>
                     </div>

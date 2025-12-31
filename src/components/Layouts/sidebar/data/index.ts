@@ -1,4 +1,4 @@
-import * as Icons from "../icons";
+import { LayoutGrid, User, PieChart, FileText, Calendar } from "lucide-react";
 
 export const NAV_DATA = [
   {
@@ -6,28 +6,28 @@ export const NAV_DATA = [
     items: [
       {
         title: "Dashboard",
-        icon: Icons.FourCircle,
+        icon: LayoutGrid,
         items: [
           {
             title: "Customers",
             url: "/customers",
-            icon: Icons.User,
+            icon: User,
           },
         ],
       },
       {
         title: "Master",
-        icon: Icons.PieChart,
+        icon: PieChart,
         items: [
           {
             title: "Station addition",
             url: "/station-submissions",
-            icon: Icons.Alphabet,
+            icon: FileText,
           },
           {
             title: "Trip Check-ins",
             url: "/trip-checkins",
-            icon: Icons.Calendar,
+            icon: Calendar,
           }
         ]
       }

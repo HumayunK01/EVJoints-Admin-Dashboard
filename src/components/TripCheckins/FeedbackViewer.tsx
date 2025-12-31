@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { XIcon } from "@/assets/icons";
+import { X } from "lucide-react";
 
 interface FeedbackViewerProps {
     isOpen: boolean;
@@ -24,7 +24,7 @@ export default function FeedbackViewer({ isOpen, onClose, feedback, userName }: 
                         onClick={onClose}
                         className="text-dark hover:text-red-600 dark:text-white"
                     >
-                        <XIcon className="h-6 w-6" />
+                        <X className="h-6 w-6" />
                     </button>
                 </div>
 

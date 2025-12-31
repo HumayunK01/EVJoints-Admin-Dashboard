@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { BellIcon } from "./icons";
+import { Bell } from "lucide-react";
 
 export function Notification() {
   const [isDotVisible] = useState(true);
@@ -13,7 +13,7 @@ export function Notification() {
       aria-label="Notifications"
     >
       <span className="relative">
-        <BellIcon />
+        <Bell size={16} />
 
         {isDotVisible && (
           <span

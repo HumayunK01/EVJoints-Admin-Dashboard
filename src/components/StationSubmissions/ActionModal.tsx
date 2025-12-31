@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { StationSubmission, Connector } from "@/lib/api";
-import { XIcon } from "@/assets/icons";
+import { X } from "lucide-react";
 import { NETWORK_NAMES } from "@/data/networks";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
@@ -163,7 +163,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                         onClick={onClose}
                         className="text-dark hover:text-red-600 dark:text-white"
                     >
-                        <XIcon className="h-6 w-6" />
+                        <X className="h-6 w-6" />
                     </button>
                 </div>
 
@@ -225,7 +225,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                                             className="text-red-500 hover:text-red-700 transition-colors p-1"
                                             title="Delete Connector"
                                         >
-                                            <XIcon className="h-4 w-4" />
+                                            <X className="h-4 w-4" />
                                         </button>
                                     </div>
 

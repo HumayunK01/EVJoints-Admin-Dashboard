@@ -11,17 +11,18 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+
 import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    SearchIcon,
-    FilterIcon,
-    ChevronDownIcon,
-    CheckIcon,
-    XIcon,
-    PencilSquareIcon,
-} from "@/assets/icons";
-import { PreviewIcon, DownloadIcon } from "@/components/Tables/icons";
+    ChevronLeft,
+    ChevronRight,
+    Search,
+    Filter,
+    ChevronDown,
+    Check,
+    X,
+    Pencil,
+    Download
+} from "lucide-react";
 import { DateRangeFilter } from "@/components/Tables/DateRangeFilter";
 import ActionModal from "@/components/StationSubmissions/ActionModal";
 
@@ -118,7 +119,7 @@ function PhotoViewer({ photos, stationName, onClose }: PhotoViewerProps) {
                         onClick={onClose}
                         className="text-dark hover:text-red-600 dark:text-white"
                     >
-                        <XIcon className="h-6 w-6" />
+                        <X className="h-6 w-6" />
                     </button>
                 </div>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -518,7 +519,7 @@ export default function StationSubmissionsTable({
                     className={`text-dark hover:text-primary dark:text-white ${item.status === 'Rejected' ? 'opacity-50 cursor-not-allowed' : ''}`}
                     title={item.status === 'Rejected' ? "Cannot edit rejected station" : "Edit"}
                 >
-                    <PencilSquareIcon className="h-5 w-5" />
+                    <Pencil className="h-5 w-5" />
                 </button>
             )
         }
@@ -536,7 +537,7 @@ export default function StationSubmissionsTable({
                     {/* Search */}
                     <div className="relative w-full sm:w-auto">
                         <button className="absolute left-4 top-1/2 -translate-y-1/2 text-dark dark:text-white">
-                            <SearchIcon className="h-4 w-4" />
+                            <Search className="h-4 w-4" />
                         </button>
                         <input
                             type="text"
@@ -562,7 +563,7 @@ export default function StationSubmissionsTable({
                                         <option key={opt} value={opt}>{opt}</option>
                                     ))}
                                 </select>
-                                <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
                             </div>
                         ))}
 
@@ -579,7 +580,7 @@ export default function StationSubmissionsTable({
                             onClick={() => setIsFilterOpen(true)}
                             className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <FilterIcon className="h-4 w-4" />
+                            <Filter className="h-4 w-4" />
                             Date
                         </button>
 
@@ -587,7 +588,7 @@ export default function StationSubmissionsTable({
                             onClick={handleExport}
                             className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <DownloadIcon className="h-4 w-4" />
+                            <Download className="h-4 w-4" />
                             Export
                         </button>
                     </div>
@@ -656,7 +657,7 @@ export default function StationSubmissionsTable({
                                                                     onClick={() => toggleExpand(item.id)}
                                                                     className="text-primary hover:text-primary/80"
                                                                 >
-                                                                    <ChevronDownIcon className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                                                    <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                                                 </button>
                                                             )}
                                                         </div>
@@ -737,14 +738,14 @@ export default function StationSubmissionsTable({
                             disabled={currentPage === 1}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronLeftIcon className="h-5 w-5" />
+                            <ChevronLeft className="h-5 w-5" />
                         </button>
                         <button
                             onClick={handleNextPage}
                             disabled={currentPage === totalPages}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronRightIcon className="h-5 w-5" />
+                            <ChevronRight className="h-5 w-5" />
                         </button>
                     </div>
                 </div>
@@ -774,4 +775,3 @@ export default function StationSubmissionsTable({
         </div>
     );
 }
-    

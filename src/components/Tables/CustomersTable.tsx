@@ -1,8 +1,7 @@
 "use client";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronLeftIcon, ChevronRightIcon, SearchIcon, FilterIcon, SortIcon, ChevronDownIcon } from "@/assets/icons";
-import { DownloadIcon } from "./icons";
+import { ChevronLeft, ChevronRight, Search, Filter, ArrowUpDown, ChevronDown, Download } from "lucide-react";
 import { useState, useMemo, useEffect, Fragment } from "react";
 import { createPortal } from "react-dom";
 import { Dropdown, DropdownContent, DropdownTrigger } from "@/components/ui/dropdown";
@@ -203,7 +202,7 @@ const ExpandableCell = ({ value, hasMultipleEntries, isExpanded, onToggle, showE
             <p className="text-sm text-dark dark:text-white whitespace-nowrap">{displayValue}</p>
             {hasMultipleEntries && showExpandIcon && (
                 <button onClick={onToggle} className="text-dark dark:text-white hover:text-primary flex-shrink-0">
-                    <ChevronDownIcon className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                 </button>
             )}
         </div>
@@ -436,7 +435,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                     {/* Search */}
                     <div className="relative w-full sm:w-auto">
                         <button className="absolute left-4 top-1/2 -translate-y-1/2 text-dark dark:text-white">
-                            <SearchIcon className="h-4 w-4" />
+                            <Search className="h-4 w-4" />
                         </button>
                         <input
                             type="text"
@@ -453,16 +452,16 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                             onClick={() => setIsFilterOpen(true)}
                             className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <FilterIcon className="h-4 w-4" />
+                            <Filter className="h-4 w-4" />
                             Filters
                         </button>
 
                         {/* Sort */}
                         <Dropdown isOpen={isSortOpen} setIsOpen={setIsSortOpen}>
                             <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
-                                <SortIcon className="h-4 w-4" />
+                                <ArrowUpDown className="h-4 w-4" />
                                 Sort
-                                <ChevronDownIcon className="h-4 w-4" />
+                                <ChevronDown className="h-4 w-4" />
                             </DropdownTrigger>
                             <DropdownContent className="w-48 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
                                 {SORT_OPTIONS.map((option) => (
@@ -486,7 +485,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                             onClick={handleExport}
                             className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <DownloadIcon className="h-4 w-4" />
+                            <Download className="h-4 w-4" />
                             Export
                         </button>
                     </div>
@@ -648,14 +647,14 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                             disabled={currentPage === 1}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronLeftIcon className="h-5 w-5" />
+                            <ChevronLeft className="h-5 w-5" />
                         </button>
                         <button
                             onClick={handleNextPage}
                             disabled={currentPage === totalPages}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronRightIcon className="h-5 w-5" />
+                            <ChevronRight className="h-5 w-5" />
                         </button>
                     </div>
                 </div>

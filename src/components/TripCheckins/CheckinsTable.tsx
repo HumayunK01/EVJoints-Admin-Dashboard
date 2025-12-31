@@ -11,17 +11,19 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+
 import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    SearchIcon,
-    ChevronDownIcon,
-} from "@/assets/icons";
-import { Fuel, PlugZap } from "lucide-react";
+    ChevronLeft,
+    ChevronRight,
+    Search,
+    ChevronDown,
+    Fuel,
+    PlugZap,
+    Download
+} from "lucide-react";
 import LocationViewer from "@/components/TripCheckins/LocationViewer";
 import FeedbackViewer from "@/components/TripCheckins/FeedbackViewer";
 import StoryActionModal from "@/components/TripCheckins/StoryActionModal";
-import { DownloadIcon } from "@/components/Tables/icons";
 
 interface CheckinsTableProps {
     initialData: TripCheckin[];
@@ -311,7 +313,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                                 className={`h-5 w-5 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isExpanded ? "bg-gray-100 dark:bg-gray-700 text-primary" : "text-gray-500"}`}
                                 title={`${stops.length} stops`}
                             >
-                                <ChevronDownIcon className={`h-3 w-3 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                                <ChevronDown className={`h-3 w-3 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                             </button>
                         )}
                     </div>
@@ -525,7 +527,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                     {/* Search */}
                     <div className="relative w-full sm:w-auto">
                         <button className="absolute left-4 top-1/2 -translate-y-1/2 text-dark dark:text-white">
-                            <SearchIcon className="h-4 w-4" />
+                            <Search className="h-4 w-4" />
                         </button>
                         <input
                             type="text"
@@ -550,7 +552,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                             <option value="ONGOING_TEST">Ongoing Test</option>
                             <option value="COMPLETED">Completed</option>
                         </select>
-                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
                     </div>
 
                     {/* Story Filter */}
@@ -564,7 +566,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                             <option value="With Story">With Story</option>
                             <option value="Without Story">Without Story</option>
                         </select>
-                        <ChevronDownIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
                     </div>
 
                     {/* Export Button */}
@@ -572,7 +574,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                         onClick={handleExport}
                         className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                     >
-                        <DownloadIcon className="h-4 w-4" />
+                        <Download className="h-4 w-4" />
                         Export
                     </button>
                 </div>
@@ -677,14 +679,14 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                             disabled={currentPage === 1 || loading}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronLeftIcon className="h-5 w-5" />
+                            <ChevronLeft className="h-5 w-5" />
                         </button>
                         <button
                             onClick={handleNextPage}
                             disabled={currentPage === totalPages || loading}
                             className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronRightIcon className="h-5 w-5" />
+                            <ChevronRight className="h-5 w-5" />
                         </button>
                     </div>
                 </div>
