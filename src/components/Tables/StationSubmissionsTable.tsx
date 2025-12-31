@@ -386,7 +386,7 @@ export default function StationSubmissionsTable({
             minWidth: "120px",
             render: (item: StationSubmission) => (
                 <span className="text-sm text-dark dark:text-white">
-                    {formatDate(item.submissionDate)}
+                    {mounted ? formatDate(item.submissionDate) : "-"}
                 </span>
             )
         },
@@ -395,7 +395,7 @@ export default function StationSubmissionsTable({
             minWidth: "100px",
             render: (item: StationSubmission) => (
                 <span className="text-sm text-dark dark:text-white">
-                    {formatTime(item.submissionDate)}
+                    {mounted ? formatTime(item.submissionDate) : "-"}
                 </span>
             )
         },
@@ -504,7 +504,7 @@ export default function StationSubmissionsTable({
         {
             header: "Approval Date",
             minWidth: "120px",
-            render: (item: StationSubmission) => item.approvalDate ? (
+            render: (item: StationSubmission) => mounted && item.approvalDate ? (
                 <span className="text-sm text-dark dark:text-white whitespace-nowrap">
                     {formatDate(item.approvalDate)}
                 </span>
@@ -513,7 +513,7 @@ export default function StationSubmissionsTable({
         {
             header: "Approval Time",
             minWidth: "120px",
-            render: (item: StationSubmission) => item.approvalDate ? (
+            render: (item: StationSubmission) => mounted && item.approvalDate ? (
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                     {formatTime(item.approvalDate)}
                 </span>
@@ -533,7 +533,7 @@ export default function StationSubmissionsTable({
                 </button>
             )
         }
-    ], [handlePhotoClick, handleActionClick]);
+    ], [handlePhotoClick, handleActionClick, mounted]);
 
     return (
         <div className="max-w-full rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
