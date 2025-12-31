@@ -89,14 +89,28 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
 
     useEffect(() => {
         if (station) {
+            // Attempt to resolve network ID/Status because API response often lacks them
+            let resolvedId = station.networkId;
+            let resolvedStatus = (station as any).networkStatus ?? 0;
+
+            if (!resolvedId && station.networkName && allNetworks.length > 0) {
+                const found = allNetworks.find(n => n.name === station.networkName);
+                if (found) {
+                    resolvedId = found.id;
+                    resolvedStatus = found.status;
+                }
+            }
+
             setFormData({
                 ...station,
-                latitude: station.latitude, // Keep as numbers in state, input handles conversion
-                longitude: station.longitude
+                latitude: station.latitude,
+                longitude: station.longitude,
+                networkId: resolvedId,
+                networkStatus: resolvedStatus
             });
-            setConnectors(JSON.parse(JSON.stringify(station.connectors))); // Deep copy
+            setConnectors(JSON.parse(JSON.stringify(station.connectors)));
         }
-    }, [station]);
+    }, [station, allNetworks]);
 
     const handleConnectorChange = (index: number, field: keyof Connector, value: string) => {
         const updated = [...connectors];
