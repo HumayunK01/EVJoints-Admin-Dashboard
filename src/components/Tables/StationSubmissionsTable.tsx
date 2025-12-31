@@ -402,14 +402,24 @@ export default function StationSubmissionsTable({
         {
             header: "Added By",
             minWidth: "120px",
-            render: (item: StationSubmission) => (
-                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${item.addedByType === 'Station Owner' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' :
-                    item.addedByType === 'CPO' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                    }`}>
-                    {item.addedByType || '-'}
-                </span>
-            )
+            render: (item: StationSubmission) => {
+                const type = item.addedByType?.toLowerCase();
+                let colorClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+
+                if (type === 'station owner') {
+                    colorClass = 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400';
+                } else if (type === 'cpo') {
+                    colorClass = 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
+                } else if (type === 'ev owner') {
+                    colorClass = 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
+                }
+
+                return (
+                    <span className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium uppercase tracking-wide ${colorClass}`}>
+                        {item.addedByType || '-'}
+                    </span>
+                );
+            }
         },
         { header: "Customer Name", accessor: "userName", minWidth: "150px", render: (item: StationSubmission) => item.userName || "-" },
         { header: "Customer Phone", accessor: "contactNumber", minWidth: "130px", render: (item: StationSubmission) => item.contactNumber || "-" },
