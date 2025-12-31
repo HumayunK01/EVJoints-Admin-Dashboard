@@ -69,6 +69,7 @@ const COLUMNS: ColumnConfig[] = [
         minWidth: "150px",
         formatValue: formatDate
     },
+    { key: "subscription", label: "Subscription", minWidth: "120px" },
     {
         key: "vehicleRegDate",
         label: "Vehicle Reg Date",
@@ -83,7 +84,6 @@ const COLUMNS: ColumnConfig[] = [
         isExpandable: true,
         formatValue: formatRegistrationNumber
     },
-    { key: "subscription", label: "Subscription", minWidth: "120px" },
     { key: "vehicleType", label: "Vehicle Type", minWidth: "120px", isExpandable: true },
     { key: "manufacturer", label: "Manufacturer", minWidth: "120px", isExpandable: true },
     { key: "vehicleModel", label: "Vehicle Model", minWidth: "120px", isExpandable: true },
@@ -179,7 +179,7 @@ const SORT_OPTIONS = [
     { label: "Oldest First", value: "customerRegDate-asc" },
 ];
 
-const ROWS_PER_PAGE_OPTIONS = [10, 15, 20];
+const ROWS_PER_PAGE_OPTIONS = [10, 15, 20, 50, 100];
 
 // ============================================================================
 // HELPER COMPONENTS
@@ -288,8 +288,8 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
 
     // const [isDownloadOpen, setIsDownloadOpen] = useState(false); // Removed
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-    const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => setMounted(true), []);
@@ -303,11 +303,15 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
     // Server-side pagination - use data directly from backend
     const totalPages = Math.ceil(totalRecords / rowsPerPage);
 
-    // Client-side sorting & filtering logic
-    const sortedData = useMemo(() => {
-        let processedData = [...customers];
 
-        // 1. Search Filtering
+    // Client-side filtering (search only - sorting is server-side)
+    const filteredData = useMemo(() => {
+        // 1. Deduplicate by ID (Safety check)
+        const uniqueCustomers = Array.from(new Map(customers.map(item => [item.id, item])).values());
+
+        let processedData = [...uniqueCustomers];
+
+        // 2. Search Filtering (client-side for instant feedback)
         if (searchTerm) {
             const lowerTerm = searchTerm.toLowerCase();
             processedData = processedData.filter(customer =>
@@ -318,38 +322,23 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
             );
         }
 
-        // 2. Sorting
-        const [key, order] = sortOption.split("-");
+        return processedData;
+    }, [customers, searchTerm]);
 
-        return processedData.sort((a, b) => {
-            let valA: any = a[key as keyof Customer];
-            let valB: any = b[key as keyof Customer];
+    const currentData = filteredData; // Display filtered data from current page
 
-            // Handle dates specifically
-            if (key.includes("Date")) {
-                valA = new Date(valA || 0).getTime();
-                valB = new Date(valB || 0).getTime();
-            } else {
-                // Handle strings (case-insensitive)
-                valA = String(valA || "").toLowerCase();
-                valB = String(valB || "").toLowerCase();
-            }
 
-            if (valA < valB) return order === "asc" ? -1 : 1;
-            if (valA > valB) return order === "asc" ? 1 : -1;
-            return 0;
-        });
-    }, [customers, sortOption, searchTerm]);
-
-    const currentData = sortedData; // Display sorted data from current page
-
-    // Helper to fetch data
+    // Helper to fetch data with server-side sorting
     const fetchData = async (page: number, limit: number, showLoading = true) => {
         if (showLoading) setLoading(true);
         try {
             const { getCustomersPaginated } = await import("@/lib/api");
-            // Note: We are ignoring server-side sort params for now as backend doesn't support them
-            const response = await getCustomersPaginated(page, limit);
+
+            // Parse sortOption to get sortBy and order
+            const [sortBy, order] = sortOption.split("-") as [string, "asc" | "desc"];
+
+            // Fetch with server-side sorting
+            const response = await getCustomersPaginated(page, limit, sortBy, order);
             setCustomers(response.data);
             setTotalRecords(response.pagination.total);
             setCurrentPage(response.pagination.page);
@@ -366,12 +355,14 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
             if (!loading && !isSortOpen && !isFilterOpen) {
                 fetchData(currentPage, rowsPerPage, false);
             }
-        }, 3000);
+        }, 30000); // Changed to 30 seconds
         return () => clearInterval(interval);
     }, [currentPage, rowsPerPage, loading, isSortOpen, isFilterOpen, sortOption]);
 
     // Re-fetch when sort option changes
-    // Removed: No need to re-fetch from server since we sort client-side now
+    useEffect(() => {
+        fetchData(currentPage, rowsPerPage);
+    }, [sortOption]);
 
     // Handlers
     const handleNextPage = async () => {
@@ -398,26 +389,26 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
         setExpandedRows(new Set());
     };
 
-    const toggleRow = (identifier: string) => {
+    const toggleRow = (identifier: number) => {
         const newSelected = new Set(selectedRows);
         newSelected.has(identifier) ? newSelected.delete(identifier) : newSelected.add(identifier);
         setSelectedRows(newSelected);
     };
 
-    const toggleExpand = (identifier: string) => {
+    const toggleExpand = (identifier: number) => {
         const newExpanded = new Set(expandedRows);
         newExpanded.has(identifier) ? newExpanded.delete(identifier) : newExpanded.add(identifier);
         setExpandedRows(newExpanded);
     };
 
     const toggleAll = () => {
-        setSelectedRows(selectedRows.size === currentData.length ? new Set() : new Set(currentData.map(c => c.phone)));
+        setSelectedRows(selectedRows.size === currentData.length ? new Set() : new Set(currentData.map(c => c.id)));
     };
 
     const handleExport = () => {
         // Export current page data (or selected rows from current page)
         const dataToDownload = selectedRows.size > 0
-            ? customers.filter(row => selectedRows.has(row.phone))
+            ? customers.filter(row => selectedRows.has(row.id))
             : customers;
 
         const filename = `customers_list_page${currentPage}${selectedRows.size > 0 ? '_selected' : ''}.csv`;
@@ -541,19 +532,19 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                 <TableBody>
                     {currentData.length > 0 ? (
                         currentData.map((customer) => {
-                            const isExpanded = expandedRows.has(customer.phone);
+                            const isExpanded = expandedRows.has(customer.id);
                             const hasMultipleVehicles = !!(customer.vehicles && customer.vehicles.length > 1);
 
                             return (
-                                <Fragment key={customer.phone}>
+                                <Fragment key={customer.id}>
                                     <TableRow className="border-t border-stroke dark:border-dark-3">
                                         {showCheckboxes && (
                                             <TableCell className="px-4 py-4">
                                                 <input
                                                     type="checkbox"
                                                     className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
-                                                    checked={selectedRows.has(customer.phone)}
-                                                    onChange={() => toggleRow(customer.phone)}
+                                                    checked={selectedRows.has(customer.id)}
+                                                    onChange={() => toggleRow(customer.id)}
                                                 />
                                             </TableCell>
                                         )}
@@ -568,7 +559,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                                                             value={value}
                                                             hasMultipleEntries={hasMultipleVehicles}
                                                             isExpanded={isExpanded}
-                                                            onToggle={() => toggleExpand(customer.phone)}
+                                                            onToggle={() => toggleExpand(customer.id)}
                                                             showExpandIcon={true}
                                                             formatValue={column.formatValue}
                                                         />
@@ -587,7 +578,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                                     {/* Expanded Rows for Additional Vehicles */}
                                     {isExpanded && customer.vehicles && customer.vehicles.slice(1).map((vehicle, vIdx) => (
                                         <TableRow
-                                            key={`${customer.phone}-v-${vIdx}`}
+                                            key={`${customer.id}-v-${vIdx}`}
                                             className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-white/5"
                                         >
                                             {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
