@@ -485,11 +485,10 @@ export async function updateStation(
             status: data.status,
             stationName: data.stationName,
             stationNumber: data.stationNumber,
-            userId: data.userId,
+            userId: data.userId ?? null,
             userName: data.userName,
             networkName: data.networkName,
             networkId: data.networkId ?? null,
-            networkStatus: data.networkStatus ?? 0,
             stationType: data.stationType,
             latitude: Number(data.latitude),
             longitude: Number(data.longitude),
@@ -508,7 +507,6 @@ export async function updateStation(
     }
 
     const url = `${SECONDARY_API_URL}/stations/${id}`;
-    console.log(`[API] Station Action: ${action} to ${url}`, payload);
 
     const response = await fetch(url, {
         method: "PUT",

@@ -94,10 +94,14 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
             let resolvedStatus = (station as any).networkStatus ?? 0;
 
             if (!resolvedId && station.networkName && allNetworks.length > 0) {
-                const found = allNetworks.find(n => n.name === station.networkName);
+                const targetName = station.networkName.trim().toLowerCase();
+                const found = allNetworks.find(n => n.name.trim().toLowerCase() === targetName);
                 if (found) {
                     resolvedId = found.id;
                     resolvedStatus = found.status;
+                    console.log(`[Frontend] Resolved Network "${station.networkName}" -> ID: ${resolvedId}, Status: ${resolvedStatus}`);
+                } else {
+                    console.warn(`[Frontend] Could not find network "${station.networkName}" in list of ${allNetworks.length} networks`);
                 }
             }
 
