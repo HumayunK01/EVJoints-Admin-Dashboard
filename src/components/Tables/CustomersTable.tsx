@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { Dropdown, DropdownContent, DropdownTrigger } from "@/components/ui/dropdown";
 import { type Customer } from "@/lib/api";
 import { DateRangeFilter } from "./DateRangeFilter";
+import { PaginationSelect } from "@/components/ui/pagination-select";
 
 const formatDate = (dateString: any): string => {
     if (!dateString) return "-";
@@ -396,8 +397,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
         }
     };
 
-    const handleRowsPerPageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newLimit = Number(e.target.value);
+    const handleRowsPerPageChange = async (newLimit: number) => {
         setRowsPerPage(newLimit); // Update state first
         await fetchData(1, newLimit);
         setSelectedRows(new Set());
@@ -629,15 +629,12 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
             {/* Pagination */}
             <div className="flex items-center justify-end gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
                 <div className="flex items-center gap-2">
-                    <select
+                    <PaginationSelect
                         value={rowsPerPage}
+                        options={ROWS_PER_PAGE_OPTIONS}
                         onChange={handleRowsPerPageChange}
-                        className="bg-transparent text-sm font-medium text-dark outline-none dark:text-white"
-                    >
-                        {ROWS_PER_PAGE_OPTIONS.map((option) => (
-                            <option key={option} value={option}>{option}</option>
-                        ))}
-                    </select>
+                        direction="up"
+                    />
                 </div>
 
                 <div className="flex items-center gap-4">

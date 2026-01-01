@@ -24,6 +24,26 @@ import {
 import LocationViewer from "@/components/TripCheckins/LocationViewer";
 import FeedbackViewer from "@/components/TripCheckins/FeedbackViewer";
 import StoryActionModal from "@/components/TripCheckins/StoryActionModal";
+import { PaginationSelect } from "@/components/ui/pagination-select";
+import { FilterDropdown } from "@/components/ui/filter-dropdown";
+
+const STATUS_OPTIONS = [
+    { value: "All", label: "All Status" },
+    { value: "ENQUIRED", label: "Enquired" },
+    { value: "SAVED", label: "Saved" },
+    { value: "ON_GOING", label: "Ongoing" },
+    { value: "ON_GOING_TEST", label: "Ongoing Test" },
+    { value: "COMPLETED", label: "Completed" },
+    { value: "CANCELLED", label: "Cancelled" },
+    { value: "SUCCESSFULL", label: "Successful" },
+    { value: "UNSUCCESSFULL", label: "Unsuccessful" },
+];
+
+const STORY_OPTIONS = [
+    { value: "All", label: "All Trip Stories" },
+    { value: "With Story", label: "With Story" },
+    { value: "Without Story", label: "Without Story" },
+];
 
 interface CheckinsTableProps {
     initialData: TripCheckin[];
@@ -199,8 +219,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         }
     };
 
-    const handleRowsPerPageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newLimit = Number(e.target.value);
+    const handleRowsPerPageChange = async (newLimit: number) => {
         setRowsPerPage(newLimit); // Update state first
         await fetchData(1, newLimit, statusFilter, storyFilter);
     };
@@ -544,36 +563,22 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
 
                     {/* Status Filter */}
                     <div className="relative">
-                        <select
+                        <FilterDropdown
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="appearance-none rounded-lg border border-stroke bg-transparent px-3 py-2 text-sm font-medium text-dark outline-none hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 pr-8"
-                        >
-                            <option value="All">All Status</option>
-                            <option value="ENQUIRED">Enquired</option>
-                            <option value="SAVED">Saved</option>
-                            <option value="ON_GOING">Ongoing</option>
-                            <option value="ON_GOING_TEST">Ongoing Test</option>
-                            <option value="COMPLETED">Completed</option>
-                            <option value="CANCELLED">Cancelled</option>
-                            <option value="SUCCESSFULL">Successful</option>
-                            <option value="UNSUCCESSFULL">Unsuccessful</option>
-                        </select>
-                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
+                            options={STATUS_OPTIONS}
+                            onChange={(val) => setStatusFilter(val)}
+                            minWidth="140px"
+                        />
                     </div>
 
                     {/* Story Filter */}
                     <div className="relative">
-                        <select
+                        <FilterDropdown
                             value={storyFilter}
-                            onChange={(e) => setStoryFilter(e.target.value)}
-                            className="appearance-none rounded-lg border border-stroke bg-transparent px-3 py-2 text-sm font-medium text-dark outline-none hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 pr-8"
-                        >
-                            <option value="All">All Trip Stories</option>
-                            <option value="With Story">With Story</option>
-                            <option value="Without Story">Without Story</option>
-                        </select>
-                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
+                            options={STORY_OPTIONS}
+                            onChange={(val) => setStoryFilter(val)}
+                            minWidth="160px"
+                        />
                     </div>
 
                     {/* Export Button */}
@@ -656,17 +661,12 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             {/* Pagination */}
             <div className="flex items-center justify-end gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
                 <div className="flex items-center gap-2">
-                    <select
+                    <PaginationSelect
                         value={rowsPerPage}
+                        options={[10, 15, 20, 50, 100]}
                         onChange={handleRowsPerPageChange}
-                        className="bg-transparent text-sm font-medium text-dark outline-none dark:text-white"
-                    >
-                        <option value={10}>10</option>
-                        <option value={15}>15</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                    </select>
+                        direction="up"
+                    />
                 </div>
 
                 <div className="flex items-center gap-4">

@@ -81,7 +81,7 @@ export function Sidebar() {
                   className="size-11 transition-opacity duration-300 group-hover:opacity-0 rounded-lg overflow-hidden"
                 />
               ) : (
-                <Logo src="/images/logo/logo-white.svg" />
+                <Logo src="/images/logo/logo-dark.svg" />
               )}
             </Link>
 

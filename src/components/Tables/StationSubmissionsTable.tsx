@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { DateRangeFilter } from "@/components/Tables/DateRangeFilter";
 import ActionModal from "@/components/StationSubmissions/ActionModal";
+import { PaginationSelect } from "@/components/ui/pagination-select";
+import { FilterDropdown } from "@/components/ui/filter-dropdown";
 
 import { NETWORK_NAMES } from "@/data/networks";
 import { SearchableSelect } from "@/components/ui/searchable-select";
@@ -305,8 +307,7 @@ export default function StationSubmissionsTable({
         }
     };
 
-    const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newLimit = Number(e.target.value);
+    const handleRowsPerPageChange = (newLimit: number) => {
         setRowsPerPage(newLimit);
         fetchPage(1, newLimit);
     };
@@ -588,17 +589,18 @@ export default function StationSubmissionsTable({
                         {/* Dynamic Filters */}
                         {FILTER_CONFIG.map((filter) => (
                             <div key={filter.key} className="relative">
-                                <select
+                                <FilterDropdown
                                     value={activeFilters[filter.key] || "All"}
-                                    onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                                    className="appearance-none rounded-lg border border-stroke bg-transparent px-3 py-2 text-sm font-medium text-dark outline-none hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 pr-8 max-w-[150px]"
-                                >
-                                    <option value="All">All {filter.label === 'Status' ? 'Status' : filter.label + 's'}</option>
-                                    {(filter.options || filterOptions[filter.key])?.map((opt) => (
-                                        <option key={opt} value={opt}>{opt}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
+                                    options={[
+                                        { label: `All ${filter.label === 'Status' ? 'Status' : filter.label + 's'}`, value: "All" },
+                                        ...(filter.options || filterOptions[filter.key] || []).map(opt => ({
+                                            label: opt,
+                                            value: opt
+                                        }))
+                                    ]}
+                                    onChange={(val) => handleFilterChange(filter.key, val)}
+                                    minWidth="150px"
+                                />
                             </div>
                         ))}
 
@@ -746,17 +748,12 @@ export default function StationSubmissionsTable({
                     </span>
                 )}
                 <div className="flex items-center gap-2">
-                    <select
+                    <PaginationSelect
                         value={rowsPerPage}
+                        options={[10, 15, 20, 50, 100]}
                         onChange={handleRowsPerPageChange}
-                        className="bg-transparent text-sm font-medium text-dark outline-none dark:text-white"
-                    >
-                        <option value={10}>10</option>
-                        <option value={15}>15</option>
-                        <option value={20}>20</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                    </select>
+                        direction="up"
+                    />
                 </div>
 
                 <div className="flex items-center gap-4">
