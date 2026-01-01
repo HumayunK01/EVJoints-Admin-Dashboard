@@ -328,7 +328,7 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
     const currentData = filteredData; // Display filtered data from current page
 
 
-    // Helper to fetch data with server-side sorting
+    // Helper to fetch data with server-side sorting and date filtering
     const fetchData = async (page: number, limit: number, showLoading = true) => {
         if (showLoading) setLoading(true);
         try {
@@ -337,8 +337,15 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
             // Parse sortOption to get sortBy and order
             const [sortBy, order] = sortOption.split("-") as [string, "asc" | "desc"];
 
-            // Fetch with server-side sorting
-            const response = await getCustomersPaginated(page, limit, sortBy, order);
+            // Fetch with server-side sorting and date filtering
+            const response = await getCustomersPaginated(
+                page,
+                limit,
+                sortBy,
+                order,
+                startDate || undefined,
+                endDate || undefined
+            );
             setCustomers(response.data);
             setTotalRecords(response.pagination.total);
             setCurrentPage(response.pagination.page);
@@ -357,12 +364,20 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
             }
         }, 30000); // Changed to 30 seconds
         return () => clearInterval(interval);
-    }, [currentPage, rowsPerPage, loading, isSortOpen, isFilterOpen, sortOption]);
+    }, [currentPage, rowsPerPage, loading, isSortOpen, isFilterOpen, sortOption, startDate, endDate]);
 
     // Re-fetch when sort option changes
     useEffect(() => {
         fetchData(currentPage, rowsPerPage);
     }, [sortOption]);
+
+    // Re-fetch when date filters change
+    useEffect(() => {
+        // Reset to page 1 when filters change
+        if (startDate || endDate) {
+            fetchData(1, rowsPerPage);
+        }
+    }, [startDate, endDate]);
 
     // Handlers
     const handleNextPage = async () => {

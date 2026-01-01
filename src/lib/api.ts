@@ -423,10 +423,27 @@ export async function getCustomersPaginated(
     page: number = 1,
     limit: number = 10,
     sortBy: string = "customerRegDate",
-    order: "asc" | "desc" = "desc"
+    order: "asc" | "desc" = "desc",
+    startDate?: string,
+    endDate?: string
 ): Promise<CustomersResponse> {
     try {
-        const result = await fetchApi<CustomersResponse>(`/customers?page=${page}&limit=${limit}&sortBy=${sortBy}&order=${order}`);
+        const queryParams = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+            sortBy,
+            order,
+        });
+
+        if (startDate) {
+            queryParams.append("startDate", startDate);
+        }
+
+        if (endDate) {
+            queryParams.append("endDate", endDate);
+        }
+
+        const result = await fetchApi<CustomersResponse>(`/customers?${queryParams.toString()}`);
         console.log(`✅ Fetched page ${page} from backend (sorted by ${sortBy} ${order})`);
         return result;
     } catch (error) {
