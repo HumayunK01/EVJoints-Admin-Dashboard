@@ -472,6 +472,135 @@ export async function getCustomersPaginated(
     }
 }
 
+// ============================================================================
+// DOWNLOAD FUNCTIONS
+// ============================================================================
+
+/**
+ * Helper function to trigger CSV download
+ */
+async function downloadCSV(endpoint: string, filename: string, queryParams: URLSearchParams): Promise<void> {
+    try {
+        const baseUrl = getApiUrl(endpoint);
+        const fullUrl = `${baseUrl}${endpoint}?${queryParams.toString()}`;
+
+        // Get token from cookies (client-side)
+        let token = "";
+        if (typeof document !== "undefined") {
+            const match = document.cookie.match(new RegExp('(^| )auth_token=([^;]+)'));
+            if (match) token = match[2];
+        }
+
+        const headers: HeadersInit = {};
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        console.log(`[API] Downloading: ${fullUrl}`);
+
+        const response = await fetch(fullUrl, {
+            cache: CACHE_POLICY,
+            headers: headers,
+        });
+
+        if (!response.ok) {
+            throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+        }
+
+        // Get the blob and trigger download
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        console.log('✅ Download completed');
+    } catch (error) {
+        console.error("Download failed:", error);
+        throw error;
+    }
+}
+
+/**
+ * Download customers as CSV
+ */
+export async function downloadCustomers(
+    sortBy: string = "customerRegDate",
+    order: "asc" | "desc" = "desc",
+    startDate?: string,
+    endDate?: string
+): Promise<void> {
+    const queryParams = new URLSearchParams({ sortBy, order });
+    if (startDate) queryParams.append("startDate", startDate);
+    if (endDate) queryParams.append("endDate", endDate);
+
+    await downloadCSV("/customers/download", "customers.csv", queryParams);
+}
+
+/**
+ * Download station submissions as CSV
+ */
+export async function downloadStationSubmissions(
+    status?: string,
+    startDate?: string,
+    endDate?: string,
+    search?: string
+): Promise<void> {
+    const queryParams = new URLSearchParams();
+    if (status && status !== "All") queryParams.append("status", status);
+    if (startDate) queryParams.append("startDate", startDate);
+    if (endDate) queryParams.append("endDate", endDate);
+    if (search) queryParams.append("search", search);
+
+    await downloadCSV("/stations/download", "station_submissions.csv", queryParams);
+}
+
+/**
+ * Download trip check-ins as CSV
+ */
+export async function downloadTripCheckins(
+    status: string = "All",
+    story: string = "All"
+): Promise<void> {
+    const queryParams = new URLSearchParams();
+    if (status && status !== "All") queryParams.append("status", status);
+    if (story && story !== "All") queryParams.append("story", story);
+
+    await downloadCSV("/trips/download", "trip_checkins.csv", queryParams);
+}
+
+/**
+ * Download charging stations as CSV
+ */
+export async function downloadChargingStations(
+    status?: string,
+    usageType?: string,
+    networkId?: string,
+    addedBy?: string,
+    chargerType?: string,
+    stationType?: string,
+    startDate?: string,
+    endDate?: string,
+    search?: string
+): Promise<void> {
+    const queryParams = new URLSearchParams();
+    if (status && status !== "All") queryParams.append("status", status);
+    if (usageType && usageType !== "All") queryParams.append("usageType", usageType);
+    if (networkId && networkId !== "All") queryParams.append("networkId", networkId);
+    if (addedBy && addedBy !== "All") queryParams.append("addedBy", addedBy);
+    if (chargerType && chargerType !== "All") queryParams.append("chargerType", chargerType);
+    if (stationType && stationType !== "All") queryParams.append("stationType", stationType);
+    if (startDate) queryParams.append("startDate", startDate);
+    if (endDate) queryParams.append("endDate", endDate);
+    if (search) queryParams.append("search", search);
+
+    await downloadCSV("/charging-stations/download", "charging_stations.csv", queryParams);
+}
+
 // Networks
 
 

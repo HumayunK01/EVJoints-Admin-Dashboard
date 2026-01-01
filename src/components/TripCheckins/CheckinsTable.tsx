@@ -63,50 +63,7 @@ interface ColumnConfig {
     className?: string;
 }
 
-const exportToCSV = (data: TripCheckin[], filename: string) => {
-    const headers = [
-        "Date", "Time", "Name", "Email", "Mobile", "Source", "Destination", "Total Km",
-        "Stations & Connectors", "Charging Stops", "EV Model", "EV Variant", "Battery",
-        "EVolts", "Status", "Trip Story", "Story Status", "Approval Date", "Approval Time", "Approved By"
-    ];
 
-    const rows = data.map(item => [
-        item.dateTime ? new Date(item.dateTime).toLocaleDateString() : "-",
-        item.dateTime ? new Date(item.dateTime).toLocaleTimeString() : "-",
-        `${item.firstName || ""} ${item.lastName || ""}`.trim() || "-",
-        item.email || "-",
-        item.mobileNumber || "-",
-        item.source || "-",
-        item.destination || "-",
-        item.totalKm || "-",
-        item.stationConnectorCount || "-",
-        item.chargingStopsCount || "-",
-        item.evModel || "-",
-        item.evVariant || "-",
-        item.evBatteryCapacity || "-",
-        item.evolts || "-",
-        item.tripStatus || "-",
-        item.hasTripStory || "-",
-        item.storyStatus || "-",
-        item.approvalDate ? new Date(item.approvalDate).toLocaleDateString() : "-",
-        item.approvalDate ? new Date(item.approvalDate).toLocaleTimeString() : "-",
-        item.approvedBy || "-"
-    ]);
-
-    const csvContent = [
-        headers.join(","),
-        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-};
 
 export default function CheckinsTable({ initialData, initialPagination }: CheckinsTableProps) {
     const [data, setData] = useState<TripCheckin[]>(initialData);
@@ -244,9 +201,14 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         setData(prev => prev.map(item => item.id === updated.id ? updated : item));
     };
 
-    const handleExport = () => {
-        const filename = `trip_checkins_page${currentPage}.csv`;
-        exportToCSV(data, filename);
+    const handleExport = async () => {
+        try {
+            const { downloadTripCheckins } = await import("@/lib/api");
+            await downloadTripCheckins(statusFilter, storyFilter);
+        } catch (error) {
+            console.error("Export failed:", error);
+            alert("Failed to download CSV. Please try again.");
+        }
     };
 
     const truncateText = (text: string, maxLength: number = 80) => {

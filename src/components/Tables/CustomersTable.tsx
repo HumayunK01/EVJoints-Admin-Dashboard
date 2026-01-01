@@ -223,43 +223,7 @@ const formatCellValue = (value: any, column: ColumnConfig) => {
     return value;
 };
 
-const exportToCSV = (data: Customer[], columns: ColumnConfig[], filename: string) => {
-    const headers = columns.map(col => col.label);
 
-    const rows = data.flatMap(customer => {
-        if (customer.vehicles && customer.vehicles.length > 0) {
-            return customer.vehicles.map(vehicle =>
-                columns.map(col => {
-                    if (col.isExpandable && col.key in vehicle) {
-                        return (vehicle as any)[col.key] || "-";
-                    }
-                    const value = getCellValue(customer, col);
-                    if (typeof value === 'boolean') return value ? "Yes" : "No";
-                    return value || "-";
-                })
-            );
-        }
-        return [columns.map(col => {
-            const value = getCellValue(customer, col);
-            if (typeof value === 'boolean') return value ? "Yes" : "No";
-            return value || "-";
-        })];
-    });
-
-    const csvContent = [
-        headers.join(","),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-};
 
 // ============================================================================
 // MAIN COMPONENT
@@ -420,14 +384,23 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
         setSelectedRows(selectedRows.size === currentData.length ? new Set() : new Set(currentData.map(c => c.id)));
     };
 
-    const handleExport = () => {
-        // Export current page data (or selected rows from current page)
-        const dataToDownload = selectedRows.size > 0
-            ? customers.filter(row => selectedRows.has(row.id))
-            : customers;
+    const handleExport = async () => {
+        try {
+            const { downloadCustomers } = await import("@/lib/api");
 
-        const filename = `customers_list_page${currentPage}${selectedRows.size > 0 ? '_selected' : ''}.csv`;
-        exportToCSV(dataToDownload, COLUMNS, filename);
+            // Parse sortOption to get sortBy and order
+            const [sortBy, order] = sortOption.split("-") as [string, "asc" | "desc"];
+
+            await downloadCustomers(
+                sortBy,
+                order,
+                startDate || undefined,
+                endDate || undefined
+            );
+        } catch (error) {
+            console.error("Export failed:", error);
+            alert("Failed to download CSV. Please try again.");
+        }
     };
 
     // Render

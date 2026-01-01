@@ -360,47 +360,23 @@ export default function StationSubmissionsTable({
         }
     };
 
-    const handleExport = () => {
-        const headers = [
-            "ID", "Date", "Time", "Customer Name", "Customer Phone", "Lat", "Long",
-            "Network", "Station Name", "Station ID", "Connector Types", "Connectors",
-            "Power", "Tariff", "Usage", "Hours", "Photos", "Status", "EVolts",
-            "Approval Date", "Approval Time"
-        ];
+    const handleExport = async () => {
+        try {
+            const { downloadStationSubmissions } = await import("@/lib/api");
 
-        const rows = currentData.map((item) => [
-            item.id,
-            formatDate(item.submissionDate),
-            formatTime(item.submissionDate),
-            item.userName || "-",
-            item.contactNumber || "-",
-            item.latitude,
-            item.longitude,
-            item.networkName,
-            item.stationName,
-            item.stationNumber || "-",
-            Array.from(new Set(item.connectors.map(c => c.type || "-"))).join('/'),
-            item.connectors.map(c => `${c.count}x ${c.name}`).join(', '),
-            item.connectors.map(c => c.powerRating || "-").join(', '),
-            item.connectors.map(c => c.tariff || "-").join(', '),
-            item.usageType,
-            item.operationalHours || "-",
-            item.photos.length,
-            item.status,
-            item.eVolts,
-            formatOptionalDate(item.approvalDate),
-            formatOptionalTime(item.approvalDate)
-        ]);
+            // Get the current status filter value
+            const statusFilter = activeFilters["status"] || undefined;
 
-        const csvContent = "data:text/csv;charset=utf-8," +
-            [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
-
-        const link = document.createElement("a");
-        link.href = encodeURI(csvContent);
-        link.download = "station_submissions.csv";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            await downloadStationSubmissions(
+                statusFilter,
+                startDate || undefined,
+                endDate || undefined,
+                search || undefined
+            );
+        } catch (error) {
+            console.error("Export failed:", error);
+            alert("Failed to download CSV. Please try again.");
+        }
     };
 
     const columns: ColumnConfig[] = useMemo(() => [
