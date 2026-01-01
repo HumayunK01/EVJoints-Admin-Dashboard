@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { StationSubmission, Connector } from "@/lib/api";
 import { createPortal } from "react-dom";
 import {
@@ -173,6 +173,13 @@ export default function StationSubmissionsTable({
     const [actionModalOpen, setActionModalOpen] = useState(false);
     const [selectedStation, setSelectedStation] = useState<StationSubmission | null>(null);
 
+    // Ref to track current page for race condition handling
+    const currentPageRef = useRef(currentPage);
+
+    useEffect(() => {
+        currentPageRef.current = currentPage;
+    }, [currentPage]);
+
     useEffect(() => {
         setMounted(true);
     }, []);
@@ -194,6 +201,13 @@ export default function StationSubmissionsTable({
                 endDate || undefined,
                 search || undefined
             );
+
+            // Prevent race condition: If this was a background refresh (showLoading=false)
+            // but the user has navigated away (currentPage changed), ignore the result.
+            if (!showLoading && response.pagination.page !== currentPageRef.current) {
+                return;
+            }
+
             setData(response.data);
             setTotalRecords(response.pagination.total);
             if (showLoading) setCurrentPage(response.pagination.page);
@@ -215,13 +229,14 @@ export default function StationSubmissionsTable({
         const interval = setInterval(() => {
             // Only refresh if no filters are active (as filtering is client-side on current page data)
             // and no modals are open to prevent UX disruption
-            if (!hasActiveFilters && !actionModalOpen && !photoViewerOpen && !isFilterOpen) {
+            // AND not currently loading (to prevent race conditions with manual navigation)
+            if (!hasActiveFilters && !actionModalOpen && !photoViewerOpen && !isFilterOpen && !isLoading) {
                 fetchPage(currentPage, rowsPerPage, false);
             }
         }, 3000);
 
         return () => clearInterval(interval);
-    }, [currentPage, rowsPerPage, hasActiveFilters, actionModalOpen, photoViewerOpen, isFilterOpen]);
+    }, [currentPage, rowsPerPage, hasActiveFilters, actionModalOpen, photoViewerOpen, isFilterOpen, isLoading]);
 
     // Re-fetch when status filter changes
     useEffect(() => {
@@ -710,14 +725,6 @@ export default function StationSubmissionsTable({
                                     </React.Fragment>
                                 );
                             })
-                        ) : isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    <div className="flex items-center justify-center">
-                                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-24 text-center">
@@ -733,6 +740,11 @@ export default function StationSubmissionsTable({
 
             {/* Pagination */}
             <div className="flex items-center justify-end gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
+                {isLoading && (
+                    <span className="text-sm font-medium text-primary animate-pulse">
+                        Loading...
+                    </span>
+                )}
                 <div className="flex items-center gap-2">
                     <select
                         value={rowsPerPage}
