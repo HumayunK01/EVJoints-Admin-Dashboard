@@ -1,136 +1,146 @@
-# EVJoints Admin Dashboard
+# ⚡ EVJoints Admin Dashboard
 
-A state-of-the-art, responsive admin dashboard tailored for managing the EVJoints ecosystem. This platform empowers administrators to oversee EV charging station submissions, monitor trip check-ins, and manage customer data with precision and ease. Built with **Next.js 15+**, **Tailwind CSS**, and **TypeScript**, it prioritizes performance, scalability, and a premium "Elite" user experience.
+![Next.js](https://img.shields.io/badge/Next.js-16.x-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 
-![Dashboard Preview](public/images/dashboard.png)
+> The premium, high-performance administrative interface for the EVJoints ecosystem. Built with the latest web technologies to provide real-time insights and management capabilities for EV implementation.
 
-# EVJoints Admin System Architecture
+---
 
-## 1. Project Structure
-The solution consists of two isolated applications acting as a monorepo structure locally:
-*   **Backend**: [https://github.com/Asil786/ev-backend](https://github.com/Asil786/ev-backend) (Node.js/Express)
-*   **Frontend**: [https://github.com/HumayunK01/EVJoints-Admin-Dashboard](https://github.com/HumayunK01/EVJoints-Admin-Dashboard) (Next.js App Router)
+## 📚 Table of Contents
 
-## 2. Backend (Node.js + Express)
-*   **Tech Stack**: Node.js, Express, MySQL (`mysql2`).
-*   **Entry Point**: `server.js` initializes the Express app, configures CORS/Middlewares, and mounts routes.
-*   **Database**: Uses a raw SQL approach with a connection pool defined in `src/db.js`. No ORM is present.
-*   **Routes**: Located in `src/routes/admin/` (e.g., `customers.js`, `stations.js`, `trips.js`).
-*   **API Design**: RESTful JSON APIs.
-    *   **Authentication**: `/api/auth/vendor`
-    *   **Data**: `/api/customers`, `/api/stations`, `/api/trips`, `/api/networks` with pagination support via query params (`page`, `limit`).
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Environment Variables](#-environment-variables)
+- [Project Structure](#-project-structure)
+- [Deployment](#-deployment)
+- [Design System](#-design-system)
 
-## 3. Frontend (Next.js Admin Dashboard)
-*   **Tech Stack**: Next.js 16 (App Router), React 19, Tailwind CSS, TypeScript.
-*   **Key Libraries**: `lucide-react` (Icons), `apexcharts` (Charts), `react-hook-form` (implied by complex forms), `axios` (or fetch wrapper).
-*   **Project Layout**:
-    *   `src/app`: Follows Next.js 13+ App Router conventions.
-        *   `(auth)`: Route group for authentication pages (Login).
-        *   `(dashboard)`: Route group for protected dashboard pages (Customers, Stations, Trips).
-    *   `src/components`: Reusable UI components (Sidebar, Header, Forms).
-    *   `src/lib/api.ts`: Centralized API client. It abstracts `fetch` calls, handles tokens, and provides typed interfaces for all API responses.
-    *   `src/data`: Fallback JSON data for offline development or error handling.
+---
 
-## 4. Key Workflows
-*   **Authentication**: Login is handled via `src/components/Auth/LoginForm.tsx`. It sends OTPs to the backend and stores the returned JWT token in cookies.
-*   **Data Fetching**: Pages (e.g., Customers) hook into `api.ts`.
-    *   `getCustomersPaginated` fetches from `/customers` endpoint.
-    *   If the backend is down, it gracefully falls back to mock data (`src/data/customers.json`). This is a key resilience feature.
-*   **Navigation**: `Sidebar` component (`src/components/Layouts/sidebar`) drives navigation based on `NAV_DATA`.
+## 🚀 Features
 
-## 5. Development Conventions
-*   **Styling**: Tailwind CSS with a consistent design system (colors, spacing).
-*   **Type Safety**: TypeScript is used extensively in the frontend. Backend uses JS but follows a consistent pattern.
-*   **Env Variables**: Critical for API URLs and DB connections. `dotenv` is used in backend. Next.js uses standard `.env.local` support.
+- **📊 Interactive Dashboard**: Real-time data visualization using ApexCharts.
+- **📱 Responsive Design**: Fully responsive UI built with Tailwind CSS.
+- **🎨 Modern Aesthetics**: "Elite" design system with glassmorphism, gradients, and dark mode support.
+- **🔐 Secure Access**: Role-based access control and secure authentication.
+- **⚡ High Performance**: Powered by Next.js 14+ Server Components and optimizations.
+- **🗺️ Geo-Mapping**: Integrated vector maps for station and trip tracking.
+- **📅 Data Management**: Advanced tables with sorting, filtering, and pagination.
 
-## 🚀 Key Features
+---
 
-### 🔌 Station Submissions Management
-*   **Approval Workflow**: Review, approve, or reject new charging station submissions with a streamlined interface.
-*   **Detailed Insights**: View comprehensive station details including connector types (CCS2, Type 2, etc.), power ratings, and location data.
-*   **Status Tracking**: Visual status indicators (Pending, Approved, Rejected) with detailed rejection reasons.
-*   **Edit Capabilities**: Modify station details directly from the dashboard before approval.
-*   **Validation**: Robust validation to ensure data integrity before database commitment.
+## 🛠 Tech Stack
 
-### 🚗 Trip Check-ins Oversight
-*   **Story Management**: Review and moderate user-generated trip stories and check-ins.
-*   **Visual Feedback**: Quick access to trip photos and user comments.
-*   **Verification**: Validate check-ins to ensure community guidelines are met.
-*   **Geospacial Data**:  Analyze source and destination data (planned).
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Framework** | Next.js 16 | React framework for production |
+| **UI Library** | React 19 | Library for building user interfaces |
+| **Styling** | Tailwind CSS | Utility-first CSS framework |
+| **Language** | TypeScript | Static type checking |
+| **Icons** | Lucide React | Beautiful & consistent open-source icons |
+| **Charts** | ApexCharts | Modern & interactive charting library |
+| **Date handling** | Day.js | Immutable date library |
 
-### 👥 Comprehensive Customer Management
-*   **Deep Data Access**: Explore detailed customer profiles including vehicle registration numbers (Indian format), device models, and app versions.
-*   **Advanced Formatting**: Intelligent formatting for vehicle plates (e.g., `MH 12 AB 1234`) and capitalized device details.
-*   **Smart Search**: Real-time filtering by First Name, Last Name, Email, or Phone.
-*   **Flexible Export**: Export filtered datasets to **CSV** for offline analysis, with Excel compatibility.
+---
 
-### 🎨 Premium UI/UX ("Elite" Design System)
-*   **Visual Consistency**: Strict adherence to a centered-content philosophy for maximum readability.
-*   **Data Density Control**: Customizable pagination (10, 20, 50, 100 rows) to suit different viewing needs.
-*   **Zebra Striping**: Alternating row colors for enhanced data scanning.
-*   **Responsive & Adaptive**: Fluid layouts that adapt to desktops, tablets, and distinct Dark/Light modes.
-*   **Interactive Elements**: Smooth hover effects, modal transitions, and intuitive dropdowns.
+## 📋 Prerequisites
 
-## 🛠️ Technology Stack
+Before you begin, ensure you have met the following requirements:
 
-*   **Core**: [Next.js 15+](https://nextjs.org/) (App Router), [React 19](https://react.dev/)
-*   **Language**: [TypeScript](https://www.typescriptlang.org/) (Strict Mode)
-*   **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-*   **State Management**: React Hooks (`useState`, `useEffect`, `useMemo`)
-*   **Data Fetching**: Server-side pagination and sorting integration
-*   **Icons**: Custom SVG set + Phosphor/Heroicons concepts
+- **Node.js** (v18 or higher)
+- **npm** (v9 or higher)
+- **Running Backend**: The EVJoints Backend service should be running (locally or remote).
 
-## 📂 Project Structure
+---
 
-```bash
-src/
-├── app/                    # Next.js App Router pages
-├── components/
-│   ├── Tables/             # Complex table components (Customers, Stations)
-│   ├── TripCheckins/       # Trip-specific components
-│   ├── ui/                 # Reusable UI primitives (Buttons, Modals, Inputs)
-│   ├── Layouts/            # Dashboard layout wrappers
-│   └── Header/Sidebar      # Navigation components
-├── lib/                    # API definitions and helpers
-└── types/                  # TypeScript type definitions
-```
+## 💻 Installation
 
-## 📦 precise setup & Installation
-
-1.  **Clone the Repository**
+1.  **Clone the repository** (if you haven't already):
     ```bash
-    git clone https://github.com/HumayunK01/EVJoints-Admin-Dashboard.git
-    cd EVJoints-Admin-Dashboard
+    git clone <repo_url>
+    cd frontend
     ```
 
-2.  **Install Dependencies**
+2.  **Install dependencies**:
     ```bash
     npm install
     ```
 
-3.  **Environment Setup**
-    Create a `.env.local` file in the root directory and add necessary API keys:
-    ```env
-    NEXT_PUBLIC_API_URL=https://your-api-url.com
-    ```
+3.  **Configure Environment**:
+    Create a `.env.local` file in the root directory (see [Environment Variables](#-environment-variables)).
 
-4.  **Run Development Server**
+4.  **Run Locally**:
     ```bash
     npm run dev
     ```
 
-5.  **Build for Production**
-    ```bash
-    npm run build
-    npm start
-    ```
-
-## 🤝 Contribution Guidelines
-
-*   **Design First**: Always adhere to the "Elite" design principles—centered content, consistent padding, and premium assets.
-*   **Type Safety**: Ensure strict TypeScript types for all new components and API responses.
-*   **Clean Code**: Follow the existing module structure; keep components small and focused.
+The application will launch on `http://localhost:3000`.
 
 ---
 
-© 2024 EVJoints. All rights reserved.
+## 🔑 Environment Variables
+
+Create a `.env.local` file in the root of your project and add the following:
+
+```env
+# API Configuration
+NEXT_PUBLIC_PRIMARY_API_URL=https://devapi.evjoints.com
+NEXT_PUBLIC_SECONDARY_API_URL=http://localhost:4000/api
+SECONDARY_API_URL_SERVER=http://127.0.0.1:4000/api
+
+# App Details
+NEXT_PUBLIC_APP_NAME=EVJoints Admin Dashboard
+NEXT_PUBLIC_APP_VERSION=1.2.1
+```
+
+*Note: For production, update the API URLs to point to your deployed backend.*
+
+---
+
+## 📂 Project Structure
+
+```
+frontend/
+├── public/              # Static assets (images, icons)
+├── src/
+│   ├── app/             # Next.js App Router pages
+│   ├── components/      # Reusable UI components
+│   ├── css/             # Global styles and Tailwind directives
+│   ├── hooks/           # Custom React hooks
+│   ├── types/           # TypeScript interfaces and types
+│   └── utils/           # Helper functions and utilities
+├── .env.local           # Local environment variables
+├── next.config.mjs      # Next.js configuration
+├── tailwind.config.ts   # Tailwind CSS configuration
+└── package.json         # Dependencies and scripts
+```
+
+---
+
+## ☁️ Deployment
+
+This project is optimized for deployment on **Netlify** or **Vercel**.
+
+### Netlify Deployment:
+1.  Connect your repository to Netlify.
+2.  The `netlify.toml` file will automatically configure the build settings.
+3.  Add your environment variables in the Netlify dashboard.
+4.  Deploy!
+
+---
+
+## 🎨 Design System
+
+This project follows a strict "Elite" design system:
+- **Typography**: Inter / Sans-serif
+- **Colors**: High-contrast dark mode with brand-specific glows.
+- **Components**: Glassmorphism cards, neon accents, and clean spacing.
+
+---
+
+Made with ❤️ for **EVJoints**
