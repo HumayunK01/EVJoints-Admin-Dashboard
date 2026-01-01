@@ -68,18 +68,19 @@ const SEARCH_FIELDS: (keyof StationSubmission)[] = [
 interface FilterConfigItem {
     key: keyof StationSubmission;
     label: string;
+    options?: string[];
 }
 
 const FILTER_CONFIG: FilterConfigItem[] = [
-    { key: "status", label: "Status" },
+    { key: "status", label: "Status", options: ["Pending", "Approved", "Rejected"] },
 ];
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
-const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('en-GB', { timeZone: 'UTC' });
-const formatTime = (dateString: string) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('en-GB');
+const formatTime = (dateString: string) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 const formatOptionalDate = (dateString: string | null | undefined) => dateString ? formatDate(dateString) : "-";
 const formatOptionalTime = (dateString: string | null | undefined) => dateString ? formatTime(dateString) : "-";
 
@@ -89,6 +90,15 @@ const formatTo12Hour = (timeStr: string) => {
     const period = hours >= 12 ? 'PM' : 'AM';
     const hours12 = hours % 12 || 12;
     return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
+
+const formatNetworkName = (name: string | null | undefined) => {
+    if (!name) return "-";
+    return name
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 };
 
 const formatOperationalHours = (range: string | null | undefined) => {
@@ -172,7 +182,18 @@ export default function StationSubmissionsTable({
         if (showLoading) setIsLoading(true);
         try {
             const { getStationSubmissionsPaginated } = await import("@/lib/api");
-            const response = await getStationSubmissionsPaginated(page, limit);
+
+            // Get the current status filter value
+            const statusFilter = activeFilters["status"] || undefined;
+
+            const response = await getStationSubmissionsPaginated(
+                page,
+                limit,
+                statusFilter,
+                startDate || undefined,
+                endDate || undefined,
+                search || undefined
+            );
             setData(response.data);
             setTotalRecords(response.pagination.total);
             if (showLoading) setCurrentPage(response.pagination.page);
@@ -202,7 +223,28 @@ export default function StationSubmissionsTable({
         return () => clearInterval(interval);
     }, [currentPage, rowsPerPage, hasActiveFilters, actionModalOpen, photoViewerOpen, isFilterOpen]);
 
-    // Derived unique values for each filter key
+    // Re-fetch when status filter changes
+    useEffect(() => {
+        if (activeFilters["status"]) {
+            fetchPage(1, rowsPerPage);
+        }
+    }, [activeFilters]);
+
+    // Re-fetch when date filters change
+    useEffect(() => {
+        if (startDate || endDate) {
+            fetchPage(1, rowsPerPage);
+        }
+    }, [startDate, endDate]);
+
+    // Re-fetch when search changes
+    useEffect(() => {
+        if (search) {
+            fetchPage(1, rowsPerPage);
+        }
+    }, [search]);
+
+    // Derived unique values for each filter key (from current page data only)
     const filterOptions = useMemo(() => {
         const options: Record<string, string[]> = {};
         FILTER_CONFIG.forEach(({ key }) => {
@@ -212,30 +254,8 @@ export default function StationSubmissionsTable({
         return options;
     }, [data]);
 
-    const filteredData = useMemo(() => {
-        return data.filter((item) => {
-            // 1. Search Logic
-            const matchesSearch = search === "" || SEARCH_FIELDS.some((field) => {
-                const val = item[field];
-                return val && String(val).toLowerCase().includes(search.toLowerCase());
-            });
-
-            // 2. Dynamic Filters Logic
-            const matchesFilters = FILTER_CONFIG.every(({ key }) => {
-                const activeValue = activeFilters[key];
-                // If no filter selected for this key (or "All"), match everything
-                if (!activeValue || activeValue === "All") return true;
-                return String(item[key]) === activeValue;
-            });
-
-            // 3. Date Range Logic
-            const matchesDate =
-                (!startDate || new Date(item.submissionDate) >= new Date(startDate)) &&
-                (!endDate || new Date(item.submissionDate) <= new Date(endDate));
-
-            return matchesSearch && matchesFilters && matchesDate;
-        });
-    }, [data, search, activeFilters, startDate, endDate]);
+    // Use server data directly - no client-side filtering
+    const currentData = data;
 
     // Handlers
     const handleFilterChange = (key: string, value: string) => {
@@ -247,23 +267,15 @@ export default function StationSubmissionsTable({
         setSearch("");
         setStartDate("");
         setEndDate("");
+        fetchPage(1, rowsPerPage); // Re-fetch without filters
     };
 
-    const totalPages = hasActiveFilters
-        ? Math.ceil(filteredData.length / rowsPerPage)
-        : Math.ceil(totalRecords / rowsPerPage);
+    // Always use server-side totals
+    const totalPages = Math.ceil(totalRecords / rowsPerPage);
 
-    const currentData = hasActiveFilters
-        ? filteredData.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
-        : filteredData;
-
-    // Helper function to handle page navigation
+    // Helper function to handle page navigation - always server-side
     const navigateToPage = (newPage: number) => {
-        if (!hasActiveFilters) {
-            fetchPage(newPage, rowsPerPage);
-        } else {
-            setCurrentPage(newPage);
-        }
+        fetchPage(newPage, rowsPerPage);
     };
 
     const handleNextPage = () => {
@@ -281,11 +293,7 @@ export default function StationSubmissionsTable({
     const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newLimit = Number(e.target.value);
         setRowsPerPage(newLimit);
-        if (!hasActiveFilters) {
-            fetchPage(1, newLimit);
-        } else {
-            setCurrentPage(1);
-        }
+        fetchPage(1, newLimit);
     };
 
 
@@ -344,7 +352,7 @@ export default function StationSubmissionsTable({
             "Approval Date", "Approval Time"
         ];
 
-        const rows = filteredData.map((item) => [
+        const rows = currentData.map((item) => [
             item.id,
             formatDate(item.submissionDate),
             formatTime(item.submissionDate),
@@ -425,7 +433,7 @@ export default function StationSubmissionsTable({
         { header: "Customer Phone", accessor: "contactNumber", minWidth: "130px", render: (item: StationSubmission) => item.contactNumber || "-" },
         { header: "Latitude", accessor: "latitude", minWidth: "100px" },
         { header: "Longitude", accessor: "longitude", minWidth: "100px" },
-        { header: "Network Name", accessor: "networkName", minWidth: "150px", render: (item: StationSubmission) => item.networkName },
+        { header: "Network Name", accessor: "networkName", minWidth: "150px", render: (item: StationSubmission) => formatNetworkName(item.networkName) },
         { header: "Station Name", accessor: "stationName", minWidth: "180px" },
         { header: "Stations ID", accessor: "stationNumber", minWidth: "130px", render: (item: StationSubmission) => item.stationNumber || "-" },
         {
@@ -558,6 +566,8 @@ export default function StationSubmissionsTable({
                         />
                     </div>
 
+
+
                     <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
                         {/* Status Filter */}
                         {/* Dynamic Filters */}
@@ -569,7 +579,7 @@ export default function StationSubmissionsTable({
                                     className="appearance-none rounded-lg border border-stroke bg-transparent px-3 py-2 text-sm font-medium text-dark outline-none hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 pr-8 max-w-[150px]"
                                 >
                                     <option value="All">All {filter.label === 'Status' ? 'Status' : filter.label + 's'}</option>
-                                    {filterOptions[filter.key]?.map((opt) => (
+                                    {(filter.options || filterOptions[filter.key])?.map((opt) => (
                                         <option key={opt} value={opt}>{opt}</option>
                                     ))}
                                 </select>
@@ -739,8 +749,8 @@ export default function StationSubmissionsTable({
 
                 <div className="flex items-center gap-4">
                     <p className="text-sm font-medium text-dark dark:text-white">
-                        {((currentPage - 1) * rowsPerPage) + 1}-{Math.min(currentPage * rowsPerPage, hasActiveFilters ? filteredData.length : totalRecords)} of{" "}
-                        {hasActiveFilters ? filteredData.length : totalRecords}
+                        {((currentPage - 1) * rowsPerPage) + 1}-{Math.min(currentPage * rowsPerPage, totalRecords)} of{" "}
+                        {totalRecords}
                     </p>
                     <div className="flex items-center gap-2">
                         <button

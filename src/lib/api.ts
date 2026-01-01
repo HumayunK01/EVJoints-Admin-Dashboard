@@ -174,6 +174,26 @@ export interface Connector {
     tariff?: string;
 }
 
+export interface ChargerType {
+    id: number;
+    name: string;
+    type: string;
+    defaultPower?: string;
+}
+
+export interface Network {
+    id: number;
+    name: string;
+    status: number;
+    liveStatus?: string;
+    approvedStatus?: string;
+}
+
+export interface NetworksResponse {
+    active: Network[];
+    inactive: Network[];
+}
+
 export interface StationSubmission {
     // Core identifiers
     id: number;
@@ -453,47 +473,40 @@ export async function getCustomersPaginated(
 }
 
 // Networks
-export interface Network {
-    id: number;
-    name: string;
-    status: number;
-    liveStatus: number;
-    approvedStatus: string;
-}
 
-export interface NetworksResponse {
-    active: Network[];
-    inactive: Network[];
-}
-
-export async function getNetworks(): Promise<NetworksResponse> {
-    const result = await fetchApi<NetworksResponse>("/networks");
-    return result;
-}
-
-export async function deleteNetwork(id: number): Promise<{ message: string }> {
-    const url = `${SECONDARY_API_URL}/networks/${id}`;
-    const response = await fetch(url, {
-        method: "DELETE",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    });
-
-    if (!response.ok) {
-        throw new Error(`Failed to delete network: ${response.status} ${response.statusText}`);
-    }
-
-    return response.json();
-}
 
 // Station Submissions
 export async function getStationSubmissionsPaginated(
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    status?: string,
+    startDate?: string,
+    endDate?: string,
+    search?: string
 ): Promise<StationSubmissionsResponse> {
     try {
-        const result = await fetchApi<StationSubmissionsResponse>(`/stations?page=${page}&limit=${limit}`);
+        const queryParams = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+        });
+
+        if (status && status !== "All") {
+            queryParams.append("status", status);
+        }
+
+        if (startDate) {
+            queryParams.append("startDate", startDate);
+        }
+
+        if (endDate) {
+            queryParams.append("endDate", endDate);
+        }
+
+        if (search) {
+            queryParams.append("search", search);
+        }
+
+        const result = await fetchApi<StationSubmissionsResponse>(`/stations?${queryParams.toString()}`);
         console.log(`✅ Fetched stations page ${page} from backend`);
         return result;
     } catch (error) {
@@ -529,11 +542,7 @@ export async function updateStation(
 
         payload = {
             ...payload,
-            status: data.status,
             stationName: data.stationName,
-            stationNumber: data.stationNumber,
-            userId: data.userId ?? null,
-            userName: data.userName,
             networkName: data.networkName,
             networkId: data.networkId ?? null,
             stationType: data.stationType,
@@ -688,4 +697,56 @@ export async function rejectCheckin(
 export async function postAudit(entry: any): Promise<void> {
     console.log("[API] Audit log:", entry);
     // TODO: Implement backend API call
+}
+
+export async function getChargerTypes(): Promise<ChargerType[]> {
+    try {
+        return await fetchApi<ChargerType[]>("/stations/charger-types");
+    } catch (error) {
+        console.warn("Using static charger types fallback");
+        return [
+            { id: 1, name: "CCS2", type: "DC", defaultPower: "60" },
+            { id: 2, name: "Type 2", type: "AC", defaultPower: "22" },
+            { id: 3, name: "CHAdeMO", type: "DC", defaultPower: "50" },
+            { id: 4, name: "Bharat AC001", type: "AC", defaultPower: "3.3" },
+            { id: 5, name: "Bharat DC001", type: "DC", defaultPower: "15" }
+        ];
+    }
+}
+
+export async function getNetworks(): Promise<NetworksResponse> {
+    try {
+        return await fetchApi<NetworksResponse>("/networks");
+    } catch (error) {
+        console.warn("Using fallback networks data");
+        return {
+            active: [
+                { id: 1, name: "Tata Power", status: 1 },
+                { id: 2, name: "Jio-bp", status: 1 },
+                { id: 3, name: "Zeon Charging", status: 1 },
+                { id: 4, name: "Statiq", status: 1 }
+            ],
+            inactive: []
+        };
+    }
+}
+
+export async function deleteNetwork(id: number): Promise<{ message: string }> {
+    const url = `${SECONDARY_API_URL}/networks/${id}`;
+
+    // For delete, we might not use fetchApi wrapper if we want specific response handling
+    // But consistent usage is better. fetchApi handles json parsing.
+
+    const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to delete network: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
 }

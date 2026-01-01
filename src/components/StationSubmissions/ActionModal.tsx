@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { StationSubmission, Connector, Network } from "@/lib/api";
-import { X, CheckCircle, Trash2 } from "lucide-react";
+import { StationSubmission, Connector, Network, ChargerType } from "@/lib/api";
+import { X, CheckCircle, Trash2, AlertTriangle } from "lucide-react";
 import { NETWORK_NAMES } from "@/data/networks";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
@@ -16,8 +16,6 @@ interface ModalFieldConfig {
     section: "Station Information" | "Location & Contact";
 }
 
-
-
 interface ConnectorFieldConfig {
     label: string;
     key: keyof Connector;
@@ -27,11 +25,11 @@ interface ConnectorFieldConfig {
 }
 
 const CONNECTOR_FIELDS: ConnectorFieldConfig[] = [
-    { label: "Name", key: "name", type: "text", width: "full" },
+    { label: "Name", key: "name", type: "select", width: "full" }, // Changed to select
     { label: "Count", key: "count", type: "number", width: "half" },
-    { label: "Type", key: "type", type: "select", options: ["AC", "DC"], width: "half" },
-    { label: "Power", key: "powerRating", type: "text", width: "half" },
-    { label: "Tariff", key: "tariff", type: "text", width: "half" },
+    { label: "Type", key: "type", type: "text", width: "half" }, // Changed to text (readonly/derived) or select
+    { label: "Power", key: "powerRating", type: "number", width: "half" },
+    { label: "Tariff", key: "tariff", type: "number", width: "half" },
 ];
 
 interface ActionModalProps {
@@ -50,28 +48,28 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     const [networkOptions, setNetworkOptions] = useState<string[]>([]);
     const [inactiveNetworks, setInactiveNetworks] = useState<Network[]>([]);
     const [allNetworks, setAllNetworks] = useState<Network[]>([]);
+    const [chargerTypes, setChargerTypes] = useState<ChargerType[]>([]);
+    const [networkToDelete, setNetworkToDelete] = useState<{ id: number; name: string } | null>(null);
 
     const fetchNetworks = useCallback(async () => {
         try {
-            const { getNetworks } = await import("@/lib/api");
+            const { getNetworks, getChargerTypes } = await import("@/lib/api");
+
+            // Fetch networks
             const res = await getNetworks();
-
-            // Map active networks to names and sort
             const activeNetworks = res.active.map(n => n.name).sort();
-
-            // create final options list: Active users + "Others"
             const options = Array.from(new Set([...activeNetworks, "Others"]));
-
             setNetworkOptions(options);
-
-            // Store inactive networks objects for the secondary dropdown / delete
             setInactiveNetworks(res.inactive);
-
-            // Store ALL networks for ID lookup on save
             setAllNetworks([...res.active, ...res.inactive]);
+
+            // Fetch charger types
+            const types = await getChargerTypes();
+            setChargerTypes(types);
+
         } catch (error) {
-            console.error("Failed to fetch networks:", error);
-            // Fallback to static list if API fails
+            console.error("Failed to fetch data:", error);
+            // Fallback
             setNetworkOptions(NETWORK_NAMES);
         }
     }, []);
@@ -112,13 +110,32 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                 networkId: resolvedId,
                 networkStatus: resolvedStatus
             });
-            setConnectors(JSON.parse(JSON.stringify(station.connectors)));
+            setConnectors(station.connectors.map(c => ({
+                ...c,
+                tariff: c.tariff ? String(c.tariff).replace(/[^\d.]/g, "") : "",
+                powerRating: c.powerRating ? String(c.powerRating).replace(/[^\d.]/g, "") : ""
+            })));
         }
     }, [station, allNetworks]);
 
     const handleConnectorChange = (index: number, field: keyof Connector, value: string) => {
         const updated = [...connectors];
-        if (field === 'count') {
+
+        if (field === 'name') {
+            // When Name changes, find the charger type and auto-fill other fields
+            const selectedType = chargerTypes.find(ct => ct.name === value);
+            if (selectedType) {
+                updated[index] = {
+                    ...updated[index],
+                    name: selectedType.name,
+                    chargerTypeId: selectedType.id,
+                    type: selectedType.type,
+                    powerRating: selectedType.defaultPower || updated[index].powerRating || ""
+                };
+            } else {
+                updated[index] = { ...updated[index], name: value };
+            }
+        } else if (field === 'count') {
             updated[index] = { ...updated[index], [field]: parseInt(value) || 0 };
         } else {
             updated[index] = { ...updated[index], [field]: value };
@@ -127,11 +144,14 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     };
 
     const handleAddConnector = () => {
+        const defaultType = chargerTypes.length > 0 ? chargerTypes[0] : { id: 1, name: "CCS2", type: "DC", defaultPower: "60" };
+
         setConnectors([...connectors, {
-            name: "New Connector",
+            name: defaultType.name,
+            chargerTypeId: defaultType.id,
             count: 1,
-            type: "AC",
-            powerRating: "",
+            type: defaultType.type,
+            powerRating: defaultType.defaultPower || "",
             tariff: ""
         }]);
     };
@@ -187,20 +207,25 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
             return;
         }
 
-        if (window.confirm(`Are you sure you want to delete the network "${name}" from the database?`)) {
-            try {
-                const { deleteNetwork } = await import("@/lib/api");
-                await deleteNetwork(network.id);
-                // Refresh networks list
-                await fetchNetworks();
-                // Clear the field if it was the selected one
-                if (formData.networkName === name) {
-                    handleInputChange("networkName", "");
-                }
-            } catch (error) {
-                console.error("Failed to delete network:", error);
-                alert("Failed to delete network. Please try again.");
+        setNetworkToDelete({ id: network.id, name: network.name });
+    };
+
+    const confirmDeleteNetwork = async () => {
+        if (!networkToDelete) return;
+
+        try {
+            const { deleteNetwork } = await import("@/lib/api");
+            await deleteNetwork(networkToDelete.id);
+            // Refresh networks list
+            await fetchNetworks();
+            // Clear the field if it was the selected one
+            if (formData.networkName === networkToDelete.name) {
+                handleInputChange("networkName", "");
             }
+            setNetworkToDelete(null);
+        } catch (error) {
+            console.error("Failed to delete network:", error);
+            alert("Failed to delete network. Please try again.");
         }
     };
 
@@ -432,31 +457,54 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                                     <div className="flex flex-col gap-3">
                                         {/* Dynamic Connector Fields */}
                                         <div className="flex flex-wrap -mx-1">
-                                            {CONNECTOR_FIELDS.map((field) => (
-                                                <div key={field.key} className={`${field.width === 'half' ? 'w-1/2' : 'w-full'} px-1 mb-2`}>
-                                                    <label className="mb-1 block text-xs font-medium text-dark dark:text-white">
-                                                        {field.label}
-                                                    </label>
-                                                    {field.type === 'select' ? (
-                                                        <select
-                                                            value={(connector[field.key] as string) || ""}
-                                                            onChange={(e) => handleConnectorChange(idx, field.key, e.target.value)}
-                                                            className="w-full rounded border-[1.5px] border-stroke bg-white px-2 py-1.5 text-sm text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
-                                                        >
-                                                            <option value="">Select</option>
-                                                            {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                                        </select>
-                                                    ) : (
-                                                        <input
-                                                            type={field.type}
-                                                            min={field.type === 'number' ? "1" : undefined}
-                                                            value={connector[field.key] || ""}
-                                                            onChange={(e) => handleConnectorChange(idx, field.key, e.target.value)}
-                                                            className="w-full rounded border-[1.5px] border-stroke bg-white px-2 py-1.5 text-sm text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white"
-                                                        />
-                                                    )}
-                                                </div>
-                                            ))}
+                                            {CONNECTOR_FIELDS.map((field) => {
+                                                let options = field.options;
+                                                if (field.key === "name" && chargerTypes.length > 0) {
+                                                    options = Array.from(new Set(chargerTypes.map(ct => ct.name)));
+                                                }
+
+                                                return (
+                                                    <div key={field.key} className={`${field.width === 'half' ? 'w-1/2' : 'w-full'} px-1 mb-2`}>
+                                                        <label className="mb-1 block text-xs font-medium text-dark dark:text-white">
+                                                            {field.label}
+                                                        </label>
+                                                        {field.type === 'select' ? (
+                                                            <SearchableSelect
+                                                                options={options || []}
+                                                                value={(connector[field.key] as string) || ""}
+                                                                onChange={(val) => handleConnectorChange(idx, field.key, val)}
+                                                                placeholder="Select Type..."
+                                                                className="w-full"
+                                                            />
+                                                        ) : (
+                                                            <div className="relative">
+                                                                <input
+                                                                    type={field.type}
+                                                                    min={field.type === 'number' ? "0" : undefined}
+                                                                    value={connector[field.key] || ""}
+                                                                    onChange={(e) => handleConnectorChange(idx, field.key, e.target.value)}
+                                                                    className={cn(
+                                                                        "w-full rounded border-[1.5px] border-stroke bg-white px-2 py-1.5 text-sm text-dark outline-none focus:border-primary dark:border-dark-3 dark:bg-gray-dark dark:text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                                                                        (field.key === "tariff" || field.key === "powerRating") && "pr-12"
+                                                                    )}
+                                                                    placeholder={field.key === "tariff" || field.key === "powerRating" ? "0" : ""}
+                                                                    readOnly={field.key === "type"}
+                                                                />
+                                                                {field.key === "tariff" && (
+                                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                                                        ₹/kWh
+                                                                    </span>
+                                                                )}
+                                                                {field.key === "powerRating" && (
+                                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                                                        kW
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 </div>
@@ -518,6 +566,37 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                     <div className="flex items-center gap-3 rounded-lg bg-green-500 px-4 py-3 text-white shadow-lg">
                         <CheckCircle className="h-5 w-5" />
                         <span className="font-medium">Saved Successfully</span>
+                    </div>
+                </div>
+            )}
+            {/* Custom Delete Confirmation Modal */}
+            {networkToDelete && (
+                <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 animate-in fade-in duration-200">
+                    <div className="w-full max-w-sm overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-dark-2 ring-1 ring-stroke dark:ring-dark-3">
+                        <div className="p-6 text-center">
+                            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-500">
+                                <AlertTriangle className="h-8 w-8" />
+                            </div>
+                            <h3 className="mb-2 text-xl font-bold text-dark dark:text-white">Confirm Deletion</h3>
+                            <p className="text-sm text-body-color dark:text-dark-6">
+                                Are you sure you want to delete the network <span className="font-bold text-dark dark:text-white">"{networkToDelete.name}"</span>?
+                                <br /> This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="flex border-t border-stroke dark:border-dark-3">
+                            <button
+                                onClick={() => setNetworkToDelete(null)}
+                                className="flex-1 border-r border-stroke px-4 py-3 font-medium text-dark hover:bg-gray-50 dark:border-dark-3 dark:text-white dark:hover:bg-white/5 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeleteNetwork}
+                                className="flex-1 px-4 py-3 font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
