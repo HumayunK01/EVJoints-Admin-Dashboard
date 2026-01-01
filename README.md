@@ -62,8 +62,8 @@ Before you begin, ensure you have met the following requirements:
 
 1.  **Clone the repository** (if you haven't already):
     ```bash
-    git clone <repo_url>
-    cd frontend
+    git clone https://github.com/HumayunK01/EVJoints-Admin-Dashboard.git
+    cd EVJoints-Admin-Dashboard
     ```
 
 2.  **Install dependencies**:
