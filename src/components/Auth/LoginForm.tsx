@@ -89,7 +89,8 @@ export const LoginForm = ({ initialMode }: { initialMode?: "LOGIN" | "SIGNUP" })
                 const token = response.result?.token || response.token || 'authenticated';
                 const user = response.result?.user || response.user;
 
-                document.cookie = `auth_token=${token}; path=/; max-age=86400`;
+                // Set session cookie for 24 hours (24 * 60 * 60 seconds)
+                document.cookie = `auth_token=${token}; path=/; max-age=${24 * 60 * 60}`;
 
                 // Store user data with vendor ID for API calls
                 const userData = {
