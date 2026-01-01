@@ -278,7 +278,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "Name",
             minWidth: "150px",
             render: (item) => (
-                <span className="text-sm text-dark dark:text-white whitespace-nowrap truncate max-w-[150px] block" title={`${item.firstName} ${item.lastName}`}>
+                <span className="text-sm text-dark dark:text-white block" title={`${item.firstName} ${item.lastName}`}>
                     {item.firstName ? `${item.firstName} ${item.lastName || ""}` : "-"}
                 </span>
             )
@@ -304,7 +304,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
 
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
+                        <span className="text-sm text-dark dark:text-white">
                             {item.source ? item.source.split(',')[0] : "-"}
                         </span>
                         {hasStops && (
@@ -327,7 +327,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "Destination",
             minWidth: "250px",
             render: (item) => (
-                <span className="text-sm text-dark dark:text-white block min-w-[200px]" title={item.destination || ""}>
+                <span className="text-sm text-dark dark:text-white block" title={item.destination || ""}>
                     {item.destination || "-"}
                 </span>
             )
@@ -374,12 +374,12 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         {
             header: "EV Model",
             minWidth: "150px",
-            render: (item) => <span className="text-sm text-dark dark:text-white whitespace-nowrap truncate max-w-[150px] block" title={item.evModel}>{item.evModel || "-"}</span>
+            render: (item) => <span className="text-sm text-dark dark:text-white block" title={item.evModel}>{item.evModel || "-"}</span>
         },
         {
             header: "EV Variant",
             minWidth: "130px",
-            render: (item) => <span className="text-sm text-dark dark:text-white whitespace-nowrap truncate max-w-[130px] block" title={item.evVariant}>{item.evVariant || "-"}</span>
+            render: (item) => <span className="text-sm text-dark dark:text-white block" title={item.evVariant}>{item.evVariant || "-"}</span>
         },
         {
             header: "EV Battery Capacity",
@@ -397,7 +397,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             minWidth: "300px",
             render: (item) => item.feedback ? (
                 <div className="flex items-center gap-2">
-                    <p className="text-sm text-dark dark:text-white truncate max-w-[200px]">
+                    <p className="text-sm text-dark dark:text-white">
                         {truncateText(item.feedback)}
                     </p>
                     <button
