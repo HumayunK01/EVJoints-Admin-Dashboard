@@ -338,8 +338,8 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     if (!isOpen || !station) return null;
 
     return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-            <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-white px-6 dark:bg-gray-dark">
+        <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 pb-4 sm:pb-0">
+            <div className="relative w-full max-w-3xl h-[85vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto rounded-xl bg-white px-6 dark:bg-gray-dark shadow-2xl animate-in slide-in-from-bottom-5 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300">
                 <div className="mb-6 flex items-center justify-between sticky top-0 z-10 bg-white dark:bg-gray-dark -mx-6 px-6 pt-6 pb-4 border-b border-stroke dark:border-dark-3">
                     <div>
                         <h3 className="text-xl font-bold text-dark dark:text-white">
@@ -526,18 +526,18 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4 border-t border-stroke dark:border-dark-3">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-stroke dark:border-dark-3 pb-6 sm:pb-0">
                         {station.status === 'Pending' && (
                             <button
                                 onClick={handleReject}
-                                className="flex-1 rounded-lg bg-red-500 px-6 py-3 font-medium text-white hover:bg-red-600 transition-colors"
+                                className="flex-1 rounded-lg bg-red-500 px-6 py-3 font-medium text-white hover:bg-red-600 transition-colors order-3 sm:order-1"
                             >
                                 Reject
                             </button>
                         )}
                         <button
                             onClick={() => handleSave()}
-                            className="flex-1 rounded-lg bg-primary px-6 py-3 font-medium text-white hover:bg-primary/90 transition-colors"
+                            className="flex-1 rounded-lg bg-primary px-6 py-3 font-medium text-white hover:bg-primary/90 transition-colors order-1 sm:order-2"
                         >
                             Save Changes
                         </button>
@@ -546,7 +546,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                                 onClick={() => handleSave('Approved')}
                                 disabled={!isSaved}
                                 className={cn(
-                                    "flex-1 rounded-lg px-6 py-3 font-medium text-white transition-all",
+                                    "flex-1 rounded-lg px-6 py-3 font-medium text-white transition-all order-2 sm:order-3",
                                     isSaved
                                         ? "bg-green-500 hover:bg-green-600"
                                         : "bg-gray-400 cursor-not-allowed opacity-70"

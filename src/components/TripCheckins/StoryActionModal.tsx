@@ -128,9 +128,9 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                                 <span className="text-sm font-medium text-dark dark:text-white">User:</span>
                                 <span className="text-sm text-dark dark:text-white">{trip.firstName} {trip.lastName}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-sm font-medium text-dark dark:text-white">Route:</span>
-                                <span className="text-sm text-dark dark:text-white truncate max-w-[200px]">
+                            <div className="flex justify-between items-center gap-2">
+                                <span className="text-sm font-medium text-dark dark:text-white shrink-0">Route:</span>
+                                <span className="text-sm text-dark dark:text-white truncate max-w-[140px] sm:max-w-[200px]">
                                     {trip.source.split(',')[0]} → {trip.destination.split(',')[0]}
                                 </span>
                             </div>
@@ -164,11 +164,11 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4 border-t border-stroke dark:border-dark-3">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-stroke dark:border-dark-3">
                         <button
                             onClick={handleApprove}
                             disabled={isLoading}
-                            className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-colors ${isLoading ? "bg-green-600/50 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"}`}
+                            className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-colors ${isLoading ? "bg-green-600/50 cursor-not-allowed" : "bg-green-600 hover:bg-green-700"} w-full sm:w-auto`}
                         >
                             <Check className="h-5 w-5" />
                             {isLoading ? "Processing..." : "Approve Story"}
@@ -176,7 +176,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
                         <button
                             onClick={handleReject}
                             disabled={isLoading}
-                            className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-colors ${isLoading ? "bg-red-600/50 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"}`}
+                            className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium text-white transition-colors ${isLoading ? "bg-red-600/50 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"} w-full sm:w-auto`}
                         >
                             <X className="h-5 w-5" />
                             {isLoading ? "Processing..." : "Reject Story"}

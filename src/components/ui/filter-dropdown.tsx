@@ -35,7 +35,7 @@ export function FilterDropdown({ value, options, onChange, className, minWidth =
                 <ChevronDown className={cn("h-4 w-4 opacity-50 transition-transform duration-200", isOpen && "rotate-180")} />
             </DropdownTrigger>
             <DropdownContent
-                className="max-h-[300px] overflow-y-auto no-scrollbar border border-stroke bg-white p-1 shadow-2xl dark:border-dark-3 dark:bg-gray-dark"
+                className="min-w-full max-h-[300px] overflow-y-auto no-scrollbar border border-stroke bg-white p-1 shadow-2xl dark:border-dark-3 dark:bg-gray-dark"
                 align="start"
             >
                 <div className="flex flex-col gap-0.5">

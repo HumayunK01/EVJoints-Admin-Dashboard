@@ -437,9 +437,9 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
             <div className="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6 xl:px-7.5">
                 <h4 className="text-lg font-bold text-dark dark:text-white">Customers List</h4>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center sm:gap-2 sm:flex-wrap">
                     {/* Search */}
-                    <div className="relative w-full sm:w-auto">
+                    <div className="relative col-span-2 w-full sm:w-auto">
                         <button className="absolute left-4 top-1/2 -translate-y-1/2 text-dark dark:text-white">
                             <Search className="h-4 w-4" />
                         </button>
@@ -452,44 +452,46 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                         />
                     </div>
 
-                    <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+                    <div className="contents sm:flex sm:items-center sm:gap-2">
                         {/* Filter */}
                         <button
                             onClick={() => setIsFilterOpen(true)}
-                            className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
+                            className="col-span-1 flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
                             <Filter className="h-4 w-4" />
                             Filters
                         </button>
 
                         {/* Sort */}
-                        <Dropdown isOpen={isSortOpen} setIsOpen={setIsSortOpen}>
-                            <DropdownTrigger className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
-                                <ArrowUpDown className="h-4 w-4" />
-                                Sort
-                                <ChevronDown className="h-4 w-4" />
-                            </DropdownTrigger>
-                            <DropdownContent className="w-48 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
-                                {SORT_OPTIONS.map((option) => (
-                                    <button
-                                        key={option.value}
-                                        onClick={() => {
-                                            setSortOption(option.value);
-                                            setIsSortOpen(false);
-                                        }}
-                                        className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 ${sortOption === option.value ? "bg-gray-2 dark:bg-dark-2" : ""
-                                            }`}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
-                            </DropdownContent>
-                        </Dropdown>
+                        <div className="col-span-1 w-full sm:w-auto">
+                            <Dropdown isOpen={isSortOpen} setIsOpen={setIsSortOpen}>
+                                <DropdownTrigger className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2">
+                                    <ArrowUpDown className="h-4 w-4" />
+                                    Sort
+                                    <ChevronDown className="h-4 w-4" />
+                                </DropdownTrigger>
+                                <DropdownContent className="w-48 border border-stroke bg-white p-2 shadow-1 dark:border-dark-3 dark:bg-gray-dark">
+                                    {SORT_OPTIONS.map((option) => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => {
+                                                setSortOption(option.value);
+                                                setIsSortOpen(false);
+                                            }}
+                                            className={`flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-2 dark:hover:bg-dark-2 ${sortOption === option.value ? "bg-gray-2 dark:bg-dark-2" : ""
+                                                }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </DropdownContent>
+                            </Dropdown>
+                        </div>
 
                         {/* Export Button */}
                         <button
                             onClick={handleExport}
-                            className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
+                            className="col-span-2 flex items-center justify-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 w-full sm:w-auto"
                         >
                             <Download className="h-4 w-4" />
                             Export
@@ -520,115 +522,118 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
             )}
 
             {/* Table */}
-            <Table>
-                <TableHeader>
-                    <TableRow className="border-t border-stroke bg-green-light-7 hover:bg-green-light-7 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-dark-2">
-                        {showCheckboxes && (
-                            <TableHead className="w-[50px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
-                                <input
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
-                                    checked={currentData.length > 0 && selectedRows.size === currentData.length}
-                                    onChange={toggleAll}
-                                />
-                            </TableHead>
-                        )}
-                        {COLUMNS.map((column) => (
-                            <TableHead
-                                key={column.key}
-                                className="px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap text-center"
-                                style={{ minWidth: column.minWidth }}
-                            >
-                                {column.label}
-                            </TableHead>
-                        ))}
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {currentData.length > 0 ? (
-                        currentData.map((customer) => {
-                            const isExpanded = expandedRows.has(customer.id);
-                            const hasMultipleVehicles = !!(customer.vehicles && customer.vehicles.length > 1);
+            <div className="max-w-full overflow-x-auto">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="border-t border-stroke bg-green-light-7 hover:bg-green-light-7 dark:border-dark-3 dark:bg-dark-2 dark:hover:bg-dark-2">
+                            {showCheckboxes && (
+                                <TableHead className="w-[50px] px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap">
+                                    <input
+                                        type="checkbox"
+                                        className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
+                                        checked={currentData.length > 0 && selectedRows.size === currentData.length}
+                                        onChange={toggleAll}
+                                    />
+                                </TableHead>
+                            )}
+                            {COLUMNS.map((column) => (
+                                <TableHead
+                                    key={column.key}
+                                    className="px-4 py-4 text-sm font-medium text-dark dark:text-white whitespace-nowrap text-center"
+                                    style={{ minWidth: column.minWidth }}
+                                >
+                                    {column.label}
+                                </TableHead>
+                            ))}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {currentData.length > 0 ? (
+                            currentData.map((customer) => {
+                                const isExpanded = expandedRows.has(customer.id);
+                                const hasMultipleVehicles = !!(customer.vehicles && customer.vehicles.length > 1);
 
-                            return (
-                                <Fragment key={customer.id}>
-                                    <TableRow className="border-t border-stroke dark:border-dark-3">
-                                        {showCheckboxes && (
-                                            <TableCell className="px-4 py-4">
-                                                <input
-                                                    type="checkbox"
-                                                    className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
-                                                    checked={selectedRows.has(customer.id)}
-                                                    onChange={() => toggleRow(customer.id)}
-                                                />
-                                            </TableCell>
-                                        )}
-                                        {COLUMNS.map((column) => {
-                                            const value = getCellValue(customer, column);
-                                            const formattedValue = formatCellValue(value, column);
-
-                                            return (
-                                                <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3 text-center align-middle">
-                                                    {column.isExpandable ? (
-                                                        <ExpandableCell
-                                                            value={value}
-                                                            hasMultipleEntries={hasMultipleVehicles}
-                                                            isExpanded={isExpanded}
-                                                            onToggle={() => toggleExpand(customer.id)}
-                                                            showExpandIcon={true}
-                                                            formatValue={column.formatValue}
-                                                        />
-                                                    ) : column.render ? (
-                                                        column.render(value, customer)
-                                                    ) : (
-                                                        <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center">
-                                                            {formattedValue || "-"}
-                                                        </p>
-                                                    )}
+                                return (
+                                    <Fragment key={customer.id}>
+                                        <TableRow className="border-t border-stroke dark:border-dark-3">
+                                            {showCheckboxes && (
+                                                <TableCell className="px-4 py-4">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="h-4 w-4 rounded border-stroke text-primary focus:ring-primary dark:border-dark-3 dark:bg-dark-2"
+                                                        checked={selectedRows.has(customer.id)}
+                                                        onChange={() => toggleRow(customer.id)}
+                                                    />
                                                 </TableCell>
-                                            );
-                                        })}
-                                    </TableRow>
-
-                                    {/* Expanded Rows for Additional Vehicles */}
-                                    {isExpanded && customer.vehicles && customer.vehicles.slice(1).map((vehicle, vIdx) => (
-                                        <TableRow
-                                            key={`${customer.id}-v-${vIdx}`}
-                                            className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-white/5"
-                                        >
-                                            {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
+                                            )}
                                             {COLUMNS.map((column) => {
-                                                if (column.isExpandable && column.key in vehicle) {
-                                                    const value = (vehicle as any)[column.key];
-                                                    const formattedValue = column.formatValue ? column.formatValue(value) : value;
-                                                    return (
-                                                        <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3 text-center align-middle">
+                                                const value = getCellValue(customer, column);
+                                                const formattedValue = formatCellValue(value, column);
+
+                                                return (
+                                                    <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3 text-center align-middle">
+                                                        {column.isExpandable ? (
+                                                            <ExpandableCell
+                                                                value={value}
+                                                                hasMultipleEntries={hasMultipleVehicles}
+                                                                isExpanded={isExpanded}
+                                                                onToggle={() => toggleExpand(customer.id)}
+                                                                showExpandIcon={true}
+                                                                formatValue={column.formatValue}
+                                                            />
+                                                        ) : column.render ? (
+                                                            column.render(value, customer)
+                                                        ) : (
                                                             <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center">
                                                                 {formattedValue || "-"}
                                                             </p>
-                                                        </TableCell>
-                                                    );
-                                                }
-                                                return <TableCell key={column.key} className="px-4 py-4"></TableCell>;
+                                                        )}
+                                                    </TableCell>
+                                                );
                                             })}
                                         </TableRow>
-                                    ))}
-                                </Fragment>
-                            );
-                        })
-                    ) : (
-                        <TableRow>
-                            <TableCell colSpan={COLUMNS.length + (showCheckboxes ? 1 : 0)} className="h-24 text-center">
-                                <p className="text-sm text-dark dark:text-white">No customers found.</p>
-                            </TableCell>
-                        </TableRow>
-                    )}
-                </TableBody>
-            </Table>
+
+                                        {/* Expanded Rows for Additional Vehicles */}
+                                        {isExpanded && customer.vehicles && customer.vehicles.slice(1).map((vehicle, vIdx) => (
+                                            <TableRow
+                                                key={`${customer.id}-v-${vIdx}`}
+                                                className="border-t border-stroke bg-gray-50 dark:border-dark-3 dark:bg-white/5"
+                                            >
+                                                {showCheckboxes && <TableCell className="px-4 py-4"></TableCell>}
+                                                {COLUMNS.map((column) => {
+                                                    if (column.isExpandable && column.key in vehicle) {
+                                                        const value = (vehicle as any)[column.key];
+                                                        const formattedValue = column.formatValue ? column.formatValue(value) : value;
+                                                        return (
+                                                            <TableCell key={column.key} className="px-4 py-4 dark:border-dark-3 text-center align-middle">
+                                                                <p className="text-sm text-dark dark:text-white whitespace-nowrap text-center">
+                                                                    {formattedValue || "-"}
+                                                                </p>
+                                                            </TableCell>
+                                                        );
+                                                    }
+                                                    return <TableCell key={column.key} className="px-4 py-4"></TableCell>;
+                                                })}
+                                            </TableRow>
+                                        ))}
+                                    </Fragment>
+                                );
+                            })
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={COLUMNS.length + (showCheckboxes ? 1 : 0)} className="h-24 text-center">
+                                    <p className="text-sm text-dark dark:text-white">No customers found.</p>
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-end gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
                 <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-dark dark:text-white sm:hidden">Rows per page:</span>
                     <PaginationSelect
                         value={rowsPerPage}
                         options={ROWS_PER_PAGE_OPTIONS}
@@ -637,27 +642,27 @@ export function CustomersTable({ initialData, initialPagination }: CustomersTabl
                     />
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between w-full sm:w-auto sm:gap-4">
                     {loading && (
-                        <p className="text-sm font-medium text-dark dark:text-white">Loading...</p>
+                        <p className="hidden sm:block text-sm font-medium text-dark dark:text-white">Loading...</p>
                     )}
-                    <p className="text-sm font-medium text-dark dark:text-white">
+                    <p className="text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                         {((currentPage - 1) * rowsPerPage) + 1}-{Math.min(currentPage * rowsPerPage, totalRecords)} of {totalRecords}
                     </p>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handlePrevPage}
                             disabled={currentPage === 1}
-                            className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
+                            className="flex h-8 w-8 items-center justify-center rounded border border-stroke bg-transparent text-dark hover:bg-gray-2 disabled:opacity-50 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronLeft className="h-5 w-5" />
+                            <ChevronLeft className="h-4 w-4" />
                         </button>
                         <button
                             onClick={handleNextPage}
                             disabled={currentPage === totalPages}
-                            className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
+                            className="flex h-8 w-8 items-center justify-center rounded border border-stroke bg-transparent text-dark hover:bg-gray-2 disabled:opacity-50 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronRight className="h-5 w-5" />
+                            <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
                 </div>

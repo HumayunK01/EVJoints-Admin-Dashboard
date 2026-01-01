@@ -562,14 +562,14 @@ export default function StationSubmissionsTable({
     return (
         <div className="max-w-full rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
             {/* Header and Filters */}
-            <div className="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6 xl:px-7.5">
+            <div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between md:px-6 xl:px-7.5">
                 <h4 className="text-lg font-bold text-dark dark:text-white">
                     Station Additions
                 </h4>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center sm:gap-2 sm:flex-wrap">
                     {/* Search */}
-                    <div className="relative w-full sm:w-auto">
+                    <div className="relative col-span-2 w-full sm:w-auto">
                         <button className="absolute left-4 top-1/2 -translate-y-1/2 text-dark dark:text-white">
                             <Search className="h-4 w-4" />
                         </button>
@@ -582,13 +582,10 @@ export default function StationSubmissionsTable({
                         />
                     </div>
 
-
-
-                    <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
-                        {/* Status Filter */}
-                        {/* Dynamic Filters */}
+                    <div className="contents sm:flex sm:items-center sm:gap-2">
+                        {/* Dynamic Filters - Side by Side on Mobile */}
                         {FILTER_CONFIG.map((filter) => (
-                            <div key={filter.key} className="relative">
+                            <div key={filter.key} className="relative col-span-1 w-full sm:w-auto">
                                 <FilterDropdown
                                     value={activeFilters[filter.key] || "All"}
                                     options={[
@@ -599,31 +596,34 @@ export default function StationSubmissionsTable({
                                         }))
                                     ]}
                                     onChange={(val) => handleFilterChange(filter.key, val)}
-                                    minWidth="150px"
+                                    minWidth="100%"
+                                    className="w-full sm:w-[150px]"
                                 />
                             </div>
                         ))}
 
-                        {(Object.keys(activeFilters).length > 0 || startDate || endDate || search) && (
-                            <button
-                                onClick={clearFilters}
-                                className="text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400"
-                            >
-                                Clear
-                            </button>
-                        )}
-
+                        {/* Date Filter - Side by Side with Clear or on its own */}
                         <button
                             onClick={() => setIsFilterOpen(true)}
-                            className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
+                            className="col-span-1 flex w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
                             <Filter className="h-4 w-4" />
                             Date
                         </button>
 
+                        {(Object.keys(activeFilters).length > 0 || startDate || endDate || search) && (
+                            <button
+                                onClick={clearFilters}
+                                className="col-span-2 sm:col-span-1 text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 text-center sm:text-left py-1"
+                            >
+                                Clear
+                            </button>
+                        )}
+
+                        {/* Export Button - Full Width on Mobile */}
                         <button
                             onClick={handleExport}
-                            className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
+                            className="col-span-2 flex items-center justify-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 w-full sm:w-auto"
                         >
                             <Download className="h-4 w-4" />
                             Export
@@ -741,13 +741,9 @@ export default function StationSubmissionsTable({
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-end gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
-                {isLoading && (
-                    <span className="text-sm font-medium text-primary animate-pulse">
-                        Loading...
-                    </span>
-                )}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
                 <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-dark dark:text-white sm:hidden">Rows per page:</span>
                     <PaginationSelect
                         value={rowsPerPage}
                         options={[10, 15, 20, 50, 100]}
@@ -756,8 +752,13 @@ export default function StationSubmissionsTable({
                     />
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <p className="text-sm font-medium text-dark dark:text-white">
+                <div className="flex items-center justify-between w-full sm:w-auto sm:gap-4">
+                    {isLoading && (
+                        <span className="hidden sm:inline text-sm font-medium text-primary animate-pulse">
+                            Loading...
+                        </span>
+                    )}
+                    <p className="text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                         {((currentPage - 1) * rowsPerPage) + 1}-{Math.min(currentPage * rowsPerPage, totalRecords)} of{" "}
                         {totalRecords}
                     </p>
@@ -765,16 +766,16 @@ export default function StationSubmissionsTable({
                         <button
                             onClick={handlePrevPage}
                             disabled={currentPage === 1}
-                            className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
+                            className="flex h-8 w-8 items-center justify-center rounded border border-stroke bg-transparent text-dark hover:bg-gray-2 disabled:opacity-50 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronLeft className="h-5 w-5" />
+                            <ChevronLeft className="h-4 w-4" />
                         </button>
                         <button
                             onClick={handleNextPage}
                             disabled={currentPage === totalPages}
-                            className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
+                            className="flex h-8 w-8 items-center justify-center rounded border border-stroke bg-transparent text-dark hover:bg-gray-2 disabled:opacity-50 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronRight className="h-5 w-5" />
+                            <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
                 </div>

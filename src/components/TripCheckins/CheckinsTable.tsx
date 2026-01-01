@@ -541,14 +541,14 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
     return (
         <div className="max-w-full rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
             {/* Header and Filters */}
-            <div className="flex flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between md:px-6 xl:px-7.5">
+            <div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between md:px-6 xl:px-7.5">
                 <h4 className="text-lg font-bold text-dark dark:text-white">
                     Trip Check-ins
                 </h4>
 
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-row sm:items-center sm:gap-2 sm:flex-wrap">
                     {/* Search */}
-                    <div className="relative w-full sm:w-auto">
+                    <div className="relative col-span-2 w-full sm:w-auto">
                         <button className="absolute left-4 top-1/2 -translate-y-1/2 text-dark dark:text-white">
                             <Search className="h-4 w-4" />
                         </button>
@@ -562,29 +562,31 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                     </div>
 
                     {/* Status Filter */}
-                    <div className="relative">
+                    <div className="relative col-span-1 w-full sm:w-auto">
                         <FilterDropdown
                             value={statusFilter}
                             options={STATUS_OPTIONS}
                             onChange={(val) => setStatusFilter(val)}
-                            minWidth="140px"
+                            minWidth="100%"
+                            className="w-full sm:w-[140px]"
                         />
                     </div>
 
                     {/* Story Filter */}
-                    <div className="relative">
+                    <div className="relative col-span-1 w-full sm:w-auto">
                         <FilterDropdown
                             value={storyFilter}
                             options={STORY_OPTIONS}
                             onChange={(val) => setStoryFilter(val)}
-                            minWidth="160px"
+                            minWidth="100%"
+                            className="w-full sm:w-[160px]"
                         />
                     </div>
 
                     {/* Export Button */}
                     <button
                         onClick={handleExport}
-                        className="flex items-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
+                        className="col-span-2 flex items-center justify-center gap-2 rounded-lg border border-stroke px-3 py-2 text-sm font-medium text-dark hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2 w-full sm:w-auto"
                     >
                         <Download className="h-4 w-4" />
                         Export
@@ -659,8 +661,9 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-end gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-stroke px-4 py-4 dark:border-dark-3 sm:px-6">
                 <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-dark dark:text-white sm:hidden">Rows per page:</span>
                     <PaginationSelect
                         value={rowsPerPage}
                         options={[10, 15, 20, 50, 100]}
@@ -669,27 +672,27 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                     />
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between w-full sm:w-auto sm:gap-4">
                     {loading && (
-                        <p className="text-sm font-medium text-dark dark:text-white">Loading...</p>
+                        <p className="hidden sm:block text-sm font-medium text-dark dark:text-white">Loading...</p>
                     )}
-                    <p className="text-sm font-medium text-dark dark:text-white">
+                    <p className="text-sm font-medium text-dark dark:text-white whitespace-nowrap">
                         {((currentPage - 1) * rowsPerPage) + 1}-{Math.min(currentPage * rowsPerPage, totalRecords)} of {totalRecords}
                     </p>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handlePrevPage}
                             disabled={currentPage === 1 || loading}
-                            className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
+                            className="flex h-8 w-8 items-center justify-center rounded border border-stroke bg-transparent text-dark hover:bg-gray-2 disabled:opacity-50 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronLeft className="h-5 w-5" />
+                            <ChevronLeft className="h-4 w-4" />
                         </button>
                         <button
                             onClick={handleNextPage}
                             disabled={currentPage === totalPages || loading}
-                            className="flex h-8 w-8 items-center justify-center rounded text-dark hover:bg-gray-2 disabled:opacity-50 dark:text-white dark:hover:bg-dark-2"
+                            className="flex h-8 w-8 items-center justify-center rounded border border-stroke bg-transparent text-dark hover:bg-gray-2 disabled:opacity-50 dark:border-dark-3 dark:text-white dark:hover:bg-dark-2"
                         >
-                            <ChevronRight className="h-5 w-5" />
+                            <ChevronRight className="h-4 w-4" />
                         </button>
                     </div>
                 </div>
