@@ -243,10 +243,10 @@ export interface TripCheckin {
     email: string | null;
     mobileNumber: string;
     source: string;
-    stop1?: Stop | null;
-    stop2?: Stop | null;
-    stop3?: Stop | null;
+    sourceLocation?: LocationCoordinates | null;
+    stops?: Stop[];
     destination: string;
+    destinationLocation?: LocationCoordinates | null;
     totalKm: number;
     stationConnectorCount: string;
     chargingStopsCount: number;
@@ -257,7 +257,7 @@ export interface TripCheckin {
     feedback?: string | null;
     navigation: "Yes" | "No";
     checkIn: "Yes" | "No";
-    tripStatus: "ENQUIRED" | "COMPLETED" | "SAVED" | "ONGOING" | "ONGOING_TEST";
+    tripStatus: "SAVED" | "ON_GOING" | "CANCELLED" | "COMPLETED" | "ENQUIRED" | "SUCCESSFULL" | "ON_GOING_TEST" | "UNSUCCESSFULL";
     tripCompletionStatus?: string | null;
     hasTripStory: "Yes" | "No";
     storyStatus?: string | null;
@@ -568,21 +568,37 @@ export async function getStationSubmissions(): Promise<StationSubmission[]> {
 }
 
 // Trip Check-ins
+// Trip Check-ins
 export async function getTripCheckinsPaginated(
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    status: string = "All",
+    story: string = "All"
 ): Promise<TripCheckinsResponse> {
     try {
-        const result = await fetchApi<TripCheckinsResponse>(`/trips?page=${page}&limit=${limit}`);
-        console.log(`✅ Fetched trips page ${page} from backend`);
+        const queryParams = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+        });
+
+        if (status && status !== "All") {
+            queryParams.append("status", status);
+        }
+
+        if (story && story !== "All") {
+            queryParams.append("story", story);
+        }
+
+        const result = await fetchApi<TripCheckinsResponse>(`/trips?${queryParams.toString()}`);
         return result;
     } catch (error) {
         console.warn("⚠️ Backend unavailable for trips, using fallback data");
+        // Note: Filter logic is not implemented in fallback simulation for now
         return simulatePagination(tripsData as TripCheckin[], page, limit);
     }
 }
 
-export async function updateTripStory(id: number, action: "Approved" | "Rejected", name: string): Promise<{ message: string }> {
+export async function updateTripStory(id: number, action: "Approved" | "Rejected", name: string, blogLink?: string): Promise<{ message: string }> {
     const endpoint = `/trips/story/${id}/`; // Trailing slash per backend snippet
     const baseUrl = getApiUrl(endpoint);
 
@@ -599,7 +615,7 @@ export async function updateTripStory(id: number, action: "Approved" | "Rejected
             "Content-Type": "application/json",
             ...(token ? { "Authorization": `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ action, name }),
+        body: JSON.stringify({ action, name, blogLink }),
     });
 
     if (!response.ok) {

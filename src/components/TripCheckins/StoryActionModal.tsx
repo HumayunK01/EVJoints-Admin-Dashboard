@@ -60,7 +60,7 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
     const handleApprove = async () => {
         setIsLoading(true);
         try {
-            await updateTripStory(trip.id, "Approved", currentUserName);
+            await updateTripStory(trip.id, "Approved", currentUserName, blogLink);
 
             // Update local state to reflect change immediately
             const updated: TripCheckin = {
@@ -88,7 +88,6 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
             const updated: TripCheckin = {
                 ...trip,
                 storyStatus: "Rejected",
-                blogLink: null,
                 approvalDate: new Date().toISOString(),
                 approvedBy: `[REJECTED_BY:${currentUserName}]`,
             };
@@ -144,6 +143,8 @@ export default function StoryActionModal({ isOpen, onClose, trip, onSave }: Stor
 
                         </div>
                     </div>
+
+
 
                     {/* Blog Link Input */}
                     <div>

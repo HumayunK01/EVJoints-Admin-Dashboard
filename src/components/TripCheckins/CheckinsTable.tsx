@@ -124,7 +124,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
         setExpandedRows(newExpanded);
     };
 
-    // Filter Logic (client-side filtering on current page data)
+    // Filter Logic (client-side filtering for search only, status/story handled by server)
     const filteredData = useMemo(() => {
         return data.filter(item => {
             const matchesSearch =
@@ -134,25 +134,22 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                 item.source.toLowerCase().includes(search.toLowerCase()) ||
                 item.destination.toLowerCase().includes(search.toLowerCase());
 
-            const matchesStatus = statusFilter === "All" || item.tripStatus === statusFilter;
-            const matchesStory = storyFilter === "All" ||
-                (storyFilter === "With Story" && item.hasTripStory === "Yes") ||
-                (storyFilter === "Without Story" && item.hasTripStory === "No");
-
-            return matchesSearch && matchesStatus && matchesStory;
+            // Status and Story filters are handled by the API (server-side)
+            return matchesSearch;
         });
-    }, [data, search, statusFilter, storyFilter]);
+    }, [data, search]);
 
     // Server-side pagination
     const totalPages = Math.ceil(totalRecords / rowsPerPage);
     const currentData = filteredData; // Display filtered data from current page
 
     // Helper to fetch data
-    const fetchData = async (page: number, limit: number, showLoading = true) => {
+    const fetchData = async (page: number, limit: number, status: string = statusFilter, story: string = storyFilter, showLoading = true) => {
         if (showLoading) setLoading(true);
         try {
             const { getTripCheckinsPaginated } = await import("@/lib/api");
-            const response = await getTripCheckinsPaginated(page, limit);
+            // Pass current filters to the API
+            const response = await getTripCheckinsPaginated(page, limit, status, story);
             setData(response.data);
             setTotalRecords(response.pagination.total);
             setCurrentPage(response.pagination.page);
@@ -172,30 +169,40 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             const noModalsOpen = !locationViewerOpen && !feedbackViewerOpen && !storyActionOpen;
 
             if (isDefaultFilters && noModalsOpen && !loading) {
-                fetchData(currentPage, rowsPerPage, false);
+                // Pass current state explicitly
+                fetchData(currentPage, rowsPerPage, statusFilter, storyFilter, false);
             }
         }, 3000);
 
         return () => clearInterval(interval);
     }, [currentPage, rowsPerPage, search, statusFilter, storyFilter, locationViewerOpen, feedbackViewerOpen, storyActionOpen, loading]);
 
+    // Initial Fetch & Filter Change Effect
+    // When filters or page/row counts change, fetch new data.
+    // Note: We debounce generic search, but filters usually trigger immediate fetch or via Apply button.
+    // Assuming filters align with state immediately.
+    useEffect(() => {
+        fetchData(currentPage, rowsPerPage, statusFilter, storyFilter);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPage, rowsPerPage, statusFilter, storyFilter]); // Re-fetch when any of these change
+
     // Pagination Handlers
     const handleNextPage = async () => {
         if (currentPage < totalPages && !loading) {
-            await fetchData(currentPage + 1, rowsPerPage);
+            await fetchData(currentPage + 1, rowsPerPage, statusFilter, storyFilter);
         }
     };
 
     const handlePrevPage = async () => {
         if (currentPage > 1 && !loading) {
-            await fetchData(currentPage - 1, rowsPerPage);
+            await fetchData(currentPage - 1, rowsPerPage, statusFilter, storyFilter);
         }
     };
 
     const handleRowsPerPageChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newLimit = Number(e.target.value);
         setRowsPerPage(newLimit); // Update state first
-        await fetchData(1, newLimit);
+        await fetchData(1, newLimit, statusFilter, storyFilter);
     };
 
     // Handlers
@@ -290,13 +297,9 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             header: "Source",
             minWidth: "250px",
             render: (item) => {
-                const stops = [
-                    item.stop1 && { ...item.stop1, name: "Stop 1" },
-                    item.stop2 && { ...item.stop2, name: "Stop 2" },
-                    item.stop3 && { ...item.stop3, name: "Stop 3" }
-                ].filter(Boolean);
+                const stopsCount = item.stops?.length || 0;
 
-                const hasStops = stops.length > 0;
+                const hasStops = stopsCount > 0;
                 const isExpanded = expandedRows.has(item.id);
 
                 return (
@@ -311,7 +314,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                                     toggleRow(item.id);
                                 }}
                                 className={`h-5 w-5 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isExpanded ? "bg-gray-100 dark:bg-gray-700 text-primary" : "text-gray-500"}`}
-                                title={`${stops.length} stops`}
+                                title={`${stopsCount} stops`}
                             >
                                 <ChevronDown className={`h-3 w-3 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                             </button>
@@ -339,9 +342,10 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             minWidth: "150px",
             align: "center",
             render: (item) => {
-                const match = item.stationConnectorCount.match(/(\d+)\s*stations?,\s*(\d+)\s*connectors?/i);
-                const stationCount = match ? match[1] : 0;
-                const connectorCount = match ? match[2] : 0;
+                const text = item.stationConnectorCount || "";
+                const match = text.match(/(\d+)\s*stations?,\s*(\d+)\s*connectors?/i);
+                const stationCount = match ? match[1] : "0";
+                const connectorCount = match ? match[2] : "0";
 
                 return (
                     <div className="flex items-center justify-center gap-4">
@@ -410,19 +414,25 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             minWidth: "120px",
             render: (item) => {
                 const statusStyles: Record<string, string> = {
-                    ENQUIRED: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-                    COMPLETED: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+                    ENQUIRED: "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900/30 dark:text-fuchsia-400",
+                    COMPLETED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
                     SAVED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-                    ONGOING: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-                    ONGOING_TEST: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+                    ON_GOING: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+                    ON_GOING_TEST: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+                    CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+                    SUCCESSFULL: "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400",
+                    UNSUCCESSFULL: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400",
                 };
 
                 const statusLabels: Record<string, string> = {
                     ENQUIRED: "Enquired",
                     COMPLETED: "Completed",
                     SAVED: "Saved",
-                    ONGOING: "Ongoing",
-                    ONGOING_TEST: "Ongoing Test",
+                    ON_GOING: "Ongoing",
+                    ON_GOING_TEST: "Ongoing Test",
+                    CANCELLED: "Cancelled",
+                    SUCCESSFULL: "Successful",
+                    UNSUCCESSFULL: "Unsuccessful",
                 };
 
                 return (
@@ -437,7 +447,9 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             minWidth: "180px",
             render: (item) => item.tripCompletionStatus ? (
                 <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap
-                        ${item.tripCompletionStatus === 'Successful' ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"}`}>
+                        ${item.tripCompletionStatus === 'Successful' ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" :
+                        item.tripCompletionStatus === 'Pending' ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                            "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"}`}>
                     {item.tripCompletionStatus}
                 </span>
             ) : <span className="text-sm text-gray-400">-</span>
@@ -448,17 +460,9 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
             render: (item) => (
                 <div className="flex items-center gap-2">
                     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap
-                            ${item.hasTripStory === 'Yes' ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400" : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`}>
+                            ${item.hasTripStory === 'Yes' ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"}`}>
                         {item.hasTripStory}
                     </span>
-                    {item.hasTripStory === "Yes" && item.storyStatus && (
-                        <span className={`text-xs font-medium whitespace-nowrap
-                                ${item.storyStatus === 'Approved' ? "text-green-600" :
-                                item.storyStatus === 'Rejected' ? "text-red-600" :
-                                    "text-yellow-600"}`}>
-                            ({item.storyStatus})
-                        </span>
-                    )}
                 </div>
             )
         },
@@ -548,9 +552,12 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                             <option value="All">All Status</option>
                             <option value="ENQUIRED">Enquired</option>
                             <option value="SAVED">Saved</option>
-                            <option value="ONGOING">Ongoing</option>
-                            <option value="ONGOING_TEST">Ongoing Test</option>
+                            <option value="ON_GOING">Ongoing</option>
+                            <option value="ON_GOING_TEST">Ongoing Test</option>
                             <option value="COMPLETED">Completed</option>
+                            <option value="CANCELLED">Cancelled</option>
+                            <option value="SUCCESSFULL">Successful</option>
+                            <option value="UNSUCCESSFULL">Unsuccessful</option>
                         </select>
                         <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
                     </div>
@@ -619,11 +626,7 @@ export default function CheckinsTable({ initialData, initialPagination }: Checki
                                                 <div className="p-4 dark:border-dark-3">
                                                     <div className="flex flex-col gap-3">
                                                         <div className="flex flex-col gap-2">
-                                                            {[
-                                                                item.stop1 && { ...item.stop1, name: "Stop 1" },
-                                                                item.stop2 && { ...item.stop2, name: "Stop 2" },
-                                                                item.stop3 && { ...item.stop3, name: "Stop 3" }
-                                                            ].filter(Boolean).map((stop: any, idx) => (
+                                                            {(item.stops || []).map((s, i) => ({ ...s, name: `Stop ${i + 1}` })).map((stop: any, idx) => (
                                                                 <div key={idx} className="flex items-center gap-1 text-sm">
                                                                     <span className="font-semibold text-primary w-14">{stop.name}</span>
                                                                     <span className="text-dark dark:text-white text-gray-600">{stop.address}</span>
