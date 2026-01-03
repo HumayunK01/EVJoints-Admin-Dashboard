@@ -462,7 +462,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                                                         )}
                                                     />
                                                     {field.label === "Other Network Name" &&
-                                                        inactiveNetworks.some(n => n.name === formData.networkName) && (
+                                                        formData.networkName && (
                                                             <button
                                                                 onClick={() => handleDeleteNetwork(formData.networkName!)}
                                                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-700 p-1"
