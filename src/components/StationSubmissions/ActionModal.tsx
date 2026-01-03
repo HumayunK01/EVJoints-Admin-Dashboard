@@ -3,7 +3,9 @@ import { StationSubmission, Connector, Network, ChargerType } from "@/lib/api";
 import { X, CheckCircle, Trash2, AlertTriangle } from "lucide-react";
 import { NETWORK_NAMES } from "@/data/networks";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
+
+
 
 interface ModalFieldConfig {
     label: string;
@@ -346,7 +348,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                             Edit Station Details
                         </h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Submitted on {new Date(station.submissionDate).toLocaleDateString()} at {new Date(station.submissionDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            Submitted on {new Date(station.submissionDate).toLocaleDateString("en-GB")} at {new Date(station.submissionDate).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true })}
                         </p>
                     </div>
                     <button
