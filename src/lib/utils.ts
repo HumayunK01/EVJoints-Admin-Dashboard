@@ -33,6 +33,13 @@ export function formatTime(date: string | Date | null | undefined): string {
   return new Date(date).toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
-    hour12: true,
   });
+}
+
+export function resolveImageUrl(photo: string): string {
+  if (!photo) return "";
+  if (photo.startsWith('http')) return photo;
+  if (photo.startsWith('IMAGE/')) return `https://devapi.evjoints.com/${photo}`;
+  if (photo.includes('api/attachment/')) return `https://devapi.evjoints.com/${photo.replace('api/', '')}`;
+  return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/${photo}`;
 }

@@ -110,6 +110,71 @@ const formatOperationalHours = (range: string | null | undefined) => {
 // PHOTO VIEWER COMPONENT
 // ============================================================================
 
+import { resolveImageUrl } from "@/lib/utils";
+
+// Internal component to handle authenticated image fetching
+function AuthenticatedImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+    const [imageSrc, setImageSrc] = React.useState<string | null>(null);
+    const [error, setError] = React.useState(false);
+
+    React.useEffect(() => {
+        let active = true;
+        const loadImage = async () => {
+            if (!src) return;
+
+            // If it's not our API or doesn't need auth, just set it
+            if (!src.includes('devapi.evjoints.com') && !src.includes('api/attachment')) {
+                setImageSrc(src);
+                return;
+            }
+
+            try {
+                // Get token
+                let token = "";
+                if (typeof document !== "undefined") {
+                    const match = document.cookie.match(new RegExp('(^| )auth_token=([^;]+)'));
+                    if (match) token = match[2];
+                }
+
+                const headers: HeadersInit = {};
+                if (token) headers["Authorization"] = `Bearer ${token}`;
+
+                const res = await fetch(src, { headers });
+                if (!res.ok) throw new Error('Failed to load');
+
+                const blob = await res.blob();
+                if (active) setImageSrc(URL.createObjectURL(blob));
+            } catch (err) {
+                if (active) setError(true);
+            }
+        };
+        loadImage();
+        return () => { active = false; };
+    }, [src]);
+
+    if (error) {
+        return (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center bg-gray-100 dark:bg-dark-2">
+                <ImageOff className="h-8 w-8 text-gray-400 mb-2" />
+                <span className="text-xs text-gray-500">Failed to load</span>
+            </div>
+        );
+    }
+
+    if (!imageSrc) {
+        return <div className="h-full w-full bg-gray-100 dark:bg-dark-2 animate-pulse" />;
+    }
+
+    return (
+        <img
+            src={imageSrc}
+            alt={alt}
+            className={className}
+            onError={() => setError(true)}
+        />
+    );
+}
+
 interface PhotoViewerProps {
     photos: string[];
     stationName: string;
@@ -132,29 +197,18 @@ function PhotoViewer({ photos, stationName, onClose }: PhotoViewerProps) {
                     </button>
                 </div>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                    {photos.map((photo, idx) => (
-                        <div key={idx} className="aspect-video rounded-lg bg-gray-100 dark:bg-dark-2 overflow-hidden relative group">
-                            {photo.match(/\.(jpg|jpeg|png|gif|webp)$/i) || photo.startsWith('http') || photo.includes('IMAGE/') ? (
-                                <img
-                                    src={
-                                        photo.startsWith('http') ? photo :
-                                            photo.startsWith('IMAGE/') ? `https://devapi.evjoints.com/${photo}` :
-                                                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/${photo}`
-                                    }
+                    {photos.map((photo, idx) => {
+                        const fullUrl = resolveImageUrl(photo);
+                        return (
+                            <div key={idx} className="aspect-video rounded-lg bg-gray-100 dark:bg-dark-2 overflow-hidden relative group">
+                                <AuthenticatedImage
+                                    src={fullUrl}
                                     alt={`Station photo ${idx + 1}`}
                                     className="h-full w-full object-cover"
-                                    onError={(e) => {
-                                        (e.target as HTMLImageElement).style.display = 'none';
-                                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                                    }}
                                 />
-                            ) : null}
-                            <div className={`absolute inset-0 flex flex-col items-center justify-center p-2 text-center bg-gray-100 dark:bg-dark-2 ${photo.match(/\.(jpg|jpeg|png|gif|webp)$/i) || photo.startsWith('http') || photo.includes('IMAGE/') ? 'hidden' : ''}`}>
-                                <ImageOff className="h-8 w-8 text-gray-400 mb-2" />
-                                <span className="text-xs text-gray-500">Image not available</span>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>

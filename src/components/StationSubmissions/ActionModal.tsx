@@ -1,11 +1,83 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { StationSubmission, Connector, Network, ChargerType } from "@/lib/api";
-import { X, CheckCircle, Trash2, AlertTriangle } from "lucide-react";
+import { X, CheckCircle, Trash2, AlertTriangle, ImageOff } from "lucide-react";
 import { NETWORK_NAMES } from "@/data/networks";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { cn, formatDateTime } from "@/lib/utils";
+import { cn, formatDateTime, resolveImageUrl } from "@/lib/utils";
 
 
+
+
+// Internal component to handle authenticated image fetching
+function AuthenticatedImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+    const [imageSrc, setImageSrc] = useState<string | null>(null);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        let active = true;
+        const loadImage = async () => {
+            if (!src) return;
+
+            // If it's not our API or doesn't need auth, just set it
+            if (!src.includes('devapi.evjoints.com') && !src.includes('api/attachment')) {
+                setImageSrc(src);
+                return;
+            }
+
+            try {
+                let token = "";
+                if (typeof document !== "undefined") {
+                    const match = document.cookie.match(new RegExp('(^| )auth_token=([^;]+)'));
+                    if (match) token = match[2];
+                }
+
+                const headers: HeadersInit = {};
+                if (token) headers["Authorization"] = `Bearer ${token}`;
+
+                const res = await fetch(src, { headers });
+                if (!res.ok) throw new Error('Failed to load');
+
+                const blob = await res.blob();
+                if (active) setImageSrc(URL.createObjectURL(blob));
+            } catch (err) {
+                if (active) setError(true);
+            }
+        };
+        loadImage();
+        return () => { active = false; };
+    }, [src]);
+
+    if (error) {
+        return (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center bg-gray-100 dark:bg-dark-2 pointer-events-none">
+                <ImageOff className="h-6 w-6 text-gray-400 mb-1" />
+                <span className="text-[10px] text-gray-500">Failed</span>
+            </div>
+        );
+    }
+
+    if (!imageSrc) {
+        return <div className="h-full w-full bg-gray-100 dark:bg-dark-2 animate-pulse rounded-lg" />;
+    }
+
+    return (
+        <React.Fragment>
+            <a
+                href={imageSrc}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block h-full w-full"
+            >
+                <img
+                    src={imageSrc}
+                    alt={alt}
+                    className={className}
+                    onError={() => setError(true)}
+                />
+            </a>
+        </React.Fragment>
+    );
+}
 
 interface ModalFieldConfig {
     label: string;
@@ -571,6 +643,32 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                             </button>
                         </div>
                     </div>
+
+
+
+
+                    {/* Station Photos Section */}
+                    {station.photos && station.photos.length > 0 && (
+                        <div className="pt-6 border-t border-stroke dark:border-dark-3 mb-6">
+                            <h4 className="mb-3 text-sm font-semibold text-dark dark:text-white uppercase tracking-wide">
+                                Station Photos
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                                {station.photos.map((photo, idx) => {
+                                    const fullUrl = resolveImageUrl(photo);
+                                    return (
+                                        <div key={idx} className="aspect-video rounded-lg bg-gray-100 dark:bg-dark-2 overflow-hidden relative group">
+                                            <AuthenticatedImage
+                                                src={fullUrl}
+                                                alt={`Station photo ${idx + 1}`}
+                                                className="h-full w-full object-cover transition-transform hover:scale-105"
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-stroke dark:border-dark-3 pb-6 sm:pb-0">
