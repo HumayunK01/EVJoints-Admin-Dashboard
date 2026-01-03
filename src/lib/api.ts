@@ -661,11 +661,35 @@ export async function updateStation(
         let close_time = "23:59:00";
         const opHrs = data.operationalHours || "";
 
-        if (opHrs && opHrs !== "-" && opHrs.includes("-")) {
-            const parts = opHrs.split("-").map(s => s.trim());
+        // Manual time parser to avoid Date issues and safeguard against locale/browser inconsistencies
+        const parseTime = (timeStr: string): string | null => {
+            if (!timeStr) return null;
+            // Matches: 9, 09, 9:30, 09:30, 9 AM, 9:30 PM, etc.
+            const match = timeStr.trim().match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)?/i);
+            if (!match) return null;
+
+            let [_, h, m, mer] = match;
+            let hour = parseInt(h, 10);
+            let minute = m ? parseInt(m, 10) : 0;
+
+            if (mer) {
+                mer = mer.toUpperCase();
+                if (mer === "PM" && hour < 12) hour += 12;
+                if (mer === "AM" && hour === 12) hour = 0;
+            }
+
+            return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:00`;
+        };
+
+        if (opHrs && opHrs.length > 3) {
+            // Split by hyphen, en-dash, or em-dash
+            const parts = opHrs.split(/[-–—]/).map(s => s.trim());
             if (parts.length === 2) {
-                open_time = parts[0];
-                close_time = parts[1];
+                const start = parseTime(parts[0]);
+                const end = parseTime(parts[1]);
+                if (start) open_time = start;
+                if (end) close_time = end;
+                console.log(`[updateStation] Parsed: "${opHrs}" -> ${open_time} - ${close_time}`);
             }
         }
 
@@ -693,6 +717,8 @@ export async function updateStation(
 
     const url = `${SECONDARY_API_URL}/stations/${id}`;
 
+    console.log(`[updateStation] Sending PUT to ${url}`, payload);
+
     const response = await fetch(url, {
         method: "PUT",
         headers: {
@@ -702,7 +728,9 @@ export async function updateStation(
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to ${action} station: ${response.status} ${response.statusText}`);
+        const errText = await response.text();
+        console.error(`[updateStation] Backend Error: ${response.status} ${errText}`);
+        throw new Error(`Failed to ${action} station: ${response.status} ${response.statusText} - ${errText}`);
     }
 
     return response.json();
