@@ -33,6 +33,7 @@ export function formatTime(date: string | Date | null | undefined): string {
   return new Date(date).toLocaleTimeString("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: true,
   });
 }
 
