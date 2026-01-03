@@ -30,7 +30,7 @@ import { FilterDropdown } from "@/components/ui/filter-dropdown";
 
 import { NETWORK_NAMES } from "@/data/networks";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatTime } from "@/lib/utils";
 
 interface ColumnConfig {
     header: string;
@@ -50,8 +50,6 @@ interface StationSubmissionsTableProps {
         limit: number;
     };
 }
-
-
 
 // --- Dynamic Configuration Constants ---
 
@@ -81,10 +79,8 @@ const FILTER_CONFIG: FilterConfigItem[] = [
 // HELPER FUNCTIONS
 // ============================================================================
 
-const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('en-GB');
-const formatTime = (dateString: string) => new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-const formatOptionalDate = (dateString: string | null | undefined) => dateString ? formatDate(dateString) : "-";
-const formatOptionalTime = (dateString: string | null | undefined) => dateString ? formatTime(dateString) : "-";
+// Removed local date/time helpers in favor of @/lib/utils
+
 
 const formatTo12Hour = (timeStr: string) => {
     const [hours, minutes] = timeStr.split(':').map(Number);

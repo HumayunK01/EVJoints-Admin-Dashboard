@@ -27,3 +27,12 @@ export function formatDateTime(date: string | Date | null | undefined): string {
     hour12: true,
   })}`;
 }
+
+export function formatTime(date: string | Date | null | undefined): string {
+  if (!date) return "-";
+  return new Date(date).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
