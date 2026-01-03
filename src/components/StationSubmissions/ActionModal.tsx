@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { StationSubmission, Connector, Network, ChargerType } from "@/lib/api";
 import { X, CheckCircle, Trash2, AlertTriangle } from "lucide-react";
 import { NETWORK_NAMES } from "@/data/networks";
@@ -52,6 +52,8 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     const [allNetworks, setAllNetworks] = useState<Network[]>([]);
     const [chargerTypes, setChargerTypes] = useState<ChargerType[]>([]);
     const [networkToDelete, setNetworkToDelete] = useState<{ id: number; name: string } | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const modalContentRef = useRef<HTMLDivElement>(null);
 
     const fetchNetworks = useCallback(async () => {
         try {
@@ -88,7 +90,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     }, [showSuccess]);
 
     useEffect(() => {
-        if (station) {
+        if (station && isOpen) {
             // Attempt to resolve network ID/Status because API response often lacks them
             let resolvedId = station.networkId;
             let resolvedStatus = (station as any).networkStatus ?? 0;
@@ -118,7 +120,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                 powerRating: c.powerRating ? String(c.powerRating).replace(/[^\d.]/g, "") : ""
             })));
         }
-    }, [station, allNetworks]);
+    }, [station, allNetworks, isOpen]);
 
     const handleConnectorChange = (index: number, field: keyof Connector, value: string) => {
         const updated = [...connectors];
@@ -163,7 +165,9 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
         setConnectors(updated);
     };
 
+    // Clear error when form changes
     const handleInputChange = (key: keyof StationSubmission, value: string) => {
+        if (error) setError(null);
         setFormData(prev => {
             const updates: Partial<StationSubmission> = { [key]: key === 'latitude' || key === 'longitude' ? parseFloat(value) : value };
 
@@ -182,9 +186,6 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                         // New/Renamed Custom Network -> Always Inactive (0)
                         updates.networkStatus = 0;
                     }
-                    // If name is new/custom (not found), we preserve the existing networkId.
-                    // This allows renaming an existing Inactive network (e.g. fixing typo) without losing the ID.
-                    // Note: If we previously cleared ID (via "Others"), it stays cleared (New Network).
                 }
             }
 
@@ -194,8 +195,6 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
             };
         });
     };
-
-
 
     const handleDeleteNetwork = async (name: string) => {
         if (!name) return;
@@ -254,7 +253,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
 
         const fields: ModalFieldConfig[] = [
             { label: "Station Name", key: "stationName", type: "text", required: true, placeholder: "Enter station name", section: "Station Information" },
-            { label: "Stations ID", key: "stationNumber", type: "text", readOnly: true, section: "Station Information" },
+            { label: "Stations ID", key: "stationNumber", type: "text", required: true, readOnly: true, section: "Station Information" },
             {
                 label: "Network Name",
                 key: "networkName",
@@ -284,7 +283,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
 
         fields.push(
             { label: "Station Type", key: "stationType", type: "text", placeholder: "e.g., Mall, Highway, Residential", section: "Station Information" },
-            { label: "Added By", key: "addedByType", type: "select", options: ["EV Owner", "Station Owner", "CPO"], section: "Station Information" },
+            { label: "Added By", key: "addedByType", type: "select", required: true, options: ["EV Owner", "Station Owner", "CPO"], section: "Station Information" },
             { label: "Usage Type", key: "usageType", type: "select", required: true, options: ["Public", "Private"], section: "Station Information" },
             { label: "Operational Hours", key: "operationalHours", type: "text", placeholder: "e.g., 24/7 or 9 AM - 6 PM", section: "Station Information" },
             { label: "Latitude", key: "latitude", type: "number", required: true, placeholder: "e.g., 28.556", section: "Location & Contact" },
@@ -296,8 +295,42 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     }, [networkOptions, inactiveNetworks, formData.networkName]);
 
 
+    const validateForm = () => {
+        const requiredFields = [
+            'stationName',
+            'networkName',
+            'addedByType',
+            'usageType',
+            'latitude',
+            'longitude',
+            'contactNumber'
+        ];
+
+        for (const field of requiredFields) {
+            const val = formData[field as keyof StationSubmission];
+            if (val === undefined || val === null || val === '') {
+                const readableField = field.replace(/([A-Z])/g, ' $1').trim();
+                return `Please fill in the required field: ${readableField.charAt(0).toUpperCase() + readableField.slice(1)}`;
+            }
+        }
+        return null;
+    };
+
     const handleSave = (newStatus?: 'Approved' | 'Rejected', reason?: string) => {
         if (!station || !formData) return;
+
+        // Perform validation before saving
+        const validationError = validateForm();
+        if (validationError) {
+            setError(validationError);
+            // Scroll to top to make error visible
+            if (modalContentRef.current) {
+                modalContentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            // Auto hide error after 3 seconds
+            setTimeout(() => setError(null), 3000);
+            return;
+        }
 
         const updated: StationSubmission = {
             ...station, // Keep ID, dates, etc.
@@ -341,14 +374,17 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
 
     return (
         <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm px-4 pb-4 sm:pb-0">
-            <div className="relative w-full max-w-3xl h-[85vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto rounded-xl bg-white px-6 dark:bg-gray-dark shadow-2xl animate-in slide-in-from-bottom-5 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300">
+            <div
+                ref={modalContentRef}
+                className="relative w-full max-w-3xl h-[85vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto rounded-xl bg-white px-6 dark:bg-gray-dark shadow-2xl animate-in slide-in-from-bottom-5 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300"
+            >
                 <div className="mb-6 flex items-center justify-between sticky top-0 z-10 bg-white dark:bg-gray-dark -mx-6 px-6 pt-6 pb-4 border-b border-stroke dark:border-dark-3">
                     <div>
                         <h3 className="text-xl font-bold text-dark dark:text-white">
                             Edit Station Details
                         </h3>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Submitted on {new Date(station.submissionDate).toLocaleDateString("en-GB")} at {new Date(station.submissionDate).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                            Submitted on {formatDateTime(station.submissionDate)}
                         </p>
                     </div>
                     <button
@@ -358,6 +394,15 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                         <X className="h-6 w-6" />
                     </button>
                 </div>
+
+                {error && (
+                    <div className="mb-4 -mx-6 px-6">
+                        <div className="flex items-center gap-3 rounded-lg bg-red-50 p-4 text-red-600 dark:bg-red-900/10 dark:text-red-400">
+                            <AlertTriangle className="h-5 w-5 shrink-0" />
+                            <p className="text-sm font-medium">{error}</p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="space-y-6 pb-6">
                     {/* Dynamic Station Fields */}
