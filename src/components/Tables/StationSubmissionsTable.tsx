@@ -21,7 +21,8 @@ import {
     Check,
     X,
     Pencil,
-    Download
+    Download,
+    ImageOff
 } from "lucide-react";
 import { DateRangeFilter } from "@/components/Tables/DateRangeFilter";
 import ActionModal from "@/components/StationSubmissions/ActionModal";
@@ -132,8 +133,26 @@ function PhotoViewer({ photos, stationName, onClose }: PhotoViewerProps) {
                 </div>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
                     {photos.map((photo, idx) => (
-                        <div key={idx} className="aspect-video rounded-lg bg-gray-100 dark:bg-dark-2 flex items-center justify-center">
-                            <p className="text-sm text-gray-500">{photo}</p>
+                        <div key={idx} className="aspect-video rounded-lg bg-gray-100 dark:bg-dark-2 overflow-hidden relative group">
+                            {photo.match(/\.(jpg|jpeg|png|gif|webp)$/i) || photo.startsWith('http') || photo.includes('IMAGE/') ? (
+                                <img
+                                    src={
+                                        photo.startsWith('http') ? photo :
+                                            photo.startsWith('IMAGE/') ? `https://devapi.evjoints.com/${photo}` :
+                                                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/${photo}`
+                                    }
+                                    alt={`Station photo ${idx + 1}`}
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                />
+                            ) : null}
+                            <div className={`absolute inset-0 flex flex-col items-center justify-center p-2 text-center bg-gray-100 dark:bg-dark-2 ${photo.match(/\.(jpg|jpeg|png|gif|webp)$/i) || photo.startsWith('http') || photo.includes('IMAGE/') ? 'hidden' : ''}`}>
+                                <ImageOff className="h-8 w-8 text-gray-400 mb-2" />
+                                <span className="text-xs text-gray-500">Image not available</span>
+                            </div>
                         </div>
                     ))}
                 </div>
