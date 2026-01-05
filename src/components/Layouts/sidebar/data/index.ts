@@ -1,4 +1,4 @@
-import { LayoutGrid, User, PieChart, FileText, Calendar } from "lucide-react";
+import { LayoutGrid, User, PieChart, FileText, Calendar, Zap } from "lucide-react";
 
 export const NAV_DATA = [
   {
@@ -19,6 +19,11 @@ export const NAV_DATA = [
         title: "Master",
         icon: PieChart,
         items: [
+          {
+            title: "Charging Stations",
+            url: "/charging-stations",
+            icon: Zap,
+          },
           {
             title: "Station addition",
             url: "/station-submissions",

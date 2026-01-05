@@ -215,6 +215,7 @@ export interface StationSubmission {
     // Location
     latitude: number;
     longitude: number;
+    address?: string;
 
     // Contact
     contactNumber: string | null;
@@ -235,10 +236,31 @@ export interface StationSubmission {
     // Optional backend additions
     statusReason?: string;
     reason?: string;
+    approvedBy?: string | null;
 }
 
 export interface StationSubmissionsResponse {
     data: StationSubmission[];
+    pagination: PaginationInfo;
+}
+
+// Charging Stations (Approved/All)
+export interface ChargingStation extends StationSubmission {
+    // Extends StationSubmission as they share most fields
+    // Add specific fields if any
+    region?: string;
+    state?: string;
+    city?: string;
+    pinCode?: string;
+    address?: string;
+    rating?: number;
+    totalReviews?: number;
+    amenities?: string[];
+    ownerName?: string;
+}
+
+export interface ChargingStationsResponse {
+    data: ChargingStation[];
     pagination: PaginationInfo;
 }
 
@@ -604,6 +626,49 @@ export async function downloadChargingStations(
 // Networks
 
 
+// Charging Stations
+export async function getChargingStationsPaginated(
+    page: number = 1,
+    limit: number = 10,
+    filters: {
+        status?: string;
+        usageType?: string;
+        networkId?: string;
+        search?: string;
+        stationType?: string;
+        connectorType?: string;
+        state?: string;
+        city?: string;
+    } = {}
+): Promise<ChargingStationsResponse> {
+    try {
+        const queryParams = new URLSearchParams({
+            page: page.toString(),
+            limit: limit.toString(),
+        });
+
+        if (filters.status && filters.status !== "All") queryParams.append("status", filters.status);
+        if (filters.usageType && filters.usageType !== "All") queryParams.append("usageType", filters.usageType);
+        if (filters.networkId && filters.networkId !== "All") queryParams.append("networkId", filters.networkId);
+        if (filters.search) queryParams.append("search", filters.search);
+        if (filters.stationType && filters.stationType !== "All") queryParams.append("stationType", filters.stationType);
+        if (filters.connectorType && filters.connectorType !== "All") queryParams.append("connectorType", filters.connectorType);
+        if (filters.state) queryParams.append("state", filters.state);
+        if (filters.city) queryParams.append("city", filters.city);
+
+        const result = await fetchApi<ChargingStationsResponse>(`/charging-stations?${queryParams.toString()}`);
+        console.log(`✅ Fetched charging stations page ${page} from backend`);
+        return result;
+    } catch (error) {
+        console.warn("⚠️ Backend unavailable for charging stations, returning empty");
+        return {
+            data: [],
+            pagination: { total: 0, page, limit }
+        };
+    }
+}
+
+
 // Station Submissions
 export async function getStationSubmissionsPaginated(
     page: number = 1,
@@ -736,6 +801,38 @@ export async function updateStation(
     return response.json();
 }
 
+export async function createStation(data: any): Promise<{ message: string; stationId: number }> {
+    const response = await postApi<{ message: string; stationId: number }>("/charging-stations", data);
+    return response;
+}
+
+export async function massUploadStations(file: File): Promise<{ message: string; summary: any; failedRows: any[] }> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const fullUrl = `${SECONDARY_API_URL}/charging-stations/mass-upload`;
+    console.log(`[API] Uploading file to: ${fullUrl}`);
+
+    const response = await fetch(fullUrl, {
+        method: "POST",
+        body: formData, // fetch automatically sets Content-Type to multipart/form-data
+    });
+
+    if (!response.ok) {
+        let errorMsg = `Upload failed with status ${response.status}`;
+        try {
+            const errorData = await response.json();
+            errorMsg = errorData.message || errorMsg;
+        } catch (e) {
+            // ignore JSON parse error
+        }
+        throw new Error(errorMsg);
+    }
+
+    return response.json();
+}
+
+
 export async function updateStationStatus(
     id: number,
     status: "Approved" | "Rejected",
@@ -860,14 +957,8 @@ export async function getChargerTypes(): Promise<ChargerType[]> {
     try {
         return await fetchApi<ChargerType[]>("/stations/charger-types");
     } catch (error) {
-        console.warn("Using static charger types fallback");
-        return [
-            { id: 1, name: "CCS2", type: "DC", defaultPower: "60" },
-            { id: 2, name: "Type 2", type: "AC", defaultPower: "22" },
-            { id: 3, name: "CHAdeMO", type: "DC", defaultPower: "50" },
-            { id: 4, name: "Bharat AC001", type: "AC", defaultPower: "3.3" },
-            { id: 5, name: "Bharat DC001", type: "DC", defaultPower: "15" }
-        ];
+        console.error("Failed to fetch charger types:", error);
+        return [];
     }
 }
 
@@ -875,14 +966,9 @@ export async function getNetworks(): Promise<NetworksResponse> {
     try {
         return await fetchApi<NetworksResponse>("/networks");
     } catch (error) {
-        console.warn("Using fallback networks data");
+        console.error("Failed to fetch networks:", error);
         return {
-            active: [
-                { id: 1, name: "Tata Power", status: 1 },
-                { id: 2, name: "Jio-bp", status: 1 },
-                { id: 3, name: "Zeon Charging", status: 1 },
-                { id: 4, name: "Statiq", status: 1 }
-            ],
+            active: [],
             inactive: []
         };
     }

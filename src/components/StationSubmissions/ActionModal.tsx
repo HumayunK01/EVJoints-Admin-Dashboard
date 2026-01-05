@@ -1,9 +1,17 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { StationSubmission, Connector, Network, ChargerType } from "@/lib/api";
-import { X, CheckCircle, Trash2, AlertTriangle, ImageOff } from "lucide-react";
+"use client";
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { X, Save, AlertCircle, CheckCircle, Plus, Trash2, Maximize2, Image as ImageIcon, ImageOff, Upload, AlertTriangle, Download } from "lucide-react";
+import { StationSubmission, Connector, Network, ChargerType, massUploadStations } from "@/lib/api";
 import { NETWORK_NAMES } from "@/data/networks";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn, formatDateTime, resolveImageUrl } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const LocationPicker = dynamic(() => import("@/components/ui/LocationPicker"), {
+    ssr: false,
+    loading: () => <div className="h-[300px] w-full bg-gray-100 dark:bg-dark-2 animate-pulse rounded-lg mb-4" />
+});
 
 
 
@@ -32,7 +40,9 @@ function AuthenticatedImage({ src, alt, className }: { src: string; alt: string;
                 }
 
                 const headers: HeadersInit = {};
-                if (token) headers["Authorization"] = `Bearer ${token}`;
+                if (token) {
+                    headers["Authorization"] = "Bearer " + token;
+                }
 
                 const res = await fetch(src, { headers });
                 if (!res.ok) throw new Error('Failed to load');
@@ -126,6 +136,44 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     const [networkToDelete, setNetworkToDelete] = useState<{ id: number; name: string } | null>(null);
     const [error, setError] = useState<string | null>(null);
     const modalContentRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const result = await massUploadStations(file);
+            let message = result.message;
+            if (result.summary) {
+                message += "\nSuccess: " + result.summary.successful + "\nFailed: " + result.summary.failed;
+            }
+            if (result.failedRows && result.failedRows.length > 0) {
+                message += "\n\nCheck console for details on failed rows.";
+                console.warn("[Mass Upload] Failed Rows:", result.failedRows);
+            }
+            alert(message);
+
+            // Close modal after successful upload to refresh table
+            if (result.summary && result.summary.successful > 0) {
+                onClose();
+                // We should ideally trigger refresh here, but onClose will just close modal. 
+                // The parent component handles table state. We might need a callback to force refresh.
+                // For now, user can manually refresh or we rely on parent to detect closure?
+                // Actually onSave usually triggers refresh.
+                // We can call onSave with a dummy object to force refresh?
+                // Or just assume user refreshes. 
+                // Let's call onSave to trigger refresh if we can, but onSave expects a station.
+                // We'll just alert and close for now.
+            }
+
+        } catch (error: any) {
+            console.error("Upload failed:", error);
+            alert(`Upload failed: ${error.message} `);
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
 
     const fetchNetworks = useCallback(async () => {
         try {
@@ -150,6 +198,24 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
         }
     }, []);
 
+    const handleLocationSelect = useCallback((lat: number, lng: number, address?: string) => {
+        setFormData(prev => {
+            const updates: Partial<StationSubmission> = {
+                ...prev,
+                latitude: parseFloat(lat.toFixed(6)),
+                longitude: parseFloat(lng.toFixed(6))
+            };
+
+            // Only update address if a valid string is returned
+            if (address) {
+                updates.address = address;
+            }
+
+            return updates;
+        });
+        if (error) setError(null);
+    }, [error]);
+
     useEffect(() => {
         fetchNetworks();
     }, [fetchNetworks]);
@@ -173,7 +239,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                 if (found) {
                     resolvedId = found.id;
                     resolvedStatus = found.status;
-                    console.log(`[Frontend] Resolved Network "${station.networkName}" -> ID: ${resolvedId}, Status: ${resolvedStatus}`);
+                    console.log(`[Frontend] Resolved Network "${station.networkName}" -> ID: ${resolvedId}, Status: ${resolvedStatus} `);
                 } else {
                     console.warn(`[Frontend] Could not find network "${station.networkName}" in list of ${allNetworks.length} networks`);
                 }
@@ -220,7 +286,12 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
     };
 
     const handleAddConnector = () => {
-        const defaultType = chargerTypes.length > 0 ? chargerTypes[0] : { id: 1, name: "CCS2", type: "DC", defaultPower: "60" };
+        if (chargerTypes.length === 0) {
+            alert("Unable to add connector: No charger types available. Please try again later.");
+            return;
+        }
+
+        const defaultType = chargerTypes[0];
 
         setConnectors([...connectors, {
             name: defaultType.name,
@@ -358,8 +429,10 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
             { label: "Added By", key: "addedByType", type: "select", required: true, options: ["EV Owner", "Station Owner", "CPO"], section: "Station Information" },
             { label: "Usage Type", key: "usageType", type: "select", required: true, options: ["Public", "Private"], section: "Station Information" },
             { label: "Operational Hours", key: "operationalHours", type: "text", placeholder: "e.g., 24/7 or 9 AM - 6 PM", section: "Station Information" },
-            { label: "Latitude", key: "latitude", type: "number", required: true, placeholder: "e.g., 28.556", section: "Location & Contact" },
-            { label: "Longitude", key: "longitude", type: "number", required: true, placeholder: "e.g., 77.09", section: "Location & Contact" },
+
+            { label: "Address", key: "address", type: "text", required: true, placeholder: "Enter station address", section: "Location & Contact" },
+            { label: "Latitude", key: "latitude", type: "number", required: true, readOnly: true, placeholder: "Select on map", section: "Location & Contact" },
+            { label: "Longitude", key: "longitude", type: "number", required: true, readOnly: true, placeholder: "Select on map", section: "Location & Contact" },
             { label: "Contact Number", key: "contactNumber", type: "tel", required: true, placeholder: "+91XXXXXXXXXX", section: "Location & Contact" }
         );
 
@@ -382,7 +455,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
             const val = formData[field as keyof StationSubmission];
             if (val === undefined || val === null || val === '') {
                 const readableField = field.replace(/([A-Z])/g, ' $1').trim();
-                return `Please fill in the required field: ${readableField.charAt(0).toUpperCase() + readableField.slice(1)}`;
+                return `Please fill in the required field: ${readableField.charAt(0).toUpperCase() + readableField.slice(1)} `;
             }
         }
         return null;
@@ -453,11 +526,55 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                 <div className="mb-6 flex items-center justify-between sticky top-0 z-10 bg-white dark:bg-gray-dark -mx-6 px-6 pt-6 pb-4 border-b border-stroke dark:border-dark-3">
                     <div>
                         <h3 className="text-xl font-bold text-dark dark:text-white">
-                            Edit Station Details
+                            {station.id === 0 ? "Add Station Details" : "Edit Station Details"}
                         </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Submitted on {formatDateTime(station.submissionDate)}
-                        </p>
+                        {station.id !== 0 && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Submitted on {formatDateTime(station.submissionDate)}
+                            </p>
+                        )}
+                        {/* Download Template Button (Only for New Station) */}
+                        {station.id === 0 && (
+                            <div className="mt-1">
+                                <button
+                                    onClick={() => {
+                                        const headers = [
+                                            "Station Name", "Station Type", "Usage Type", "Latitude", "Longitude",
+                                            "Address", "Contact Number", "Open Time", "Close Time", "Network ID", "Connectors"
+                                        ];
+                                        const sample = [
+                                            "Sample Station", "Mall", "PUBLIC", "19.0760", "72.8777",
+                                            "123 Street Name, City", "98765543210", "09:00:00", "21:00:00", "1",
+                                            '[{"chargerTypeId":1,"count":2,"powerRating":"22","tariff":"15"}]'
+                                        ];
+
+                                        const csvContent = [
+                                            headers.join(","),
+                                            sample.map(field => {
+                                                const str = String(field);
+                                                if (str.includes(",") || str.includes('"')) {
+                                                    return '"' + str.replace(/"/g, '""') + '"';
+                                                }
+                                                return str;
+                                            }).join(",")
+                                        ].join("\n");
+
+                                        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                                        const link = document.createElement("a");
+                                        const url = URL.createObjectURL(blob);
+                                        link.setAttribute("href", url);
+                                        link.setAttribute("download", "station_template.csv");
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                    }}
+                                    className="flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 dark:text-primary dark:hover:text-primary/80 transition-colors"
+                                >
+                                    <Download className="h-4 w-4" />
+                                    Download Template (Excel/CSV)
+                                </button>
+                            </div>
+                        )}
                     </div>
                     <button
                         onClick={onClose}
@@ -478,11 +595,18 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
 
                 <div className="space-y-6 pb-6">
                     {/* Dynamic Station Fields */}
-                    {["Station Information", "Location & Contact"].map((section) => (
-                        <div key={section}>
-                            <h4 className="mb-3 text-sm font-semibold text-dark dark:text-white uppercase tracking-wide">
+                    {["Station Information", "Location & Contact"].map((section, idx) => (
+                        <div key={section} className={idx > 0 ? "mt-6" : ""}>
+                            <h4 className="mb-4 text-sm font-semibold text-dark dark:text-white uppercase tracking-wide">
                                 {section}
                             </h4>
+                            {section === "Location & Contact" && (
+                                <LocationPicker
+                                    latitude={Number(formData.latitude) || 0}
+                                    longitude={Number(formData.longitude) || 0}
+                                    onLocationSelect={handleLocationSelect}
+                                />
+                            )}
                             <div className={`grid grid-cols-1 ${section === "Location & Contact" ? "md:grid-cols-3" : "md:grid-cols-2"} gap-4`}>
                                 {stationFields.filter(f => f.section === section).map((field, idx) => {
                                     // Custom Logic for Network Dropdowns
@@ -506,7 +630,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                                     }
 
                                     return (
-                                        <div key={`${field.key}-${idx}`}>
+                                        <div key={`${field.key} -${idx} `}>
                                             <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
                                                 {field.label} {field.required && <span className="text-red-500">*</span>}
                                             </label>
@@ -583,7 +707,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                                                 }
 
                                                 return (
-                                                    <div key={field.key} className={`${field.width === 'half' ? 'w-1/2' : 'w-full'} px-1 mb-2`}>
+                                                    <div key={field.key} className={`${field.width === 'half' ? 'w-1/2' : 'w-full'} px - 1 mb - 2`}>
                                                         <label className="mb-1 block text-xs font-medium text-dark dark:text-white">
                                                             {field.label}
                                                         </label>
@@ -660,7 +784,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                                         <div key={idx} className="aspect-video rounded-lg bg-gray-100 dark:bg-dark-2 overflow-hidden relative group">
                                             <AuthenticatedImage
                                                 src={fullUrl}
-                                                alt={`Station photo ${idx + 1}`}
+                                                alt={`Station photo ${idx + 1} `}
                                                 className="h-full w-full object-cover transition-transform hover:scale-105"
                                             />
                                         </div>
@@ -672,7 +796,7 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
 
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-stroke dark:border-dark-3 pb-6 sm:pb-0">
-                        {station.status === 'Pending' && (
+                        {station.id !== 0 && station.status === 'Pending' && (
                             <button
                                 onClick={handleReject}
                                 className="flex-1 rounded-lg bg-red-500 px-6 py-3 font-medium text-white hover:bg-red-600 transition-colors order-3 sm:order-1"
@@ -684,9 +808,9 @@ export default function ActionModal({ isOpen, onClose, station, onSave, isSaved 
                             onClick={() => handleSave()}
                             className="flex-1 rounded-lg bg-primary px-6 py-3 font-medium text-white hover:bg-primary/90 transition-colors order-1 sm:order-2"
                         >
-                            Save Changes
+                            {station.id === 0 ? "Add Station" : "Save Changes"}
                         </button>
-                        {station.status === 'Pending' && (
+                        {station.id !== 0 && station.status === 'Pending' && (
                             <button
                                 onClick={() => handleSave('Approved')}
                                 disabled={!isSaved}

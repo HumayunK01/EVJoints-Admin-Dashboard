@@ -178,7 +178,7 @@ export function Sidebar() {
                                           aria-hidden="true"
                                         />
                                       )}
-                                      <span>{subItem.title}</span>
+                                      <span className="whitespace-nowrap">{subItem.title}</span>
                                     </MenuItem>
                                   </li>
                                 ))}
